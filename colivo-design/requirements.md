@@ -1,4 +1,6 @@
-# Mess Manager — Project Requirements, User Needs & Features
+# Colivo: Mess, Hostel & Flat Manager
+
+> Meal rate, rent, bills, members, bazar — manage any mess, hostel, PG or shared flat
 
 Nov 12, 2026 · @Rabbi @ Spordium
 
