@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>My bill</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 20px 20px 10px; display: flex; justify-content: space-between; align-items: center">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 13px; color: #5B6461">Rabbi Hasan · Room A</span>
+      <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">My bill · Oct</h1>
+    </div>
+    <span style="font-size: 12px; font-weight: 600; color: #0E6656; background: #E3F0EC; border-radius: 999px; padding: 6px 10px">Closed</span>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <section aria-label="Net balance" style="background: #0E6656; color: #FFFFFF; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 13px; opacity: 0.85">You have a credit of</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 600">৳293.65</span>
+      <span style="font-size: 13px; opacity: 0.85">Carried into November as credit</span>
+    </section>
+
+    <section aria-label="What you owe" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <h2 style="margin: 0; padding: 12px 0 6px; font-size: 14px; font-weight: 600">Your costs</h2>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-top: 1px solid #EFEDE6"><span>Meals · 28 × ৳97.48</span><span>৳2,729.35</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-top: 1px solid #EFEDE6"><span>Prepaid utilities</span><span>৳690.00</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-top: 1px solid #EFEDE6"><span>Postpaid utilities</span><span>৳1,027.00</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-top: 1px solid #EFEDE6"><span>Rent · Room A</span><span>৳6,670.00</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; font-size: 14px; font-weight: 600; border-top: 1px solid #E3E1D9"><span>Total cost</span><span>৳11,116.35</span></div>
+    </section>
+
+    <section aria-label="What you paid" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <h2 style="margin: 0; padding: 12px 0 6px; font-size: 14px; font-weight: 600">Your credits</h2>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-top: 1px solid #EFEDE6"><span>Groceries from your pocket</span><span>৳3,690.00</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-top: 1px solid #EFEDE6"><span>Internet bill you paid</span><span>৳1,050.00</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-top: 1px solid #EFEDE6"><span>Rent payment</span><span>৳6,670.00</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; font-size: 14px; font-weight: 600; border-top: 1px solid #E3E1D9"><span>Total paid</span><span>৳11,410.00</span></div>
+    </section>
+
+    <section aria-label="Deposit" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px">
+      <div style="display: flex; flex-direction: column; gap: 3px">
+        <span style="font-size: 14px; font-weight: 600">Deposit ৳13,340</span>
+        <span style="font-size: 12px; color: #5B6461">2 months · covers your last 2 months</span>
+      </div>
+      <a href="#" style="min-height: 44px; display: flex; align-items: center; font-size: 13px; font-weight: 600">Give notice</a>
+    </section>
+  </main>
+
+  <nav aria-label="Main" style="height: 68px; background: #FFFFFF; border-top: 1px solid #E3E1D9; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr))">
+    <a href="Main.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #5B6461; font-size: 11px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+    <a href="Meals.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #5B6461; font-size: 11px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M3 10h18M9 4v17M15 4v17"></path></svg>Meals</a>
+    <a href="Bazar.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #5B6461; font-size: 11px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16l-2 10H6z"></path><circle cx="9" cy="20" r="1.4"></circle><circle cx="16" cy="20" r="1.4"></circle><path d="M4 6L3 3"></path></svg>Groceries</a>
+    <a href="MyBill.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #0E6656; font-size: 11px; font-weight: 600">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>My bill</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Grocery fund</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
+    <a href="Main.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Grocery fund</h1>
+    <span style="font-size: 13px; color: #5B6461">Shared cash kept for shopping · October</span>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <section aria-label="Grocery fund balance" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; justify-content: space-between; align-items: center">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 13px; color: #5B6461">In the grocery fund · with Maruf</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600; color: #0E6656">৳140 <span style="font-size: 16px; color: #6B4A0B">+ ৳500</span></span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+        <span style="font-size: 12px; color: #5B6461">Kept by</span>
+        <span style="font-size: 14px; font-weight: 600">Hijam Shusil</span>
+      </div>
+    </section>
+
+    <section aria-label="Money put in" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Who put money in</h2>
+        <span style="font-size: 13px; font-weight: 600; color: #0E6656">+৳2,000</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6">
+        <div style="display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 14px; font-weight: 500">Maruf</span>
+          <span style="font-size: 12px; color: #5B6461">9 Oct · bKash · credited to Maruf</span>
+        </div>
+        <span style="font-size: 14px; font-weight: 600; color: #0E6656">+৳2,000</span>
+      </div>
+    </section>
+
+    <section aria-label="Money spent from the grocery fund" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Spent from the grocery fund</h2>
+        <span style="font-size: 13px; font-weight: 600">−৳1,360</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 14px; font-weight: 500">Vegetables, eggs</span>
+          <span style="font-size: 12px; color: #5B6461">10 Oct · bought by Hijam</span>
+        </div>
+        <span style="font-size: 14px; font-weight: 600">−৳620</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 14px; font-weight: 500">Fish, dal</span>
+          <span style="font-size: 12px; color: #5B6461">9 Oct · bought by Rabbi</span>
+        </div>
+        <span style="font-size: 14px; font-weight: 600">−৳740</span>
+      </div>
+    </section>
+
+    <p style="margin: 0; font-size: 12px; color: #5B6461; line-height: 1.5">Money put in is credited to whoever gave it. Spending from the grocery fund counts toward the cost per meal but gives no credit to the shopper, because it wasn't their money.</p>
+
+    <a href="Payments.html" style="height: 48px; border-radius: 12px; background: #0E6656; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">Put money in the grocery fund</a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

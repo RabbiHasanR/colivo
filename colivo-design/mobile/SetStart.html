@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Starting balances</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
+    <a href="Settings.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home settings</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Starting balances</h1>
+    <span style="font-size: 13px; color: #5B6461; line-height: 1.45">Used once, when you start. Enter what each member owed or had extra at the end of your old spreadsheet.</span>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <label style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #5B6461">Balances at the end of
+      <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>September 2026</option></select>
+    </label>
+
+    <section aria-label="Member balances" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 0 14px; display: flex; flex-direction: column">
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+        <div style="{{r.rowStyle}}">
+          <span style="font-size: 14px; font-weight: 600">{{r.name}}</span>
+          <div style="display: flex; gap: 6px; align-items: center">
+            <div role="group" aria-label="{{r.groupLabel}}" style="display: flex; background: #ECEAE2; border-radius: 9px; padding: 3px; gap: 3px">
+              <sc-for list="{{r.types}}" as="t" hint-placeholder-count="3">
+                <span style="{{t.style}}">{{t.label}}</span>
+              </sc-for>
+            </div>
+            <input type="text" inputmode="decimal" aria-label="{{r.amountLabel}}" value="{{r.amount}}" style="width: 84px; height: 40px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 10px; font-size: 14px; font-weight: 600; color: #17201D; font-family: inherit; box-sizing: border-box; text-align: right">
+          </div>
+        </div>
+      </sc-for>
+    </section>
+
+    <button style="height: 48px; border-radius: 12px; border: 1px dashed #0E6656; background: transparent; color: #0E6656; font-size: 14px; font-weight: 600; font-family: inherit">Import from spreadsheet (.xlsx or .csv)</button>
+
+    <section style="background: #E3F0EC; border-radius: 14px; padding: 12px 14px; font-size: 13px; color: #0A4E42; line-height: 1.45">After this, balances carry forward by themselves each time you close a month.</section>
+
+    <button style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit">Save starting balances</button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const chip = (label, active, kind) => {
+      const colors = { Due: ['#FBEFE3', '#7A3A0C'], Credit: ['#E3F0EC', '#0A4E42'], None: ['#FFFFFF', '#17201D'] };
+      return {
+        label,
+        style: 'font-size: 12px; padding: 6px 8px; border-radius: 7px; font-weight: ' + (active ? '600' : '500') + '; background: ' + (active ? colors[kind][0] : 'transparent') + '; color: ' + (active ? colors[kind][1] : '#5B6461')
+      };
+    };
+    const row = (name, type, amount, first) => ({
+      name, amount,
+      groupLabel: name + ' balance type',
+      amountLabel: name + ' amount',
+      rowStyle: 'display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 0' + (first ? '' : '; border-top: 1px solid #EFEDE6'),
+      types: [chip('Due', type === 'Due', 'Due'), chip('Extra', type === 'Credit', 'Credit'), chip('None', type === 'None', 'None')]
+    });
+    return {
+      rows: [
+        row('Rabbi Hasan', 'None', '0', true),
+        row('Hijam Shusil', 'None', '0'),
+        row('Maruf', 'Credit', '270.93')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

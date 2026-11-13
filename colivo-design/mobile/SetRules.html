@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home rules</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 8px; display: flex; flex-direction: column; gap: 6px">
+    <a href="Settings.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home settings</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Home rules</h1>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 10px">
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="5">
+      <fieldset style="margin: 0; background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+        <legend style="float: left; padding: 0; font-size: 14px; font-weight: 600">{{g.title}}</legend>
+        <span style="font-size: 12px; color: #5B6461; clear: both">{{g.help}}</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <sc-for list="{{g.options}}" as="o" hint-placeholder-count="3">
+            <button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button>
+          </sc-for>
+        </div>
+      </fieldset>
+    </sc-for>
+    <span style="font-size: 12px; color: #5B6461; line-height: 1.45">Current members keep the deposit and notice rules from the day they joined. New rules apply to people who join after you save.</span>
+    <button style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit; flex-shrink: 0">Save rules</button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { advance: '2', notice: '2', waiverAgree: true, waiverReplace: true, split: 'equal', gap: 'fund' };
+  }
+  renderVals() {
+    const on = 'min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit';
+    const off = 'min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit';
+    const s = this.state;
+    const single = (key, pairs) => pairs.map(([v, label]) => ({
+      label, on: s[key] === v ? 'true' : 'false', style: s[key] === v ? on : off,
+      pick: () => this.setState({ [key]: v })
+    }));
+    const toggle = (key, label) => ({
+      label: (s[key] ? '✓ ' : '') + label, on: s[key] ? 'true' : 'false', style: s[key] ? on : off,
+      pick: () => this.setState({ [key]: !s[key] })
+    });
+    return {
+      groups: [
+        { title: 'Deposit', help: 'Months of rent a new member pays before moving in', options: single('advance', [['0', 'None'], ['1', '1 month'], ['2', '2 months'], ['3', '3 months']]) },
+        { title: 'Notice to leave', help: 'Minimum notice. Members can\'t pick a leave date earlier than this.', options: single('notice', [['0', 'None'], ['1', '1 month'], ['2', '2 months']]) },
+        { title: 'When the landlord changes rent', help: 'Default way to share it; you can change it each time', options: single('split', [['equal', 'Same amount each'], ['percent', 'Same percent']]) },
+        { title: 'If members pay less than the landlord', help: 'Who covers the difference by default', options: single('gap', [['equal', 'Others equally'], ['share', 'By rent share'], ['fund', 'Home fund'], ['ask', 'Ask members']]) }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

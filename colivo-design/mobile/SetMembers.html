@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Members</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+input::placeholder{color:#6E7673}
+</style>
+</helmet>
+<div style="width: 390px; height: 1560px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
+    <a href="Settings.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home settings</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Members</h1>
+    <span style="font-size: 13px; color: #5B6461">You're the owner</span>
+  </header>
+
+  <main style="flex: 1; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px">
+    <section aria-label="Current members" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 0 14px; display: flex; flex-direction: column">
+      <sc-for list="{{members}}" as="m" hint-placeholder-count="3">
+        <div style="{{m.rowStyle}}">
+          <div aria-hidden="true" style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 999px; background: {{m.avatarBg}}; color: {{m.avatarFg}}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600">{{m.initials}}</div>
+          <div style="display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0">
+            <span style="font-size: 15px; font-weight: 600">{{m.name}}</span>
+            <span style="font-size: 12px; color: #5B6461">{{m.sub}}</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px">
+              <sc-for list="{{m.tags}}" as="t" hint-placeholder-count="2">
+                <span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: {{t.bg}}; color: {{t.fg}}">{{t.label}}</span>
+              </sc-for>
+            </div>
+            <span style="font-size: 12px; font-weight: 600; color: {{m.idColor}}">{{m.id}}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; align-items: stretch">
+            <button aria-label="{{m.editLabel}}" style="min-height: 36px; padding: 0 10px; border-radius: 999px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer">Roles</button>
+            <a href="{{m.actionHref}}" style="min-height: 36px; padding: 0 10px; border-radius: 999px; border: 1px solid {{m.actionBorder}}; background: #FFFFFF; color: {{m.actionColor}}; font-size: 12px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center">{{m.action}}</a>
+          </div>
+        </div>
+      </sc-for>
+    </section>
+
+    <form aria-label="Add a member" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">Add a member</h2>
+
+      <div style="display: flex; align-items: center; gap: 12px">
+        <button type="button" aria-label="Add member photo" style="width: 64px; height: 64px; flex-shrink: 0; border-radius: 999px; border: 1px dashed #0E6656; background: #FFFFFF; color: #0E6656; cursor: pointer; display: flex; align-items: center; justify-content: center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+        </button>
+        <span style="font-size: 12px; color: #5B6461">Photo (optional)</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Name
+          <input type="text" placeholder="Full name" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Phone
+          <input type="tel" placeholder="01XXXXXXXXX" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Room
+          <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>Room B (after Maruf)</option><option>Room A</option></select>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Joins on
+          <input type="text" placeholder="1 Jan 2027" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+        </label>
+      </div>
+
+      <fieldset style="border: 1px solid #E3E1D9; border-radius: 12px; margin: 0; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+        <legend style="font-size: 13px; font-weight: 600; padding: 0 4px">Role</legend>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <span style="min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center">✓ Member (always)</span>
+          <button type="button" aria-pressed="{{mgrOn}}" onClick="{{toggleMgr}}" style="{{mgrStyle}}">{{mgrLabel}}</button>
+          <button type="button" aria-pressed="{{boxOn}}" onClick="{{toggleBox}}" style="{{boxStyle}}">{{boxLabel}}</button>
+        </div>
+        <span style="font-size: 12px; color: {{roleNoteColor}}; line-height: 1.45">{{roleNote}}</span>
+      </fieldset>
+
+      <fieldset style="border: 1px solid #E3E1D9; border-radius: 12px; margin: 0; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+        <legend style="font-size: 13px; font-weight: 600; padding: 0 4px">ID document <span style="color: #9A4A10">(required)</span></legend>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Type
+            <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>NID</option><option>Passport</option><option>Driving licence</option><option>Birth certificate</option><option>Student ID</option></select>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Number
+            <input type="text" placeholder="ID number" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+          </label>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <button type="button" style="height: 76px; border-radius: 10px; border: 1px dashed #0E6656; background: #FFFFFF; color: #0E6656; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer">+ Front side</button>
+          <button type="button" style="height: 76px; border-radius: 10px; border: 1px dashed #0E6656; background: #FFFFFF; color: #0E6656; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer">+ Back side</button>
+        </div>
+        <span style="font-size: 12px; color: #5B6461; display: flex; gap: 6px; align-items: flex-start">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5B6461" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 1px"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
+          Only the owner and managers can see ID documents. They're kept after a member leaves, in case the landlord or police ask.
+        </span>
+      </fieldset>
+
+      <span style="font-size: 12px; color: #5B6461">Deposit needed: ৳7,775 (2 months of ৳3,887.50). We'll send them an SMS or email so they can log in.</span>
+      <button type="submit" style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit">Add and invite</button>
+    </form>
+
+    <section aria-label="Who can do what" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <h2 style="margin: 0; padding: 12px 0 6px; font-size: 15px; font-weight: 600">Who can do what</h2>
+      <sc-for list="{{perms}}" as="p" hint-placeholder-count="4">
+        <div style="display: flex; flex-direction: column; gap: 4px; padding: 10px 0; border-top: 1px solid #EFEDE6">
+          <span style="align-self: flex-start; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: {{p.bg}}; color: {{p.fg}}">{{p.role}}</span>
+          <span style="font-size: 13px; color: #3E4744; line-height: 1.45">{{p.can}}</span>
+        </div>
+      </sc-for>
+    </section>
+
+    <a href="PastMembers.html" style="min-height: 44px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; text-decoration: none">Past members (2) ›</a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1560}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { mgr: false, box: false };
+  }
+  renderVals() {
+    const T = {
+      admin: { label: 'Owner', bg: '#17201D', fg: '#FFFFFF' },
+      mgr: { label: 'Manager', bg: '#E7F1FB', fg: '#1D4F86' },
+      box: { label: 'Fund keeper', bg: '#F9EEDA', fg: '#6B4A0B' },
+      mem: { label: 'Member', bg: '#E3F0EC', fg: '#0A4E42' },
+      notice: { label: 'Notice served', bg: '#FBEFE3', fg: '#7A3A0C' }
+    };
+    const row = (first) => 'display: flex; align-items: flex-start; gap: 12px; padding: 14px 0' + (first ? '' : '; border-top: 1px solid #EFEDE6');
+    const on = 'min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit';
+    const off = 'min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit';
+    const s = this.state;
+    let roleNote = 'Only the owner can make someone a manager. A manager can add members and choose the fund keeper.';
+    let roleNoteColor = '#5B6461';
+    if (s.box) { roleNote = 'Only one fund keeper at a time. Saving moves the grocery fund from Hijam Shusil to this person.'; roleNoteColor = '#7A3A0C'; }
+    return {
+      members: [
+        { rowStyle: row(true), initials: 'RH', avatarBg: '#E7F1FB', avatarFg: '#1D4F86', name: 'Rabbi Hasan', sub: 'Room A · you', tags: [T.admin, T.mgr], id: 'NID ✓', idColor: '#0E6656', editLabel: 'Change roles for Rabbi Hasan', action: 'Deactivate', actionHref: '#', actionBorder: '#D6D3C9', actionColor: '#9A4A10' },
+        { rowStyle: row(false), initials: 'HS', avatarBg: '#E3F0EC', avatarFg: '#0A4E42', name: 'Hijam Shusil', sub: 'Room B', tags: [T.mem, T.box], id: 'Passport ✓', idColor: '#0E6656', editLabel: 'Change roles for Hijam Shusil', action: 'Deactivate', actionHref: '#', actionBorder: '#D6D3C9', actionColor: '#9A4A10' },
+        { rowStyle: row(false), initials: 'M', avatarBg: '#F1F0EA', avatarFg: '#3E4744', name: 'Maruf', sub: 'Room B · leaves 31 Dec 2026', tags: [T.mem, T.notice], id: 'ID missing · add now', idColor: '#9A4A10', editLabel: 'Change roles for Maruf', action: 'Settle', actionHref: 'FinalSettlement.html', actionBorder: '#0E6656', actionColor: '#0E6656' }
+      ],
+      mgrOn: s.mgr ? 'true' : 'false',
+      boxOn: s.box ? 'true' : 'false',
+      mgrStyle: s.mgr ? on : off,
+      boxStyle: s.box ? on : off,
+      mgrLabel: (s.mgr ? '✓ ' : '+ ') + 'Manager',
+      boxLabel: (s.box ? '✓ ' : '+ ') + 'Fund keeper',
+      toggleMgr: () => this.setState({ mgr: !s.mgr }),
+      toggleBox: () => this.setState({ box: !s.box }),
+      roleNote,
+      roleNoteColor,
+      perms: [
+        { role: 'Owner · 1 person', bg: '#17201D', fg: '#FFFFFF', can: 'Everything, including all member, manager and fund keeper jobs. Gives and removes roles, chooses managers and the fund keeper, changes home settings, and can hand the owner role to someone else.' },
+        { role: 'Manager', bg: '#E7F1FB', fg: '#1D4F86', can: 'Adds new members, chooses the fund keeper, gives home-fund money to a member to pay a bill, records payments and bills, changes rent, closes the month. Cannot make someone a manager. If no manager is set, the owner does these jobs.' },
+        { role: 'Fund keeper', bg: '#F9EEDA', fg: '#6B4A0B', can: 'Everything a member can, plus records groceries paid from the grocery fund and money put into it. If no keeper is set, the manager keeps the grocery fund (or the owner if there\'s no manager).' },
+        { role: 'Member', bg: '#E3F0EC', fg: '#0A4E42', can: 'Logs own meals and groceries, pays bills with money given to them or from their own pocket, sees own bill, gives notice. Cannot add members. The owner, managers and fund keeper are all members too.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

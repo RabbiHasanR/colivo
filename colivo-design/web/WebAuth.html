@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Log in or create a home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+input::placeholder{color:#6E7673}
+</style>
+</helmet>
+<div style="min-height: 100vh; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-wrap: wrap; align-items: stretch">
+  <section aria-label="About Mess Manager" style="flex: 1 1 420px; box-sizing: border-box; background: #0E6656; color: #FFFFFF; padding: clamp(28px, 5vw, 64px); display: flex; flex-direction: column; gap: 28px; justify-content: space-between">
+    <span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700">Mess Manager</span>
+    <div style="display: flex; flex-direction: column; gap: 16px; max-width: 520px">
+      <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: clamp(30px, 3.4vw, 46px); font-weight: 600; line-height: 1.1">Meals, groceries, rent and bills for your shared home. No spreadsheet.</h1>
+      <p style="margin: 0; font-size: 16px; line-height: 1.55; opacity: 0.9">Everyone logs their own meals, uploads receipts and sees what they owe. The month closes with one tap.</p>
+    </div>
+    <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 10px 22px; font-size: 14px; opacity: 0.92">
+      <li>✓ Cost per meal, worked out live</li>
+      <li>✓ Grocery fund and bills</li>
+      <li>✓ Deposits and notice periods</li>
+    </ul>
+  </section>
+
+  <main style="flex: 1 1 480px; box-sizing: border-box; padding: clamp(24px, 5vw, 64px) clamp(16px, 4vw, 56px); display: flex; align-items: center; justify-content: center">
+    <div style="width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 18px">
+      <div role="tablist" aria-label="Log in or sign up" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); background: #ECEAE2; border-radius: 12px; padding: 4px; gap: 4px">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="2">
+          <button role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{isLogin}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600">Log in</h2>
+          <span style="font-size: 14px; color: #5B6461; line-height: 1.5">Use the phone or email you signed up with, or the one your home's manager added you with. No home code needed.</span>
+        </div>
+        <form aria-label="Log in" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Phone or email
+            <input type="text" value="01712 345678" style="height: 46px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">6-digit code
+            <span style="display: flex; gap: 8px">
+              <input type="text" inputmode="numeric" placeholder="••••••" style="flex: 1; height: 46px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 18px; letter-spacing: 6px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+              <button type="button" style="height: 46px; padding: 0 14px; border-radius: 10px; border: 1px solid #0E6656; background: #FFFFFF; color: #0E6656; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; white-space: nowrap">Send code</button>
+            </span>
+          </label>
+          <a href="WebMemberHome.html" style="height: 48px; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center">Log in</a>
+        </form>
+        <span style="font-size: 13px; color: #5B6461; line-height: 1.5">Not added yet? Ask your home's owner or manager to add your number. You'll get an SMS or email when it's done.</span>
+      </sc-if>
+
+      <sc-if value="{{isSignup}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600">Create your home</h2>
+          <span style="font-size: 14px; color: #5B6461; line-height: 1.5">For the person who runs the home. You'll be the owner and can add members afterwards.</span>
+        </div>
+        <form aria-label="Create a home" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Your name
+              <input type="text" value="Rabbi Hasan" style="height: 46px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Phone or email
+              <input type="text" value="01681 194424" style="height: 46px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Home name
+              <input type="text" value="Our Flat" style="height: 46px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+            </label>
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">First month
+              <select style="height: 46px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 15px; color: #17201D; font-family: inherit; background: #FFFFFF; min-width: 0"><option>November 2026</option><option>December 2026</option></select>
+            </label>
+          </div>
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 44px"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #0E6656; margin: 0"> I live here too and pay my share</label>
+          <button type="button" style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer">Send code and create home</button>
+        </form>
+        <span style="font-size: 13px; color: #5B6461; line-height: 1.5">One account can own one home for now. If your number is already in a home, log in instead.</span>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'login' };
+  }
+  renderVals() {
+    const s = this.state;
+    const on = 'min-height: 42px; border: 0; border-radius: 9px; background: #FFFFFF; color: #17201D; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer';
+    const off = 'min-height: 42px; border: 0; border-radius: 9px; background: transparent; color: #5B6461; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer';
+    const tabs = [['login', 'Log in'], ['signup', 'Create a home']].map(([k, label]) => ({
+      label, on: s.tab === k ? 'true' : 'false', style: s.tab === k ? on : off,
+      pick: () => this.setState({ tab: k })
+    }));
+    return { tabs, isLogin: s.tab === 'login', isSignup: s.tab === 'signup' };
+  }
+}
+</script>
+</body>
+</html>

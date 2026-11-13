@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Give money to pay a bill</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 920px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
+    <a href="BillsToPay.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Bills to pay</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Give money to pay a bill</h1>
+    <span style="font-size: 13px; color: #5B6461; line-height: 1.45">Hand cash from the home fund to a member who will pay the landlord or provider. Managers and the owner can do this.</span>
+  </header>
+
+  <main style="flex: 1; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <section aria-label="Home fund" style="background: #0E6656; color: #FFFFFF; border-radius: 16px; padding: 14px; display: flex; justify-content: space-between; align-items: center">
+      <span style="font-size: 13px; opacity: 0.85">Home fund · free to spend</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 600">৳1,620</span>
+    </section>
+
+    <section aria-label="Give" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 14px">
+      <fieldset style="border: 0; margin: 0; padding: 0">
+        <legend style="font-size: 12px; color: #5B6461; padding: 0; margin-bottom: 8px">Which bill</legend>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <sc-for list="{{bills}}" as="b" hint-placeholder-count="3">
+            <button type="button" aria-pressed="{{b.on}}" onClick="{{b.pick}}" style="{{b.style}}">
+              <span style="display: flex; align-items: center; gap: 6px">{{b.name}} <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: {{b.tagBg}}; color: {{b.tagFg}}">{{b.tag}}</span></span>
+              <span style="font-weight: 600">{{b.amountText}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 0; margin: 0; padding: 0">
+        <legend style="font-size: 12px; color: #5B6461; padding: 0; margin-bottom: 8px">Who will pay it</legend>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <sc-for list="{{people}}" as="p" hint-placeholder-count="3">
+            <button type="button" aria-pressed="{{p.on}}" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button>
+          </sc-for>
+        </div>
+      </fieldset>
+
+      <div style="background: {{noteBg}}; color: {{noteFg}}; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45">{{note}}</div>
+      <button style="{{btnStyle}}">{{btnLabel}}</button>
+    </section>
+
+    <section aria-label="Bill money with members" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <h2 style="margin: 0; padding: 10px 0 6px; font-size: 15px; font-weight: 600">Money with members now</h2>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px"><span>Maruf · groceries (from the grocery fund)</span><span style="font-weight: 600">৳500</span></div>
+      <p style="margin: 0; padding: 8px 0 12px; font-size: 12px; color: #5B6461; line-height: 1.45">When the member pays, the bill is marked paid. Any leftover goes back to the home fund.</p>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":920}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { bill: 'service', who: 'Maruf' };
+  }
+  renderVals() {
+    const FREE = 1620;
+    const s = this.state;
+    const fmt = (n) => '৳' + n.toLocaleString('en-US');
+    const rowOn = 'min-height: 48px; padding: 0 12px; border-radius: 10px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #17201D; font-size: 14px; font-family: inherit; cursor: pointer; display: flex; justify-content: space-between; align-items: center; text-align: left';
+    const rowOff = 'min-height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 14px; font-family: inherit; cursor: pointer; display: flex; justify-content: space-between; align-items: center; text-align: left';
+    const chipOn = 'min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit';
+    const chipOff = 'min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit';
+    const list = [
+      { key: 'service', name: 'Service charge', tag: 'Postpaid', tagBg: '#EFEDFF', tagFg: '#4B3FA3', amount: 581 },
+      { key: 'khala', name: 'Cook (cook)', tag: 'Postpaid', tagBg: '#EFEDFF', tagFg: '#4B3FA3', amount: 2500 },
+      { key: 'rent', name: 'November rent', tag: 'Rent', tagBg: '#ECEAE2', tagFg: '#3E4744', amount: 15645 }
+    ];
+    const bills = list.map((b) => Object.assign({}, b, {
+      amountText: fmt(b.amount), on: s.bill === b.key ? 'true' : 'false', style: s.bill === b.key ? rowOn : rowOff,
+      pick: () => this.setState({ bill: b.key })
+    }));
+    const people = ['Maruf', 'Hijam Shusil', 'Rabbi Hasan'].map((n) => ({
+      label: n, on: s.who === n ? 'true' : 'false', style: s.who === n ? chipOn : chipOff,
+      pick: () => this.setState({ who: n })
+    }));
+    const bill = list.find((b) => b.key === s.bill);
+    const blocked = bill.amount > FREE;
+    const first = s.who.split(' ')[0];
+    return {
+      bills,
+      people,
+      note: blocked
+        ? 'The home fund has only ' + fmt(FREE) + ' free, but this bill is ' + fmt(bill.amount) + '. Collect dues first (Maruf owes ৳1,240), or give part now.'
+        : first + ' gets ' + fmt(bill.amount) + ' to pay the ' + bill.name.toLowerCase() + '. ' + fmt(FREE - bill.amount) + ' stays free in the home fund.',
+      noteBg: blocked ? '#FBEFE3' : '#F1F0EA',
+      noteFg: blocked ? '#7A3A0C' : '#3E4744',
+      btnLabel: blocked ? 'Give ' + fmt(FREE) + ' now (part)' : 'Give ' + fmt(bill.amount) + ' to ' + first,
+      btnStyle: 'height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer'
+    };
+  }
+}
+</script>
+</body>
+</html>

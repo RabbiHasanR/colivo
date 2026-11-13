@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bills to pay</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 940px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
+    <a href="Main.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Bills to pay</h1>
+    <span style="font-size: 13px; color: #5B6461">What the home still owes · October</span>
+  </header>
+
+  <main style="flex: 1; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <section aria-label="Can we pay" style="background: #FBEFE3; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <span style="font-size: 14px; font-weight: 600; color: #7A3A0C">Short by ৳1,461</span>
+        <span style="font-size: 12px; color: #7A3A0C">to pay every bill</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-size: 12px; color: #5C2C09">
+        <span>Bills to pay ৳3,081</span>
+        <span>Free to spend ৳1,620</span>
+      </div>
+      <span style="font-size: 12px; color: #5C2C09; line-height: 1.45">Collecting Maruf's ৳1,240 due leaves ৳221 still short.</span>
+    </section>
+
+    <section aria-label="Unpaid bills" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Whom we owe</h2>
+        <span style="font-size: 13px; font-weight: 600">৳3,081</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 4px 0 10px; font-size: 12px">
+        <span style="background: #ECEAE2; color: #3E4744; border-radius: 8px; padding: 6px 8px">Rent ৳0</span>
+        <span style="background: #E7F1FB; color: #1D4F86; border-radius: 8px; padding: 6px 8px">Prepaid ৳0</span>
+        <span style="background: #EFEDFF; color: #4B3FA3; border-radius: 8px; padding: 6px 8px">Postpaid ৳3,081</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 14px; font-weight: 500">Cook (cook) <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #EFEDFF; color: #4B3FA3">Postpaid</span></span>
+          <span style="font-size: 12px; color: #9A4A10; font-weight: 500">October salary · due 31 Oct</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px">
+          <span style="font-size: 14px; font-weight: 600">৳2,500</span>
+          <button style="min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid #0E6656; background: #FFFFFF; color: #0E6656; font-size: 12px; font-weight: 600; font-family: inherit">Mark paid</button>
+          <a href="GiveBill.html" style="min-height: 36px; padding: 0 12px; border-radius: 999px; background: #E3F0EC; color: #0E6656; font-size: 12px; font-weight: 600; text-decoration: none; display: flex; align-items: center">Give to a member</a>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 14px; font-weight: 500">Service charge <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #EFEDFF; color: #4B3FA3">Postpaid</span></span>
+          <span style="font-size: 12px; color: #5B6461">Building service · due 5 Nov</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px">
+          <span style="font-size: 14px; font-weight: 600">৳581</span>
+          <button style="min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid #0E6656; background: #FFFFFF; color: #0E6656; font-size: 12px; font-weight: 600; font-family: inherit">Mark paid</button>
+          <a href="GiveBill.html" style="min-height: 36px; padding: 0 12px; border-radius: 999px; background: #E3F0EC; color: #0E6656; font-size: 12px; font-weight: 600; text-decoration: none; display: flex; align-items: center">Give to a member</a>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Paid this month" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <h2 style="margin: 0; padding: 12px 0 6px; font-size: 15px; font-weight: 600">Already paid</h2>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px">
+        <span>Landlord <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #ECEAE2; color: #3E4744">Rent</span> <span style="color: #5B6461">· home fund</span></span><span style="font-weight: 600">৳15,645</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px">
+        <span>Internet <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #E7F1FB; color: #1D4F86">Prepaid</span> <span style="color: #5B6461">· Rabbi</span></span><span style="font-weight: 600">৳1,050</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px">
+        <span>Electricity <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #E7F1FB; color: #1D4F86">Prepaid</span> <span style="color: #5B6461">· Hijam</span></span><span style="font-weight: 600">৳1,000</span>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":940}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

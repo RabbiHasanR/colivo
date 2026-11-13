@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Log-in problems</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+input::placeholder{color:#6E7673}
+</style>
+</helmet>
+<div style="min-height: 100vh; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-wrap: wrap; align-items: stretch">
+  <section aria-label="About Mess Manager" style="flex: 1 1 420px; box-sizing: border-box; background: #0E6656; color: #FFFFFF; padding: clamp(28px, 5vw, 64px); display: flex; flex-direction: column; gap: 20px; justify-content: space-between">
+    <span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700">Mess Manager</span>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: clamp(28px, 3.2vw, 42px); font-weight: 600; line-height: 1.15; max-width: 480px">Meals, groceries, rent and bills for your shared home.</h1>
+    <span style="font-size: 14px; opacity: 0.9">Codes last 5 minutes · 5 wrong codes lock it for 15 minutes · a new code once a minute</span>
+  </section>
+  <main style="flex: 1 1 480px; box-sizing: border-box; padding: clamp(24px, 5vw, 64px) clamp(16px, 4vw, 56px); display: flex; align-items: center; justify-content: center">
+    <div style="width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 16px">
+      <div role="tablist" aria-label="Problem" style="display: inline-flex; flex-wrap: wrap; gap: 4px; background: #ECEAE2; border-radius: 12px; padding: 4px">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+          <button role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px"><h2 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600">Enter your code</h2><span style="font-size: 14px; color: #5B6461">Sent to 01712 345678</span></div>
+      <sc-if value="{{is_wrong}}" hint-placeholder-val="{{true}}"><form aria-label="Enter code" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">6-digit code<input type="text" inputmode="numeric" value="482 931" aria-invalid="true" style="height: 52px; border: 1.5px solid #9A4A10; border-radius: 10px; padding: 0 12px; font-size: 22px; letter-spacing: 6px; text-align: center; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0"></label>
+            <span role="alert" style="font-size: 14px; color: #7A3A0C; line-height: 1.45">That code isn't right. 3 tries left.</span>
+            <button type="button" style="min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: #0E6656; color: #FFFFFF; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 48px">Log in</button><span style="font-size: 13px; color: #5B6461; text-align: center">Didn't get it? Resend in 0:32</span>
+          </form></sc-if><sc-if value="{{is_expired}}" hint-placeholder-val="{{false}}"><form aria-label="Enter code" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">6-digit code<input type="text" inputmode="numeric" value="482 913" aria-invalid="true" style="height: 52px; border: 1.5px solid #9A4A10; border-radius: 10px; padding: 0 12px; font-size: 22px; letter-spacing: 6px; text-align: center; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0"></label>
+            <span role="alert" style="font-size: 14px; color: #7A3A0C; line-height: 1.45">This code expired. Codes work for 5 minutes.</span>
+            <button type="button" style="min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: #0E6656; color: #FFFFFF; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 48px">Send a new code</button>
+          </form></sc-if><sc-if value="{{is_locked}}" hint-placeholder-val="{{false}}"><section role="alert" style="background: #FBEFE3; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 6px; color: #7A3A0C"><span style="font-size: 17px; font-weight: 600">Too many wrong codes</span><span style="font-size: 14px; line-height: 1.5">To keep your account safe, try again in 14:52. Your home's data isn't affected.</span></section><a href="WebAuth.html" style="min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 48px">Use a different phone or email</a></sc-if><sc-if value="{{is_resend}}" hint-placeholder-val="{{false}}"><section role="status" style="background: #E3F0EC; border-radius: 16px; padding: 14px; font-size: 14px; color: #0A4E42; line-height: 1.5">New code sent to 01712 345678. The old one no longer works.</section><form aria-label="Enter code" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+            <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">6-digit code<input type="text" inputmode="numeric" value="" aria-invalid="true" style="height: 52px; border: 1.5px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 22px; letter-spacing: 6px; text-align: center; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0"></label>
+            <span role="alert" style="font-size: 14px; color: #5B6461; line-height: 1.45">No SMS after a minute? Try email instead, or check the number.</span>
+            <button type="button" style="min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: #0E6656; color: #FFFFFF; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 48px">Log in</button><div style="display: flex; gap: 8px"><button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; flex: 1">Resend in 0:58</button><a href="WebAuth.html" style="min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; flex: 1">Use email</a></div>
+          </form></sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":860}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'wrong' };
+  }
+  renderVals() {
+    const on = 'min-height: 38px; padding: 0 14px; border: 0; border-radius: 9px; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit';
+    const off = 'min-height: 38px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent; color: #5B6461; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit';
+    const tab = this.state.tab;
+    const v = { tabs: [["wrong", "Wrong code"], ["expired", "Expired"], ["locked", "Too many tries"], ["resend", "Resent"]].map(([k, label]) => ({ label, on: tab === k ? 'true' : 'false', style: tab === k ? on : off, pick: () => this.setState({ tab: k }) })) };
+    [["wrong", "Wrong code"], ["expired", "Expired"], ["locked", "Too many tries"], ["resend", "Resent"]].forEach(([k]) => { v['is_' + k] = tab === k; });
+    return v;
+  }
+}
+</script>
+</body>
+</html>

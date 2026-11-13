@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
+    <a href="Main.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Home settings</h1>
+    <span style="font-size: 13px; color: #5B6461">Owner can change everything. Managers can add members and choose the fund keeper.</span>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px">
+    <nav aria-label="Home setup" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 0 14px; display: flex; flex-direction: column">
+      <sc-for list="{{setup}}" as="s" hint-placeholder-count="4">
+        <a href="{{s.href}}" style="{{s.style}}">
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+            <span style="font-size: 15px; font-weight: 600; color: #17201D">{{s.title}}</span>
+            <span style="font-size: 12px; color: #5B6461">{{s.sub}}</span>
+          </div>
+          <span aria-hidden="true" style="font-size: 18px; color: #5B6461">›</span>
+        </a>
+      </sc-for>
+    </nav>
+
+    <span style="font-size: 12px; font-weight: 600; color: #5B6461; padding: 4px 2px 0">Money rules</span>
+    <nav aria-label="Money rules" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 0 14px; display: flex; flex-direction: column">
+      <sc-for list="{{money}}" as="s" hint-placeholder-count="4">
+        <a href="{{s.href}}" style="{{s.style}}">
+          <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+            <span style="font-size: 15px; font-weight: 600; color: #17201D">{{s.title}}</span>
+            <span style="font-size: 12px; color: #5B6461">{{s.sub}}</span>
+          </div>
+          <span aria-hidden="true" style="font-size: 18px; color: #5B6461">›</span>
+        </a>
+      </sc-for>
+    </nav>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const row = (href, title, sub, first) => ({
+      href, title, sub,
+      style: 'display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; min-height: 44px; text-decoration: none' + (first ? '' : '; border-top: 1px solid #EFEDE6')
+    });
+    return {
+      setup: [
+        row('SetFlat.html', 'Home & landlord', 'Our Flat · ৳15,645 a month · landlord holds ৳26,390', true),
+        row('SetRooms.html', 'Rooms', '2 rooms · Room A ৳6,670 · Room B ৳7,775'),
+        row('SetMembers.html', 'Members', '3 active · 1 has given notice'),
+        row('SetStart.html', 'Starting balances', 'Entered for September 2026')
+      ],
+      money: [
+        row('SetRules.html', 'Home rules', '2-month deposit · 2-month notice · home fund covers rent gaps', true),
+        row('SetBills.html', 'Bills & categories', '7 bills in Rent, Prepaid, Postpaid, Other'),
+        row('SetDeals.html', 'Custom deals', 'None this month'),
+        row('SetBazarBox.html', 'Grocery fund', 'On · kept by Hijam Shusil')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

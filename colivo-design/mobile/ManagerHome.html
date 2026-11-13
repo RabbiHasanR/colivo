@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home for a manager</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 1460px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 20px 20px 12px; display: flex; justify-content: space-between; align-items: center">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 13px; color: #5B6461">Our Flat · Manager</span>
+      <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">{{monthTitle}}</h1>
+    </div>
+    <div style="display: flex; gap: 8px">
+      <button aria-label="Switch month" aria-haspopup="dialog" onClick="{{openPicker}}" style="width: 44px; height: 44px; border-radius: 12px; border: 1px solid #E3E1D9; background: #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17201D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+      </button>
+      <a href="ManagerMembers.html" aria-label="Members" style="width: 44px; height: 44px; box-sizing: border-box; border-radius: 12px; border: 1px solid #E3E1D9; background: #FFFFFF; display: flex; align-items: center; justify-content: center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#17201D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20c1-3.5 3.6-5.5 6.5-5.5s5.5 2 6.5 5.5"></path><circle cx="17" cy="9" r="2.5"></circle><path d="M17 14c2.3 0 4 1.5 4.5 4.5"></path></svg>
+      </a>
+      <a href="Profile.html" aria-label="My profile" style="width: 44px; height: 44px; box-sizing: border-box; border-radius: 999px; background: #E7F1FB; color: #1D4F86; text-decoration: none; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600">HS</a>
+    </div>
+  </header>
+
+  <main style="flex: 1; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 14px">
+    <sc-if value="{{isPast}}" hint-placeholder-val="{{ false }}">
+      <div style="background: #F1F0EA; border-radius: 12px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; color: #3E4744">
+        <span><strong style="font-weight: 600">Closed month</strong> · view only, nothing can be changed</span>
+        <button onClick="{{backToNow}}" style="min-height: 36px; padding: 0 10px; border-radius: 999px; border: 1px solid #0E6656; background: #FFFFFF; color: #0E6656; font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer; white-space: nowrap">Back to Oct</button>
+      </div>
+    </sc-if>
+    <nav aria-label="Inbox and messages" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+      <a href="Inbox.html" style="min-height: 44px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E3E1D9; color: #17201D; text-decoration: none; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px">Inbox <span style="min-width: 22px; height: 22px; border-radius: 999px; background: #9A4A10; color: #FFFFFF; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; box-sizing: border-box">3</span></a>
+      <a href="Chats.html" style="min-height: 44px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E3E1D9; color: #17201D; text-decoration: none; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px">Messages <span style="min-width: 22px; height: 22px; border-radius: 999px; background: #0E6656; color: #FFFFFF; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; box-sizing: border-box">2</span></a>
+    </nav>
+    <section aria-label="Me" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 12px; color: #5B6461">My balance · October</span>
+          <span style="font-size: 18px; font-weight: 600; color: #0E6656">+৳3,713.77 credit</span>
+        </div>
+        <a href="MyBill.html" style="font-size: 13px; font-weight: 600; text-decoration: none; min-height: 44px; display: flex; align-items: center">My bill ›</a>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid #EFEDE6; padding-top: 10px">
+        <span style="font-size: 13px; font-weight: 600">My meals today</span>
+        <div style="display: flex; gap: 8px; align-items: center">
+          <span style="font-size: 11px; color: #5B6461">L</span>
+          <div style="display: flex; align-items: center; background: #F6F5F0; border-radius: 10px">
+            <button aria-label="Less lunch" onClick="{{myLDown}}" style="width: 40px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #17201D">−</button>
+            <span style="min-width: 28px; text-align: center; font-size: 16px; font-weight: 600">{{myL}}</span>
+            <button aria-label="More lunch" onClick="{{myLUp}}" style="width: 40px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #0E6656">+</button>
+          </div>
+          <span style="font-size: 11px; color: #5B6461">D</span>
+          <div style="display: flex; align-items: center; background: #F6F5F0; border-radius: 10px">
+            <button aria-label="Less dinner" onClick="{{myDDown}}" style="width: 40px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #17201D">−</button>
+            <span style="min-width: 28px; text-align: center; font-size: 16px; font-weight: 600">{{myD}}</span>
+            <button aria-label="More dinner" onClick="{{myDUp}}" style="width: 40px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #0E6656">+</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section aria-label="Central fund" style="background: #0E6656; color: #FFFFFF; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <span style="font-size: 13px; opacity: 0.85">Home fund</span>
+        <span style="font-size: 12px; opacity: 0.85">Free to spend</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 600">৳4,120.00</span>
+        <span style="font-size: 15px; font-weight: 600">৳1,620.00</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; border-top: 1px solid rgba(255,255,255,0.25); padding-top: 12px">
+        <a href="Advance.html" style="display: flex; flex-direction: column; gap: 2px; min-height: 44px; color: #FFFFFF; text-decoration: none"><span style="font-size: 11px; opacity: 0.85">Deposits held ›</span><span style="font-size: 14px; font-weight: 600">৳2,500</span></a>
+        <a href="BazarBox.html" style="display: flex; flex-direction: column; gap: 2px; min-height: 44px; color: #FFFFFF; text-decoration: none"><span style="font-size: 11px; opacity: 0.85">Grocery fund ›</span><span style="font-size: 14px; font-weight: 600">৳640</span></a>
+        <a href="BillsToPay.html" style="display: flex; flex-direction: column; gap: 2px; min-height: 44px; color: #FFFFFF; text-decoration: none"><span style="font-size: 11px; opacity: 0.85">Bills to pay ›</span><span style="font-size: 14px; font-weight: 600">৳3,081</span></a>
+      </div>
+    </section>
+
+    <section aria-label="This month" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <a href="Meals.html" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px; color: #17201D; text-decoration: none">
+        <span style="font-size: 12px; color: #5B6461">Cost per meal ›</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600">৳97.48</span>
+        <span style="font-size: 12px; color: #5B6461">107 meals</span>
+      </a>
+      <a href="Bazar.html" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px; color: #17201D; text-decoration: none">
+        <span style="font-size: 12px; color: #5B6461">Groceries spent ›</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600">৳10,430</span>
+        <span style="font-size: 12px; color: #5B6461">14 purchases</span>
+      </a>
+      <a href="Utilities.html" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px; color: #17201D; text-decoration: none">
+        <span style="font-size: 12px; color: #5B6461">Utilities ›</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600">৳5,151</span>
+        <span style="font-size: 12px; color: #5B6461">Pre ৳2,070 · Post ৳3,081</span>
+      </a>
+      <a href="Rent.html" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px; color: #17201D; text-decoration: none">
+        <span style="font-size: 12px; color: #5B6461">Rent ›</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600">৳14,445</span>
+        <span style="font-size: 12px; color: #9A4A10">৳1,200 short of landlord</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px">
+          <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #E3F0EC; color: #0A4E42">Landlord paid</span>
+          <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #E3F0EC; color: #0A4E42">Members 3/3 paid</span>
+        </div>
+      </a>
+    </section>
+
+    <section aria-label="Quick actions" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+      <a href="Meals.html" style="min-height: 52px; border-radius: 14px; background: #E3F0EC; color: #0E6656; text-decoration: none; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center">Log meals</a>
+      <a href="Bazar.html" style="min-height: 52px; border-radius: 14px; background: #E3F0EC; color: #0E6656; text-decoration: none; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center">Add groceries</a>
+      <a href="Payments.html" style="min-height: 52px; border-radius: 14px; background: #E3F0EC; color: #0E6656; text-decoration: none; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-align: center">Record payment</a>
+      <a href="ManagerMembers.html" style="min-height: 52px; border-radius: 14px; background: #E3F0EC; color: #0E6656; text-decoration: none; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-align: center">Add member</a>
+    </section>
+
+    <section aria-label="Today's meals in the home" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column; font-variant-numeric: tabular-nums">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0 6px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Today's meals · 12 Oct</h2>
+        <a href="Meals.html" style="font-size: 13px; font-weight: 600; text-decoration: none">Meal grid ›</a>
+      </div>
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 54px 54px 54px; gap: 6px; padding: 4px 0 6px; font-size: 11px; color: #5B6461">
+        <span>Who</span><span style="text-align: right">Lunch</span><span style="text-align: right">Dinner</span><span style="text-align: right">Total</span>
+      </div>
+      <sc-for list="{{todayRows}}" as="t" hint-placeholder-count="3">
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 54px 54px 54px; gap: 6px; padding: 9px 0; border-top: 1px solid #EFEDE6; font-size: 13px">
+          <span style="font-weight: 500">{{t.name}}</span><span style="text-align: right">{{t.l}}</span><span style="text-align: right">{{t.d}}</span><span style="text-align: right; font-weight: 600">{{t.t}}</span>
+        </div>
+      </sc-for>
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 54px 54px 54px; gap: 6px; padding: 10px 0; border-top: 1px solid #E3E1D9; font-size: 13px; font-weight: 600">
+        <span>Cook for</span><span style="text-align: right">{{todayL}}</span><span style="text-align: right">{{todayD}}</span><span style="text-align: right">{{todayT}}</span>
+      </div>
+    </section>
+    <section aria-label="Member balances" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 14px; padding: 6px 14px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0 6px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Member balances</h2>
+        <a href="Statement.html" style="font-size: 13px; font-weight: 500">Statement</a>
+      </div>
+      <a href="MemberDetail.html" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; color: #17201D; text-decoration: none; min-height: 44px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">Hijam Shusil</span><span style="font-size: 12px; color: #5B6461">Room B</span></div>
+        <span style="font-size: 14px; font-weight: 600; color: #0E6656">+৳3,713.77 ›</span>
+      </a>
+      <a href="MemberDetail.html" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; color: #17201D; text-decoration: none; min-height: 44px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">Rabbi Hasan</span><span style="font-size: 12px; color: #5B6461">Room A</span></div>
+        <span style="font-size: 14px; font-weight: 600; color: #0E6656">+৳293.65 ›</span>
+      </a>
+      <a href="MemberDetail.html" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; color: #17201D; text-decoration: none; min-height: 44px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">Maruf</span><span style="font-size: 12px; color: #5B6461">Room B · notice served</span></div>
+        <span style="font-size: 14px; font-weight: 600; color: #9A4A10">−৳1,240.00 ›</span>
+      </a>
+    </section>
+  </main>
+
+  <nav aria-label="Main" style="height: 68px; background: #FFFFFF; border-top: 1px solid #E3E1D9; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr))">
+    <a href="Main.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #0E6656; font-size: 11px; font-weight: 600">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+    <a href="Meals.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #5B6461; font-size: 11px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M3 10h18M9 4v17M15 4v17"></path></svg>Meals</a>
+    <a href="Bazar.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #5B6461; font-size: 11px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16l-2 10H6z"></path><circle cx="9" cy="20" r="1.4"></circle><circle cx="16" cy="20" r="1.4"></circle><path d="M4 6L3 3"></path></svg>Expenses</a>
+    <a href="Payments.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #5B6461; font-size: 11px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M3 10h18M16 15h2"></path></svg>Payments</a>
+    <a href="Statement.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #5B6461; font-size: 11px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10v18l-5-3-5 3z"></path><path d="M10 8h4M10 12h4"></path></svg>Statement</a>
+  </nav>
+
+  <sc-if value="{{pickerOpen}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; background: rgba(23, 32, 29, 0.45); display: flex; flex-direction: column; justify-content: flex-end">
+      <button aria-label="Close month picker" onClick="{{closePicker}}" style="flex: 1; border: 0; background: transparent; cursor: pointer"></button>
+      <section role="dialog" aria-label="Choose a month" style="background: #FFFFFF; border-radius: 20px 20px 0 0; padding: 10px 20px 24px; display: flex; flex-direction: column; gap: 6px">
+        <div aria-hidden="true" style="width: 40px; height: 4px; border-radius: 999px; background: #D6D3C9; align-self: center; margin-bottom: 8px"></div>
+        <h2 style="margin: 0 0 6px; font-size: 17px; font-weight: 600">Choose a month</h2>
+        <sc-for list="{{months}}" as="m" hint-placeholder-count="3">
+          <button onClick="{{m.pick}}" aria-current="{{m.current}}" style="{{m.style}}">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px">
+              <span style="font-size: 15px; font-weight: 600; color: #17201D">{{m.label}}</span>
+              <span style="font-size: 12px; color: #5B6461">{{m.sub}}</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: {{m.tagBg}}; color: {{m.tagFg}}">{{m.tag}}</span>
+          </button>
+        </sc-for>
+        <p style="margin: 6px 0 0; font-size: 12px; color: #5B6461; line-height: 1.45">November opens when you close October. Future months can't be opened early.</p>
+      </section>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1460}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { picker: false, month: 'oct', myL: 1, myD: 1 };
+  }
+  todayVals(me) {
+    const n = (v) => Number.isInteger(v) ? String(v) : v.toFixed(1);
+    const s = this.state;
+    const people = [
+      { key: 'rabbi', name: 'Rabbi Hasan', l: 1, d: 1 },
+      { key: 'hijam', name: 'Hijam Shusil', l: 1, d: 1 },
+      { key: 'maruf', name: 'Maruf', l: 0, d: 1 }
+    ].map((p) => p.key === me ? Object.assign({}, p, { name: p.name + ' (you)', l: s.myL, d: s.myD }) : p);
+    let L = 0, D = 0;
+    const todayRows = people.map((p) => { L += p.l; D += p.d; return { name: p.name, l: n(p.l), d: n(p.d), t: n(p.l + p.d) }; });
+    const step = (k, dlt) => () => this.setState({ [k]: Math.max(0, Math.min(6, this.state[k] + dlt)) });
+    return {
+      todayRows, todayL: n(L), todayD: n(D), todayT: n(L + D),
+      myL: n(s.myL), myD: n(s.myD),
+      myLUp: step('myL', 0.5), myLDown: step('myL', -0.5),
+      myDUp: step('myD', 0.5), myDDown: step('myD', -0.5)
+    };
+  }
+  renderVals() {
+    const list = [
+      { key: 'oct', label: 'October 2026', sub: 'This month · still open', tag: 'Open', tagBg: '#E3F0EC', tagFg: '#0A4E42' },
+      { key: 'sep', label: 'September 2026', sub: 'Closed on 1 Oct', tag: 'Closed', tagBg: '#F1F0EA', tagFg: '#3E4744' },
+      { key: 'aug', label: 'August 2026', sub: 'Closed on 1 Sep', tag: 'Closed', tagBg: '#F1F0EA', tagFg: '#3E4744' }
+    ];
+    const months = list.map((m) => {
+      const on = this.state.month === m.key;
+      return {
+        label: m.label, sub: m.sub, tag: m.tag, tagBg: m.tagBg, tagFg: m.tagFg,
+        current: on ? 'true' : 'false',
+        style: 'min-height: 60px; padding: 10px 12px; border-radius: 12px; border: ' + (on ? '1.5px solid #0E6656' : '1px solid #E3E1D9') + '; background: ' + (on ? '#E3F0EC' : '#FFFFFF') + '; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-family: inherit; text-align: left',
+        pick: () => this.setState({ month: m.key, picker: false })
+      };
+    });
+    const current = list.find((m) => m.key === this.state.month);
+    return {
+      monthTitle: current.label,
+      isPast: this.state.month !== 'oct',
+      pickerOpen: this.state.picker,
+      openPicker: () => this.setState({ picker: true }),
+      closePicker: () => this.setState({ picker: false }),
+      backToNow: () => this.setState({ month: 'oct' }),
+      months,
+      ...this.todayVals('hijam')
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Custom deals</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
+    <a href="Settings.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home settings</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Custom deals</h1>
+    <span style="font-size: 13px; color: #5B6461; line-height: 1.45">When a member pays a fixed amount for a bill, the rest of that bill is shared by everyone else.</span>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <section aria-label="Current deals" style="background: #FFFFFF; border: 1px dashed #C9C6BB; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 14px; font-weight: 600">No deals this month</span>
+      <span style="font-size: 12px; color: #5B6461">Everyone shares every bill equally.</span>
+    </section>
+
+    <form aria-label="New deal" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">New deal</h2>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Member
+          <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>Maruf</option><option>Rabbi Hasan</option><option>Hijam Shusil</option></select>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Bill
+          <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>Internet</option><option>Electricity</option><option>Gas</option><option>Cook (cook)</option><option>Rent</option></select>
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Fixed amount (৳)
+          <input type="text" inputmode="decimal" value="200" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; font-weight: 600; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">From
+          <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>November 2026</option><option>December 2026</option></select>
+        </label>
+      </div>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Reason
+        <input type="text" value="Uses his own mobile data" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box">
+      </label>
+
+      <div style="background: #F6F5F0; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px">
+        <span style="font-size: 12px; color: #5B6461">Preview · Internet bill ৳1,050</span>
+        <div style="display: flex; justify-content: space-between"><span>Maruf <span style="color: #5B6461">(deal)</span></span><span style="font-weight: 600">৳200.00 <span style="color: #0E6656">−150.00</span></span></div>
+        <div style="display: flex; justify-content: space-between"><span>Rabbi Hasan</span><span style="font-weight: 600">৳425.00 <span style="color: #9A4A10">+75.00</span></span></div>
+        <div style="display: flex; justify-content: space-between"><span>Hijam Shusil</span><span style="font-weight: 600">৳425.00 <span style="color: #9A4A10">+75.00</span></span></div>
+      </div>
+
+      <button type="submit" style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit">Save deal</button>
+    </form>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>I paid</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+input::placeholder{color:#6E7673}
+</style>
+</helmet>
+<div style="width: 390px; height: 1180px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 8px">
+    <a href="{{homeHref}}" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">I paid</h1>
+    <div role="tablist" aria-label="Preview as" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: #ECEAE2; border-radius: 12px; padding: 4px; gap: 4px">
+      <sc-for list="{{roles}}" as="r" hint-placeholder-count="3">
+        <button role="tab" aria-selected="{{r.on}}" onClick="{{r.pick}}" style="{{r.style}}">{{r.label}}</button>
+      </sc-for>
+    </div>
+  </header>
+
+  <main style="flex: 1; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <fieldset style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; margin: 0; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+      <legend style="float: left; padding: 0; font-size: 15px; font-weight: 600; margin-bottom: 4px">What did you pay for?</legend>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; clear: both">
+        <sc-for list="{{purposes}}" as="p" hint-placeholder-count="8">
+          <button type="button" aria-pressed="{{p.on}}" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button>
+        </sc-for>
+      </div>
+    </fieldset>
+
+    <form aria-label="Payment details" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px">
+        <span style="font-size: 12px; color: #5B6461">{{toLine}}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 12px; color: #5B6461">Amount</span>
+        <div style="display: flex; align-items: center; background: #F6F5F0; border-radius: 10px">
+          <button type="button" aria-label="Less by ৳50" onClick="{{minus}}" style="width: 44px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #17201D">−</button>
+          <span style="min-width: 80px; text-align: center; font-size: 17px; font-weight: 600">৳{{amount}}</span>
+          <button type="button" aria-label="More by ৳50" onClick="{{plus}}" style="width: 44px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #0E6656">+</button>
+        </div>
+      </div>
+
+      <sc-if value="{{isBazar}}" hint-placeholder-val="{{ false }}">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Items
+          <input type="text" placeholder="e.g. rice, oil, eggs" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box">
+        </label>
+      </sc-if>
+      <sc-if value="{{isBill}}" hint-placeholder-val="{{ false }}">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Which bill
+          <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>Service charge · ৳581 · Postpaid</option><option>Cook (cook) · ৳2,500 · Postpaid</option><option>Electricity · Prepaid</option><option>Landlord rent</option></select>
+        </label>
+      </sc-if>
+      <sc-if value="{{showSource}}" hint-placeholder-val="{{ false }}">
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Paid from
+          <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>{{givenOption}}</option><option>My pocket</option><option>Both (given money + my pocket)</option></select>
+        </label>
+      </sc-if>
+      <sc-if value="{{showMethod}}" hint-placeholder-val="{{ true }}">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Method
+            <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>bKash</option><option>Nagad</option><option>Cash</option><option>Bank</option></select>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Transaction ID
+            <input type="text" placeholder="From the SMS" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+          </label>
+        </div>
+      </sc-if>
+
+      <button type="button" style="height: 64px; border-radius: 10px; border: 1.5px dashed #9A4A10; background: #FFFFFF; color: #7A3A0C; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer">+ Receipt, screenshot or photo (required)</button>
+
+      <div style="background: {{confirmBg}}; color: {{confirmFg}}; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45; display: flex; gap: 8px; align-items: flex-start">
+        <span aria-hidden="true" style="font-weight: 700">{{confirmIcon}}</span><span>{{confirm}}</span>
+      </div>
+      <button type="submit" style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer">{{cta}}</button>
+    </form>
+
+    <section aria-label="My recent" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <h2 style="margin: 0; padding: 10px 0 6px; font-size: 15px; font-weight: 600">My recent</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px; gap: 8px"><span>Today · Put into grocery fund · ৳2,000</span><span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #FBEFE3; color: #7A3A0C">Waiting</span></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px; gap: 8px"><span>6 Oct · General payment · ৳2,000</span><span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #E3F0EC; color: #0A4E42">Confirmed</span></div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { role: 'member', purpose: 'rent', amount: 3887.5 };
+  }
+  renderVals() {
+    const s = this.state;
+    const tabOn = 'height: 40px; border: 0; border-radius: 9px; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit';
+    const tabOff = 'height: 40px; border: 0; border-radius: 9px; background: transparent; color: #5B6461; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit';
+    const on = 'min-height: 44px; padding: 4px 8px; border-radius: 10px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; line-height: 1.3';
+    const off = 'min-height: 44px; padding: 4px 8px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; line-height: 1.3';
+    const roles = [['member', 'Member'], ['keeper', 'Fund keeper'], ['manager', 'Manager']].map(([k, label]) => ({
+      label, on: s.role === k ? 'true' : 'false', style: s.role === k ? tabOn : tabOff,
+      pick: () => this.setState({ role: k })
+    }));
+    const P = [
+      ['rent', 'Rent', 3887.5], ['prepaid', 'Prepaid utilities', 690], ['postpaid', 'Postpaid utilities', 1027], ['general', 'General payment', 1000],
+      ['advance', 'Deposit', 7775], ['box', 'Put into grocery fund', 1000], ['bazar', 'Groceries I bought', 450], ['bill', 'A bill I paid', 581]
+    ];
+    const purposes = P.map(([k, label, amt]) => ({
+      label, on: s.purpose === k ? 'true' : 'false', style: s.purpose === k ? on : off,
+      pick: () => this.setState({ purpose: k, amount: amt })
+    }));
+    const p = s.purpose;
+    const toMess = ['rent', 'prepaid', 'postpaid', 'general', 'advance'].indexOf(p) >= 0;
+    let toLine = 'Sent to Rabbi Hasan (manager) · bKash/Nagad 01XXXXXXXXX or cash';
+    if (p === 'box') toLine = 'Given to Hijam Shusil (fund keeper) · cash or bKash';
+    if (p === 'bazar') toLine = 'Food you bought for the home';
+    if (p === 'bill') toLine = 'Paid straight to the landlord or provider';
+    let confirm, icon = '!', bg = '#FBEFE3', fg = '#7A3A0C', cta = 'Send for confirmation';
+    if (s.role === 'manager') {
+      confirm = 'Saved right away. Managers and the owner don\'t need confirmation; it still shows in everyone\'s history.';
+      icon = '✓'; bg = '#E3F0EC'; fg = '#0A4E42'; cta = 'Save';
+    } else if (p === 'box' && s.role === 'member') {
+      confirm = 'Hijam (fund keeper), Rabbi (manager) or the owner confirms once they get the money. It counts after that.';
+    } else {
+      confirm = 'Rabbi (manager) or the owner confirms. It counts toward your balance after that.';
+    }
+    if (s.role === 'keeper' && p === 'box') confirm = 'You keep the grocery fund, but money you put in yourself still needs Rabbi (manager) or the owner to confirm.';
+    const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+    return {
+      roles,
+      purposes,
+      toLine,
+      amount: fmt(s.amount),
+      plus: () => this.setState({ amount: s.amount + 50 }),
+      minus: () => this.setState({ amount: Math.max(50, s.amount - 50) }),
+      isBazar: p === 'bazar',
+      isBill: p === 'bill',
+      showSource: p === 'bazar' || p === 'bill',
+      givenOption: p === 'bazar' ? 'Grocery money given to me (৳500)' : 'Money given for this bill (৳581)',
+      showMethod: toMess || p === 'box',
+      confirm, confirmIcon: icon, confirmBg: bg, confirmFg: fg, cta,
+      homeHref: s.role === 'manager' ? 'ManagerHome.html' : (s.role === 'keeper' ? 'KeeperHome.html' : 'MemberHome.html')
+    };
+  }
+}
+</script>
+</body>
+</html>

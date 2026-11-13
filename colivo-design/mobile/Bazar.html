@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Groceries and expenses</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 20px 20px 10px; display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 13px; color: #5B6461">October 2026</span>
+      <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Expenses</h1>
+    </div>
+    <div role="tablist" aria-label="Expense type" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: #ECEAE2; border-radius: 12px; padding: 4px; gap: 4px">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+        <button role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+      </sc-for>
+    </div>
+  </header>
+
+  <sc-if value="{{isBazar}}" hint-placeholder-val="{{ true }}">
+    <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px">
+      <form aria-label="Add grocery entry" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Amount (৳)
+            <input type="text" inputmode="decimal" value="1,240" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 16px; font-weight: 600; color: #17201D; font-family: inherit; box-sizing: border-box">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Date
+            <input type="text" value="12 Oct 2026" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box">
+          </label>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Items
+          <input type="text" value="Rice, oil, chicken" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box">
+        </label>
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px">
+          <legend style="font-size: 12px; color: #5B6461; padding: 0; margin-bottom: 6px">Paid from</legend>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+            <sc-for list="{{sources}}" as="s" hint-placeholder-count="3">
+              <button type="button" aria-pressed="{{s.on}}" onClick="{{s.pick}}" style="{{s.style}}">{{s.label}}</button>
+            </sc-for>
+          </div>
+          <span style="font-size: 12px; color: #5B6461">{{sourceHint}}</span>
+        </fieldset>
+        <button type="submit" style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit">Save groceries</button>
+      </form>
+
+      <section aria-label="Recent groceries" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0 6px">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">This month</h2>
+          <span style="font-size: 13px; color: #5B6461">Purchases ৳10,430</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+          <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Rice, oil, chicken</span><span style="font-size: 12px; color: #5B6461">12 Oct · Rabbi · My pocket</span></div>
+          <span style="font-size: 14px; font-weight: 600">৳1,240</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+          <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Vegetables, eggs</span><span style="font-size: 12px; color: #5B6461">10 Oct · Hijam · Grocery fund</span></div>
+          <span style="font-size: 14px; font-weight: 600">৳620</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+          <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Fish, dal</span><span style="font-size: 12px; color: #5B6461">9 Oct · Rabbi · Grocery fund</span></div>
+          <span style="font-size: 14px; font-weight: 600">৳740</span>
+        </div>
+      </section>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{isBills}}" hint-placeholder-val="{{ false }}">
+    <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+      <form aria-label="Add bill" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 10px">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Bill
+            <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit">
+              <optgroup label="Rent"><option>Landlord rent</option></optgroup>
+              <optgroup label="Prepaid utility"><option selected>Electricity</option><option>Gas</option><option>Internet</option></optgroup>
+              <optgroup label="Postpaid utility"><option>Cook (cook)</option><option>Service charge</option></optgroup>
+              <optgroup label="Other"><option>Ad-hoc</option></optgroup>
+            </select>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Amount (৳)
+            <input type="text" inputmode="decimal" value="1,000" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 16px; font-weight: 600; color: #17201D; font-family: inherit; box-sizing: border-box">
+          </label>
+        </div>
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px">
+          <legend style="font-size: 12px; color: #5B6461; padding: 0; margin-bottom: 6px">Who paid</legend>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+            <sc-for list="{{payers}}" as="p" hint-placeholder-count="3">
+              <button type="button" aria-pressed="{{p.on}}" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button>
+            </sc-for>
+          </div>
+          <span style="font-size: 12px; color: #5B6461">{{payerHint}}</span>
+        </fieldset>
+        <button type="submit" style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit">Save bill</button>
+      </form>
+
+      <section aria-label="Bills this month" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0 6px">
+          <h2 style="margin: 0; font-size: 15px; font-weight: 600">This month</h2>
+          <a href="BillsToPay.html" style="font-size: 13px; font-weight: 600; text-decoration: none">To pay ৳3,081 ›</a>
+        </div>
+        <sc-for list="{{bills}}" as="b" hint-placeholder-count="5">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+            <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+              <span style="font-size: 14px; font-weight: 500">{{b.name}} <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: {{b.tagBg}}; color: {{b.tagFg}}">{{b.tag}}</span></span>
+              <span style="font-size: 12px; color: {{b.subColor}}">{{b.sub}}</span>
+            </div>
+            <span style="font-size: 14px; font-weight: 600">{{b.amount}}</span>
+          </div>
+        </sc-for>
+      </section>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{isBox}}" hint-placeholder-val="{{ false }}">
+    <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+      <a href="BazarBox.html" style="background: #0E6656; color: #FFFFFF; border-radius: 16px; padding: 16px; text-decoration: none; display: flex; justify-content: space-between; align-items: center">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; opacity: 0.85">Left in the grocery fund</span>
+          <span style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600">৳640</span>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+          <span style="font-size: 12px; opacity: 0.85">Kept by</span>
+          <span style="font-size: 14px; font-weight: 600">Hijam Shusil ›</span>
+        </div>
+      </a>
+
+      <form aria-label="Put money in the grocery fund" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Put money in</h2>
+        <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 10px">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Who gave
+            <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit">
+              <option>Rabbi Hasan</option><option>Hijam Shusil</option><option>Maruf</option>
+            </select>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Amount (৳)
+            <input type="text" inputmode="decimal" value="2,000" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 16px; font-weight: 600; color: #17201D; font-family: inherit; box-sizing: border-box">
+          </label>
+        </div>
+        <span style="font-size: 12px; color: #5B6461">Credited to the giver. Not counted in the cost per meal until it's spent on groceries.</span>
+        <button type="submit" style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit">Save</button>
+      </form>
+
+      <section aria-label="Grocery fund activity" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+        <h2 style="margin: 0; padding: 10px 0 6px; font-size: 15px; font-weight: 600">In and out</h2>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px"><span>10 Oct · Hijam bought vegetables, eggs</span><span style="font-weight: 600">−৳620</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px"><span>9 Oct · Rabbi bought fish, dal</span><span style="font-weight: 600">−৳740</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px"><span>9 Oct · Maruf put in</span><span style="font-weight: 600; color: #0E6656">+৳2,000</span></div>
+      </section>
+    </main>
+  </sc-if>
+
+  <nav aria-label="Main" style="height: 68px; background: #FFFFFF; border-top: 1px solid #E3E1D9; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr))">
+    <a href="Main.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #5B6461; font-size: 11px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Home</a>
+    <a href="Meals.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #5B6461; font-size: 11px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M3 10h18M9 4v17M15 4v17"></path></svg>Meals</a>
+    <a href="Bazar.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #0E6656; font-size: 11px; font-weight: 600">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16l-2 10H6z"></path><circle cx="9" cy="20" r="1.4"></circle><circle cx="16" cy="20" r="1.4"></circle><path d="M4 6L3 3"></path></svg>Expenses</a>
+    <a href="Payments.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #5B6461; font-size: 11px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M3 10h18M16 15h2"></path></svg>Payments</a>
+    <a href="Statement.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #5B6461; font-size: 11px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10v18l-5-3-5 3z"></path><path d="M10 8h4M10 12h4"></path></svg>Statement</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'bazar', source: 'pocket', payer: 'member' };
+  }
+  renderVals() {
+    const tabOn = 'height: 40px; border: 0; border-radius: 9px; background: #FFFFFF; color: #17201D; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit';
+    const tabOff = 'height: 40px; border: 0; border-radius: 9px; background: transparent; color: #5B6461; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit';
+    const boxOn = 'min-height: 44px; border-radius: 10px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer';
+    const boxOff = 'min-height: 44px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer';
+    const tab = this.state.tab;
+    const tabs = [['bazar', 'Groceries'], ['bills', 'Bills'], ['box', 'Grocery fund']].map(([k, label]) => ({
+      label,
+      on: tab === k ? 'true' : 'false',
+      style: tab === k ? tabOn : tabOff,
+      pick: () => this.setState({ tab: k })
+    }));
+    const sources = [['pocket', 'My pocket'], ['box', 'Grocery fund'], ['fund', 'Home fund']].map(([k, label]) => ({
+      label,
+      on: this.state.source === k ? 'true' : 'false',
+      style: this.state.source === k ? boxOn : boxOff,
+      pick: () => this.setState({ source: k })
+    }));
+    const sourceHints = {
+      pocket: 'You\'ll be credited ৳1,240. Counts toward the cost per meal.',
+      box: 'Taken from the grocery fund. You can spend up to what\'s in it (৳140 now), never more. No credit to you.',
+      fund: 'Paid from the manager\'s cash. No credit to you.'
+    };
+    const payers = [['member', 'A member'], ['fund', 'Home fund'], ['unpaid', 'Not paid yet']].map(([k, label]) => ({
+      label,
+      on: this.state.payer === k ? 'true' : 'false',
+      style: this.state.payer === k ? boxOn : boxOff,
+      pick: () => this.setState({ payer: k })
+    }));
+    const payerHints = {
+      member: 'Pick who paid next; they get credit for it.',
+      fund: 'Paid from the home fund.',
+      unpaid: 'Added to Bills to pay until someone pays it.'
+    };
+    const tagStyle = {
+      Rent: ['#ECEAE2', '#3E4744'],
+      Prepaid: ['#E7F1FB', '#1D4F86'],
+      Postpaid: ['#EFEDFF', '#4B3FA3']
+    };
+    const bill = (name, tag, sub, amount, unpaid) => ({
+      name, tag, sub, amount,
+      tagBg: tagStyle[tag][0], tagFg: tagStyle[tag][1],
+      subColor: unpaid ? '#9A4A10' : '#5B6461'
+    });
+    const bills = [
+      bill('Cook (cook)', 'Postpaid', 'Not paid · due 31 Oct', '৳2,500', true),
+      bill('Service charge', 'Postpaid', 'Not paid · due 5 Nov', '৳581', true),
+      bill('Internet', 'Prepaid', 'Paid by Rabbi', '৳1,050', false),
+      bill('Electricity', 'Prepaid', 'Paid by Hijam', '৳1,000', false),
+      bill('Landlord rent', 'Rent', 'Paid from the home fund', '৳15,645', false)
+    ];
+    return {
+      tabs,
+      isBazar: tab === 'bazar',
+      isBills: tab === 'bills',
+      isBox: tab === 'box',
+      sources,
+      sourceHint: sourceHints[this.state.source],
+      payers,
+      payerHint: payerHints[this.state.payer],
+      bills
+    };
+  }
+}
+</script>
+</body>
+</html>

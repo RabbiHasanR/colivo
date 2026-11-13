@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deposits held</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
+    <a href="Main.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Deposit</h1>
+    <span style="font-size: 13px; color: #5B6461">Rule for this home: 2 months' rent as a deposit</span>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <section aria-label="Where the deposit is" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <span style="font-size: 13px; color: #5B6461">Members have given</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 600">৳28,890</span>
+      </div>
+      <div style="display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: #ECEAE2" aria-hidden="true">
+        <div style="width: 91%; background: #5B6461"></div>
+        <div style="width: 9%; background: #0E6656"></div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 12px; color: #5B6461">With landlord</span>
+          <span style="font-size: 16px; font-weight: 600">৳26,390</span>
+          <span style="font-size: 11px; color: #5B6461">Paid when the home was rented</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 12px; color: #0E6656; font-weight: 600">In hand (manager)</span>
+          <span style="font-size: 16px; font-weight: 600; color: #0E6656">৳2,500</span>
+          <span style="font-size: 11px; color: #5B6461">Not for bills: members' money</span>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Deposit by member" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <h2 style="margin: 0; padding: 12px 0 6px; font-size: 15px; font-weight: 600">Who gave how much</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 14px; font-weight: 500">Rabbi Hasan</span>
+          <span style="font-size: 12px; color: #5B6461">Room A · 2 × ৳6,670 · paid in full</span>
+        </div>
+        <span style="font-size: 14px; font-weight: 600">৳13,340</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 14px; font-weight: 500">Hijam Shusil</span>
+          <span style="font-size: 12px; color: #5B6461">Room B · 2 × ৳3,887.50 · paid in full</span>
+        </div>
+        <span style="font-size: 14px; font-weight: 600">৳7,775</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 14px; font-weight: 500">Maruf</span>
+          <span style="font-size: 12px; color: #9A4A10; font-weight: 500">Notice served · covers Nov and Dec rent</span>
+        </div>
+        <span style="font-size: 14px; font-weight: 600">৳7,775</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid #E3E1D9; font-size: 14px; font-weight: 600">
+        <span>Total</span><span>৳28,890</span>
+      </div>
+    </section>
+
+    <p style="margin: 0; font-size: 12px; color: #5B6461; line-height: 1.5">When someone leaves, their deposit pays their last months' rent, or is refunded if the waiver is granted. A new member's deposit comes to the manager and usually pays back the one leaving.</p>
+
+    <a href="Payments.html" style="height: 48px; border-radius: 12px; background: #0E6656; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">Record deposit payment</a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

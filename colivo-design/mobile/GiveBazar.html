@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Give grocery money</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
+    <a href="KeeperHome.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Give money for groceries</h1>
+    <span style="font-size: 13px; color: #5B6461; line-height: 1.45">Hand cash from the grocery fund to whoever is shopping. They can spend only what you give them.</span>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <section aria-label="Grocery fund now" style="background: #0E6656; color: #FFFFFF; border-radius: 16px; padding: 14px; display: flex; justify-content: space-between; align-items: center">
+      <span style="font-size: 13px; opacity: 0.85">In the grocery fund now</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 600">৳640</span>
+    </section>
+
+    <section aria-label="Give to" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+      <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+        <legend style="font-size: 12px; color: #5B6461; padding: 0; margin-bottom: 8px">Who is shopping</legend>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <sc-for list="{{people}}" as="p" hint-placeholder-count="2">
+            <button type="button" aria-pressed="{{p.on}}" onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button>
+          </sc-for>
+        </div>
+      </fieldset>
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 12px; color: #5B6461">Amount</span>
+        <div style="display: flex; align-items: center; background: #F6F5F0; border-radius: 10px">
+          <button aria-label="Less by ৳100" onClick="{{minus}}" style="width: 44px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #17201D">−</button>
+          <span style="min-width: 76px; text-align: center; font-size: 17px; font-weight: 600">৳{{amount}}</span>
+          <button aria-label="More by ৳100" onClick="{{plus}}" style="width: 44px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #0E6656">+</button>
+        </div>
+      </div>
+      <div style="background: {{noteBg}}; color: {{noteFg}}; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45">{{note}}</div>
+      <button style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer">Give ৳{{amount}} to {{who}}</button>
+    </section>
+
+    <section aria-label="Money with shoppers" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <h2 style="margin: 0; padding: 10px 0 6px; font-size: 15px; font-weight: 600">With shoppers now</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px; gap: 10px">
+        <span>Rabbi · given 2 Oct · spent ৳1,450</span><span style="font-weight: 600; color: #5B6461">Settled</span>
+      </div>
+      <p style="margin: 0; padding: 8px 0 12px; font-size: 12px; color: #5B6461; line-height: 1.45">When the shopper is done, any leftover goes back into the grocery fund.</p>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { who: 'Maruf', amount: 500 };
+  }
+  renderVals() {
+    const BOX = 640;
+    const s = this.state;
+    const on = 'min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit';
+    const off = 'min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit';
+    const people = ['Maruf', 'Rabbi Hasan'].map((n) => ({
+      label: n, on: s.who === n ? 'true' : 'false', style: s.who === n ? on : off,
+      pick: () => this.setState({ who: n })
+    }));
+    const atMax = s.amount >= BOX;
+    const left = BOX - s.amount;
+    return {
+      people,
+      who: s.who,
+      amount: s.amount.toLocaleString('en-US'),
+      plus: () => this.setState({ amount: Math.min(BOX, s.amount + 100 > BOX ? BOX : s.amount + 100) }),
+      minus: () => this.setState({ amount: Math.max(100, s.amount - 100) }),
+      note: atMax
+        ? 'That\'s everything in the grocery fund. You can\'t give more than ৳640.'
+        : s.who + ' can spend up to ৳' + s.amount.toLocaleString('en-US') + ' on groceries. ৳' + left + ' stays in the grocery fund.',
+      noteBg: atMax ? '#FBEFE3' : '#F1F0EA',
+      noteFg: atMax ? '#7A3A0C' : '#3E4744'
+    };
+  }
+}
+</script>
+</body>
+</html>

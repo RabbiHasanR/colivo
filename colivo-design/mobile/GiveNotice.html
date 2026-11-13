@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Give notice to leave</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+input::placeholder,textarea::placeholder{color:#6E7673}
+</style>
+</helmet>
+<div style="width: 390px; height: 900px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
+    <a href="Profile.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Profile</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Give notice to leave</h1>
+    <span style="font-size: 13px; color: #5B6461; line-height: 1.45">Hijam Shusil · Room B</span>
+  </header>
+  <main style="flex: 1; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <section style="background: #F9EEDA; border-radius: 14px; padding: 12px 14px; font-size: 13px; color: #4A3407; line-height: 1.5"><strong style="font-weight: 600">This home's rule: 2 months' notice.</strong> Giving notice today (12 Oct) means the earliest you can leave is 31 Dec 2026.</section>
+    <fieldset style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; margin: 0; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+      <legend style="float: left; padding: 0; font-size: 15px; font-weight: 600; margin-bottom: 4px">When will you leave?</legend>
+      <sc-for list="{{dates}}" as="d" hint-placeholder-count="5">
+        <button type="button" aria-pressed="{{d.on}}" aria-disabled="{{d.disabled}}" onClick="{{d.pick}}" style="{{d.style}}">
+          <span>{{d.label}}</span><span style="font-size: 12px; font-weight: 500">{{d.note}}</span>
+        </button>
+      </sc-for>
+    </fieldset>
+    <section aria-label="What happens" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <h2 style="margin: 0; padding: 12px 0 6px; font-size: 15px; font-weight: 600">What happens next</h2>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px"><span>Your deposit (2 months)</span><span style="font-weight: 600">৳7,775</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px; gap: 10px"><span>Pays rent for</span><span style="font-weight: 600; text-align: right">{{covers}}</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px"><span>Everyone is told</span><span style="font-weight: 600">Today, in the app</span></div>
+    </section>
+    <button type="button" style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer">Give notice · leave {{chosen}}</button>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { pick: 'dec' };
+  }
+  renderVals() {
+    const list = [
+      { key: 'oct', label: '31 Oct 2026', ok: false },
+      { key: 'nov', label: '30 Nov 2026', ok: false },
+      { key: 'dec', label: '31 Dec 2026', ok: true, note: 'Earliest allowed' },
+      { key: 'jan', label: '31 Jan 2027', ok: true, note: '' },
+      { key: 'feb', label: '28 Feb 2027', ok: true, note: '' }
+    ];
+    const covers = { dec: 'Nov and Dec 2026', jan: 'Dec 2026 and Jan 2027', feb: 'Jan and Feb 2027' };
+    const dates = list.map((d) => {
+      const on = this.state.pick === d.key;
+      let style = 'min-height: 48px; padding: 0 12px; border-radius: 10px; font-family: inherit; font-size: 14px; display: flex; justify-content: space-between; align-items: center; text-align: left; ';
+      if (!d.ok) style += 'border: 1px dashed #D6D3C9; background: #F6F5F0; color: #8A8F8C; cursor: not-allowed';
+      else if (on) style += 'border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-weight: 600; cursor: pointer';
+      else style += 'border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; cursor: pointer';
+      return {
+        label: d.label,
+        note: d.ok ? d.note : 'Too soon: less than 2 months',
+        on: on ? 'true' : 'false',
+        disabled: d.ok ? 'false' : 'true',
+        style,
+        pick: () => { if (d.ok) this.setState({ pick: d.key }); }
+      };
+    });
+    const chosen = list.find((d) => d.key === this.state.pick).label;
+    return { dates, chosen, covers: covers[this.state.pick] };
+  }
+}
+</script>
+</body>
+</html>

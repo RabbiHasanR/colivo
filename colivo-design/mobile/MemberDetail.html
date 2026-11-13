@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Member detail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 10px">
+    <a href="Main.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
+    <div style="display: flex; justify-content: space-between; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Maruf</h1>
+        <span style="font-size: 13px; color: #5B6461">Room B · October · notice served</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+        <span style="font-size: 12px; color: #5B6461">Owes</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 600; color: #9A4A10">৳1,240.00</span>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-variant-numeric: tabular-nums">
+      <div style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 12px; color: #5B6461">Total due</span><span style="font-size: 16px; font-weight: 600">৳10,088.43</span>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 12px; color: #5B6461">Total paid</span><span style="font-size: 16px; font-weight: 600">৳8,848.43</span>
+      </div>
+    </div>
+    <div role="tablist" aria-label="Show" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); background: #ECEAE2; border-radius: 12px; padding: 4px; gap: 4px">
+      <button role="tab" aria-selected="{{dueOn}}" onClick="{{showDue}}" style="{{dueTab}}">Due, by purpose</button>
+      <button role="tab" aria-selected="{{paidOn}}" onClick="{{showPaid}}" style="{{paidTab}}">Paid, by purpose</button>
+    </div>
+  </header>
+
+  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <section aria-label="{{listLabel}}" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #EFEDE6; gap: 10px">
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+            <span style="align-self: flex-start; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: {{r.tagBg}}; color: {{r.tagFg}}">{{r.tag}}</span>
+            <span style="font-size: 14px; font-weight: 500">{{r.title}}</span>
+            <span style="font-size: 12px; color: #5B6461">{{r.sub}}</span>
+          </div>
+          <span style="font-size: 14px; font-weight: 600">{{r.amount}}</span>
+        </div>
+      </sc-for>
+      <div style="display: flex; justify-content: space-between; padding: 12px 0; font-size: 14px; font-weight: 600">
+        <span>Total</span><span>{{total}}</span>
+      </div>
+    </section>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 0 2px">
+      <span style="color: #5B6461">Deposit (kept separately)</span>
+      <a href="Advance.html" style="font-weight: 600; text-decoration: none; min-height: 44px; display: flex; align-items: center">৳7,775 ›</a>
+    </div>
+
+    <a href="Payments.html" style="height: 48px; border-radius: 12px; background: #0E6656; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">Record payment from Maruf</a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'due' };
+  }
+  renderVals() {
+    const tags = {
+      Meals: ['#E3F0EC', '#0A4E42'],
+      Rent: ['#ECEAE2', '#3E4744'],
+      Prepaid: ['#E7F1FB', '#1D4F86'],
+      Postpaid: ['#EFEDFF', '#4B3FA3'],
+      General: ['#F1F0EA', '#3E4744'],
+      'Grocery fund': ['#E3F0EC', '#0A4E42'],
+      'From September': ['#F9EEDA', '#6B4A0B']
+    };
+    const mk = (tag, title, sub, amount) => ({ tag, title, sub, amount, tagBg: tags[tag][0], tagFg: tags[tag][1] });
+    const due = [
+      mk('Meals', 'Meals', '46 meals × ৳97.48', '৳4,483.93'),
+      mk('Rent', 'Rent · Room B', 'Half of Room B', '৳3,887.50'),
+      mk('Postpaid', 'Postpaid utilities', 'Cook (cook), service charge · equal share', '৳1,027.00'),
+      mk('Prepaid', 'Prepaid utilities', 'Electricity, gas, internet · equal share', '৳690.00')
+    ];
+    const paid = [
+      mk('Rent', 'Rent payment', '4 Oct · Cash', '৳3,887.50'),
+      mk('General', 'General payment', '6 Oct · bKash · not tied to a purpose', '৳2,000.00'),
+      mk('Grocery fund', 'Put into grocery fund', '9 Oct · bKash', '৳2,000.00'),
+      mk('Prepaid', 'Prepaid utility payment', '6 Oct · bKash', '৳690.00'),
+      mk('From September', 'Credit carried forward', 'September surplus', '৳270.93')
+    ];
+    const tabOn = 'height: 40px; border: 0; border-radius: 9px; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit';
+    const tabOff = 'height: 40px; border: 0; border-radius: 9px; background: transparent; color: #5B6461; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit';
+    const dueOn = this.state.tab === 'due';
+    return {
+      dueOn,
+      paidOn: !dueOn,
+      dueTab: dueOn ? tabOn : tabOff,
+      paidTab: dueOn ? tabOff : tabOn,
+      showDue: () => this.setState({ tab: 'due' }),
+      showPaid: () => this.setState({ tab: 'paid' }),
+      rows: dueOn ? due : paid,
+      total: dueOn ? '৳10,088.43' : '৳8,848.43',
+      listLabel: dueOn ? 'What Maruf owes, by purpose' : 'What Maruf paid, by purpose'
+    };
+  }
+}
+</script>
+</body>
+</html>

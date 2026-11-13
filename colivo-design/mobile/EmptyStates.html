@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Empty states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+input::placeholder,textarea::placeholder{color:#6E7673}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 8px">
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Empty screens</h1>
+    <span style="font-size: 13px; color: #5B6461; line-height: 1.45">What each screen shows in a brand-new home</span>
+    <div role="tablist" aria-label="Screen" style="display: flex; gap: 4px; background: #ECEAE2; border-radius: 12px; padding: 4px; overflow-x: auto">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+        <button role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+      </sc-for>
+    </div>
+  </header>
+  <main style="flex: 1; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <sc-if value="{{is_meals}}" hint-placeholder-val="{{true}}">
+      <section style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 36px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+        <span aria-hidden="true" style="width: 64px; height: 64px; border-radius: 999px; background: #E3F0EC; color: #0E6656; display: flex; align-items: center; justify-content: center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M3 10h18M9 4v17M15 4v17"></path></svg></span>
+        <h2 style="margin: 0; font-size: 17px; font-weight: 600">No meals yet</h2>
+        <p style="margin: 0; font-size: 14px; color: #5B6461; line-height: 1.5; max-width: 280px">The meal grid starts when you add members. You can log your own meals now.</p>
+        <a href="SetMembers.html" style="min-height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; padding: 0 20px">Add members</a>
+      </section>
+    </sc-if>
+    <sc-if value="{{is_exp}}" hint-placeholder-val="{{false}}">
+      <section style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 36px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+        <span aria-hidden="true" style="width: 64px; height: 64px; border-radius: 999px; background: #E3F0EC; color: #0E6656; display: flex; align-items: center; justify-content: center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16l-2 10H6z"></path><circle cx="9" cy="20" r="1.4"></circle><circle cx="16" cy="20" r="1.4"></circle></svg></span>
+        <h2 style="margin: 0; font-size: 17px; font-weight: 600">No groceries or bills this month</h2>
+        <p style="margin: 0; font-size: 14px; color: #5B6461; line-height: 1.5; max-width: 280px">Add the first grocery shopping and the cost per meal appears. Bills show here once you add them in settings.</p>
+        <a href="Bazar.html" style="min-height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; padding: 0 20px">Add groceries</a>
+      </section>
+    </sc-if>
+    <sc-if value="{{is_stmt}}" hint-placeholder-val="{{false}}">
+      <section style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 36px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+        <span aria-hidden="true" style="width: 64px; height: 64px; border-radius: 999px; background: #E3F0EC; color: #0E6656; display: flex; align-items: center; justify-content: center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10v18l-5-3-5 3z"></path><path d="M10 8h4M10 12h4"></path></svg></span>
+        <h2 style="margin: 0; font-size: 17px; font-weight: 600">Nothing to close yet</h2>
+        <p style="margin: 0; font-size: 14px; color: #5B6461; line-height: 1.5; max-width: 280px">The statement fills in as meals, groceries, bills and payments are added. You can close November after it ends.</p>
+        
+      </section>
+    </sc-if>
+    <sc-if value="{{is_inbox}}" hint-placeholder-val="{{false}}">
+      <section style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 36px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+        <span aria-hidden="true" style="width: 64px; height: 64px; border-radius: 999px; background: #E3F0EC; color: #0E6656; display: flex; align-items: center; justify-content: center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H15l-3 3-3-3H4z"></path></svg></span>
+        <h2 style="margin: 0; font-size: 17px; font-weight: 600">All caught up</h2>
+        <p style="margin: 0; font-size: 14px; color: #5B6461; line-height: 1.5; max-width: 280px">Payments to confirm, money you were given and notices from your home show here.</p>
+        
+      </section>
+    </sc-if>
+    <section style="background: #FFFFFF; border: 1px dashed #C9C6BB; border-radius: 14px; padding: 12px 14px; font-size: 12px; color: #5B6461; line-height: 1.5">Every list screen uses this pattern when it has nothing to show: a short reason and, where it helps, the one action that fills it.</section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'meals' };
+  }
+  renderVals() {
+    const on = 'min-height: 40px; padding: 0 10px; border: 0; border-radius: 9px; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap';
+    const off = 'min-height: 40px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: #5B6461; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; white-space: nowrap';
+    const tab = this.state.tab;
+    const tabs = [["meals", "Meals"], ["exp", "Expenses"], ["stmt", "Statement"], ["inbox", "Inbox"]].map(([k, label]) => ({ label, on: tab === k ? 'true' : 'false', style: tab === k ? on : off, pick: () => this.setState({ tab: k }) }));
+    const v = { tabs };
+    [["meals", "Meals"], ["exp", "Expenses"], ["stmt", "Statement"], ["inbox", "Inbox"]].forEach(([k]) => { v['is_' + k] = tab === k; });
+    return v;
+  }
+}
+</script>
+</body>
+</html>
