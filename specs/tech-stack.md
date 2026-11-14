@@ -96,7 +96,7 @@ _This table is a proposal to approve._
 | `mobile/test/`                      | Flutter tests                                      |
 | `api/openapi.json`                  | Exported API contract — never edited by hand       |
 | `infra/`                            | Docker Compose, Dockerfiles, deploy scripts        |
-| `docs/design/`                      | Screen designs and `requirements.md`               |
+| `colivo-design/`                    | Screen designs and `requirements.md`               |
 | `specs/`                            | Mission, roadmap, tech stack and one folder per phase |
 
 Rules:
@@ -143,10 +143,10 @@ isn't done until they pass.
 Every page's UI must be responsive. This section is the single standard that
 all feature specs reference.
 
-- **Mobile-first:** build for a 360px phone first; `docs/design/mobile/`
+- **Mobile-first:** build for a 360px phone first; `colivo-design/mobile/`
   shows the phone layout.
 - **Breakpoints:** 640px (large phone), 768px (tablet), 1024px (sidebar
-  appears), 1280px (wide desktop); `docs/design/web/` shows the desktop layout.
+  appears), 1280px (wide desktop); `colivo-design/web/` shows the desktop layout.
 - **Supported widths:** 320px to wide desktop, no horizontal page scroll.
 - **Fluid layout:** flex and grid with wrapping; side menus stack on top on
   small screens; wide tables scroll inside their own box.
