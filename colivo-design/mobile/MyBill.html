@@ -20,14 +20,14 @@ a{color:#0E6656}a:hover{color:#0A4E42}
       <span style="font-size: 13px; color: #5B6461">Rabbi Hasan · Room A</span>
       <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">My bill · Oct</h1>
     </div>
-    <span style="font-size: 12px; font-weight: 600; color: #0E6656; background: #E3F0EC; border-radius: 999px; padding: 6px 10px">Closed</span>
+    <span style="font-size: 12px; font-weight: 600; color: #0E6656; background: #E3F0EC; border-radius: 999px; padding: 6px 10px">Open</span>
   </header>
 
   <main style="flex: 1; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
     <section aria-label="Net balance" style="background: #0E6656; color: #FFFFFF; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 6px">
       <span style="font-size: 13px; opacity: 0.85">You have a credit of</span>
       <span style="font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 600">৳293.65</span>
-      <span style="font-size: 13px; opacity: 0.85">Carried into November as credit</span>
+      <span style="font-size: 13px; opacity: 0.85">Moves into November as credit when October closes</span>
     </section>
 
     <section aria-label="What you owe" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
@@ -47,10 +47,10 @@ a{color:#0E6656}a:hover{color:#0A4E42}
       <div style="display: flex; justify-content: space-between; padding: 10px 0; font-size: 14px; font-weight: 600; border-top: 1px solid #E3E1D9"><span>Total paid</span><span>৳11,410.00</span></div>
     </section>
 
-    <section aria-label="November so far" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+    <section aria-label="November preview" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px">
-        <h2 style="margin: 0; font-size: 14px; font-weight: 600">November so far</h2>
-        <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #E3F0EC; color: #0E6656">Open</span>
+        <h2 style="margin: 0; font-size: 14px; font-weight: 600">November preview</h2>
+        <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #F1F0EA; color: #3E4744">After October closes</span>
       </div>
       <sc-for list="{{nextMonth}}" as="l" hint-placeholder-count="3">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 13px; border-top: 1px solid #EFEDE6; gap: 8px"><span>{{l.label}} <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: {{l.tagBg}}; color: {{l.tagFg}}">{{l.tag}}</span></span><span style="color: {{l.color}}">{{l.amount}}</span></div>

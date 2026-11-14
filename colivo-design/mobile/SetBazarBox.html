@@ -62,7 +62,7 @@ class Component extends DCLogic {
       isOn: on,
       isOff: !on,
       onText: on ? 'true' : 'false',
-      stateText: on ? 'On · ৳640 in the grocery fund now' : 'Off',
+      stateText: on ? 'On · ৳140 + ৳500 with Maruf' : 'Off',
       toggle: () => this.setState({ on: !on }),
       trackStyle: 'width: 52px; height: 32px; flex-shrink: 0; border-radius: 999px; border: 0; padding: 3px; cursor: pointer; display: flex; justify-content: ' + (on ? 'flex-end' : 'flex-start') + '; background: ' + (on ? '#0E6656' : '#B9B6AC'),
       knobStyle: 'width: 26px; height: 26px; border-radius: 999px; background: #FFFFFF; display: block'
