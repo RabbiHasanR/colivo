@@ -24,7 +24,7 @@ Mess Manager is a shared-home web app that replaces the monthly shared-home spre
 
 ### Scope
 
-- **In scope (v1):** one home per account, rooms and members, configurable expense categories, per-member per-category overrides with balanced redistribution, daily meal grid including guest meals, grocery purchases and grocery fund top-ups, utility and rent bills, member payments and refunds, prior-month balance import and rollover, rent revisions (home-wide, per room or per member, up or down, with effective dates), configurable home rules (deposit months, notice period, short-notice policy), deposit ledger, leave notice and final settlement, dashboard and monthly statement.
+- **In scope (v1):** one home per account, rooms and members, configurable expense categories, per-member per-category overrides with balanced redistribution, daily meal grid including guest meals, grocery purchases and grocery fund top-ups, utility and rent bills, member payments and refunds, prior-month balance import and rollover (member balances, fund cash and unpaid bills), optional estimated bills, split-funded entries (shared fund plus own pocket), rent revisions (home-wide, per room or per member, up or down, with effective dates), configurable home rules (deposit months, notice period, short-notice policy), deposit ledger, leave notice and final settlement, dashboard and monthly statement.
 - **Out of scope (v1):** multiple homes per account, short-notice waiver votes, whole-home move-out and landlord deposit settlement screens, bKash/Nagad gateway integration, cook salary payroll, grocery inventory, native mobile apps (the web app is mobile-first; Flutter app later).
 
 ### Words used in the app
@@ -146,6 +146,9 @@ Each story is written as "As a … I want … so that …" with its acceptance c
 | US-E6 | As a manager, I want a checklist before closing the month, so that I don't carry forward surprises | Dues, unpaid bills and money with shoppers are listed |
 | US-E7 | As the owner or a manager, I want to deactivate members and see past members with their documents and settlements | Leaving members are deactivated at settlement and listed as past members |
 | US-E8 | As a member, I want to message the home or one person in the app, so that money talk stays next to the records | Group chat and one-to-one chats with photos |
+| US-E9 | As a manager, I want to optionally set an estimated amount for bills like cook, electricity or internet as a default for every month, and change it for one month when needed, so that members know their share from the 1st | Each member's bill shows their estimated share; categories without an estimate are unchanged |
+| US-E10 | As a manager, I want unpaid bills, home fund cash and grocery fund cash to move into the next month when I close, so that nothing is lost or charged twice | Next month opens with the same cash and a "From \<month>" bill to pay; paying it isn't split again |
+| US-E11 | As a member or shopper, I want to record one payment that was partly from the grocery fund or given money and partly from my pocket, so that I don't make two entries | One entry, one receipt; I'm credited only the pocket part |
 
 ## 4. Features
 
@@ -236,6 +239,9 @@ These features make one app fit any home: each home sets its own rules instead o
 | Inbox | Payments to confirm, edits to review, notices, grocery fund alerts | P1 | All |
 | History | Edit or delete with a reason; full change history | P1 | All |
 | Month close | Checklist before closing | P1 | Manager, Owner |
+| Month close | Carry forward home fund and grocery fund cash, money with shoppers and unpaid bills (FR-99) | P1 | Manager, Owner |
+| Bills | Optional estimated bills: default per category for every month, changeable for one month; adjustment after close (FR-100, FR-101, BR-22) | P1 | Manager, Owner |
+| Split funding | One entry paid from a shared source plus own pocket, for groceries and bills (FR-98) | P1 | All |
 | Leaving | Give notice (minimum notice enforced); final settlement | P1 | Member, Manager |
 | Messages | Home group chat and one-to-one chats with photos | P1 | All |
 | Login | Phone or email with a one-time code | P1 | All |
@@ -271,17 +277,19 @@ The system SHALL meet these requirements for v1; each maps to a feature above.
 ### Expenses and groceries
 
 - **FR-12** The system shall record bills with date, category, amount (0 or more), description, paid by (a member, or the central fund when empty) and whether it has been paid to the landlord or provider.
-- **FR-13** The system shall record grocery entries of two kinds: a grocery purchase (with funding source: own pocket, grocery fund or central fund) and a top-up of the grocery fund (shared cash members put aside for shopping).
+- **FR-13** The system shall record grocery entries of two kinds: a grocery purchase (with funding source: own pocket, grocery fund, central fund, money given to the shopper, or a split of one shared source plus own pocket, see FR-98) and a top-up of the grocery fund (shared cash members put aside for shopping).
 - **FR-14** Only grocery purchases shall count towards the cost per meal; grocery fund top-ups shall not.
-- **FR-15** The system shall show the grocery fund balance: top-ups in minus purchases paid from the grocery fund.
+- **FR-15** The system shall show the grocery fund balance: opening balance carried from last month (FR-99) plus top-ups in, minus purchases paid from the grocery fund.
 
 * **FR-68** Only the fund keeper or a manager can take money out of the grocery fund. They can spend it directly on groceries, or give an amount to another member who is shopping.
-* **FR-69** A member given grocery money can record groceries paid from that money only, up to the amount given. Anything above it must be recorded as paid from their own pocket. Leftover money is returned to the grocery fund.
+* **FR-69** A member given grocery money can record groceries paid from that money, up to the amount given. Anything above it is paid from their own pocket, in the same entry (FR-98). Leftover money is returned to the grocery fund.
 * **FR-70** No one can spend or give out more than is in the grocery fund; the grocery fund can never go below ৳0. The grocery fund view shows money in the grocery fund and money currently with shoppers.
 
 - **FR-71** A manager or the owner can give money from the home fund to a member to pay a specific bill (rent, a utility, the cook's salary), never more than the fund's free-to-spend cash.
 - **FR-72** The member records the payment as paid from the given money, from their own pocket, or both. Given money can't be exceeded; any extra is credited to the member as paid from their pocket. Leftover given money goes back to the home fund. The bill is then marked paid.
 - **FR-73** Every person, including the owner, managers and the fund keeper, is also a member and has the same member features: own meals, own groceries, paying bills, own bill and balance. The owner can do everything any role can.
+
+- **FR-98** Split funding. Any grocery purchase or bill payment can be recorded as **one entry** paid from up to two sources: one shared source (grocery fund, home fund, or money given to the payer) plus the payer's own pocket. The payer enters the total; the shared part defaults to everything still available from that source (given amount left, grocery fund balance, or home fund free-to-spend cash) and can be lowered, and the rest is the pocket part. The shared part can never exceed what is available; the pocket part is credited to the payer (BR-6). The entry keeps one receipt, one history and one confirmation. The cost per meal or bill total uses the full amount, not each part. Applies to the grocery entry screen, "I paid", "I paid a bill" and the manager's bill entry.
 
 ### Everyday flows and safeguards
 
@@ -289,13 +297,13 @@ The system SHALL meet these requirements for v1; each maps to a feature above.
 - **FR-75** Members and the fund keeper record everything they pay on one "I paid" screen, choosing the purpose: rent, prepaid or postpaid utilities, general payment, deposit, money put into the grocery fund, groceries they bought, or a bill they paid. It counts only after confirmation: money put into the grocery fund by a member is confirmed by the fund keeper, a manager or the owner; everything else, and anything the fund keeper adds, by a manager or the owner. Entries by managers and the owner are saved without confirmation.
 - **FR-76** An inbox shows each person what needs them (payments to confirm, bills paid with given money, edits to review) and updates (notices, grocery fund low).
 - **FR-77** Any entry can be edited or deleted with a reason; the full history (who, when, old and new value) stays visible. Closed months can't be changed.
-- **FR-78** Before closing a month the app shows a checklist: unlogged meals, unpaid dues, unpaid bills, money still with shoppers, grocery fund count. The manager can fix items first or close anyway.
+- **FR-78** Before closing a month the app shows a checklist: unlogged meals, unpaid dues, unpaid bills, bills still on an estimate (FR-101), money still with shoppers, grocery fund count, home fund cash count. The manager can fix items first or close anyway.
 - **FR-79** The owner or a manager adds a member by phone or email; the app sends an SMS or email so they can log in with a one-time code. Only the owner signs up (FR-83); members never sign up, and there is no invite link or home code.
 - **FR-80** The owner and managers can deactivate or reactivate a member. Final settlement deactivates the leaving member automatically; deactivated members can't log in.
 - **FR-81** A Past members list (owner and managers only) keeps each former member's contact details, ID documents, monthly bills and final settlement.
 - **FR-82** Members can message each other: one group chat for the home plus one-to-one chats, with photo attachments. Only people in the home can join.
 
-* **FR-89** Closing a month can't be undone and needs a final confirmation that shows what moves into the next month. A closed month is never reopened.
+* **FR-89** Closing a month can't be undone and needs a final confirmation that shows what moves into the next month: member dues and credits, home fund and grocery fund opening cash, money still with shoppers, and unpaid bills (FR-99). A closed month is never reopened.
 * **FR-90** The owner or a manager can still correct an entry in a closed month. A reason is required; the closed month's statement shows the corrected figures, and each member's difference is added to the open month as an "\<month> correction" line. Everyone affected is told, and the change is kept in the entry's history.
 * **FR-91** Rejecting a payment or entry needs a reason (amount doesn't match, receipt not clear, money not received, wrong purpose, or other) and an optional note. The sender sees the reason in their inbox and can fix it and send again with a new receipt, or withdraw it. A rejected entry never changes any balance.
 * **FR-92** Deactivating a member needs a confirmation with the date it starts; it can be undone at any time with Reactivate, which asks for the date charges start again. Any amount the member still owes stays on their record. Changing rent (owner or manager only) also asks for confirmation and shows each member's new share before it's saved.
@@ -329,7 +337,16 @@ The system SHALL meet these requirements for v1; each maps to a feature above.
 
 - **FR-24** The manager shall enter or import prior-month balances (month, year, member, Due or Credit, amount, date-time), at most one of each type per member per month.
 - **FR-25** Closing a month shall lock its entries and write one prior-month record per member with a non-zero balance: Due for negative, Credit for positive.
-- **FR-26** The next cycle shall start with empty meal, expense and payment logs, the rolled-over balances, and the same rooms, members and categories.
+- **FR-26** The next cycle shall start with empty meal, expense and payment logs, the rolled-over balances and carry-forward records (FR-99), the same rooms, members and categories, and each bill category's default estimate (FR-100).
+- **FR-99** Closing a month shall also write carry-forward records for the home, so no money disappears between months:
+  - **Home fund opening cash:** the closing home fund balance (BR-8).
+  - **Grocery fund opening cash:** the closing grocery fund balance (FR-15).
+  - **Money still with shoppers:** each open given-money amount, carried to the same member; they can still record what they spent or return it.
+  - **Carried bills:** each bill not yet paid to the provider (for example October gas), with category, original month, amount owed and whether it was an estimate. These show in the next month's Bills to pay as "From October".
+
+  Paying a carried bill lowers home fund cash and the carried bill; it is **not** a new expense of the open month and is never split among members again (members were already charged in the closed month). If an estimated bill's actual amount differs, BR-22 applies.
+- **FR-100** Estimated bills are optional. For any bill category (cook, electricity, internet, gas, service charge, or a category the manager adds) the owner or a manager can set a **default estimate** that is used every month. They can change or remove the estimate for one month only, without changing the default, until that month is closed. A category with no estimate works as before (charged only when the actual bill is entered). Every estimate change keeps a history (who, when, old and new value).
+- **FR-101** While a category has an estimate and no actual bill, members are charged their share of the estimate (BR-21), shown as "Estimated" on their bill, statement and Bills to pay. Entering the actual bill in the same month replaces the estimate and recalculates the shares. If the month closes on the estimate, the estimate is charged and carried as a bill to pay (FR-99); when the actual bill arrives, the difference is handled by BR-22.
 - **FR-27** The system shall keep an immutable log (who, when, old value, new value, reason) of every create, edit and delete; financial entries are never hard-deleted.
 
 ### Home rules, deposit and leaving
@@ -434,9 +451,9 @@ D_{total,i} = C_{meal,i} + C_{util,i} + C_{rent,i} + PrevDue_i
 B_i = P_{total,i} - D_{total,i} - Refund_i
 ```
 
-**BR-8 Central cash.** Member payments (except refunds) minus central-fund outlays (bills and groceries paid from the fund) minus refunds disbursed. The grocery fund is tracked separately (FR-15).
+**BR-8 Central cash.** Opening cash carried from last month (FR-99) plus member payments (except refunds) minus carried bills paid this month, minus central-fund outlays (bills and groceries paid from the fund) minus refunds disbursed. The grocery fund is tracked separately (FR-15).
 
-**BR-9 Bills to pay.** Per class (prepaid, postpaid, rent): bills the home owes the landlord, cook, gas, internet and other providers, minus what has already been paid to them. Shown to users as "Bills to pay".
+**BR-9 Bills to pay.** Per class (prepaid, postpaid, rent): bills the home owes the landlord, cook, gas, internet and other providers, minus what has already been paid to them, plus carried bills from earlier months still unpaid (FR-99). Estimated bills count at their estimate until the actual is entered. Shown to users as "Bills to pay", with carried bills marked "From \<month>" and estimates marked "Estimated".
 
 **BR-10 Rounding.** Money is stored as NUMERIC(12,2); intermediate values (like the cost per meal 97.4766…) keep full precision and only displayed totals round to 2 decimals. Any rounding remainder from the utility split goes to one named member so BR-1 holds to the paisa.
 
@@ -489,6 +506,18 @@ Example: home rent ৳40,000 rises to ৳44,000 with 4 members. Equal: everyone 
 
 The members whose rent was changed by the revision are excluded from the split. Example: Room C is lowered by ৳1,200 with 4 other members; under Split equally each of them pays ৳300 more.
 
+**BR-21 Estimated bill.** For each category, the amount used for the month is the actual bill if one is entered, otherwise the month's estimate (FR-100), otherwise 0. That amount is split by the normal rule (BR-4: overrides first, the rest equally), so estimates and actual bills share one calculation path. BR-1 holds because the estimate is counted both in member charges and in Bills to pay.
+
+```latex
+U_{c,m} = \begin{cases} Actual_{c,m} & \text{actual entered} \\ Estimate_{c,m} & \text{estimate set} \\ 0 & \text{otherwise} \end{cases} \qquad Estimate_{c,m} = MonthEstimate_{c,m} \text{ if set, else } DefaultEstimate_c
+```
+
+Example: cook estimate ৳4,000, 4 members, no deals → each member's bill shows Cook ৳1,000 (Estimated) from the 1st of the month.
+
+**BR-22 Estimate adjustment after close.** If a month closed on an estimate and the actual bill later differs, the difference Δ = actual − estimate is split among the members charged in that closed month, by that month's split (BR-4: members with an override keep exactly their override, so Δ goes to the standard members). Each share is added to the open month as an "\<month> \<category> adjustment" line, the same way as a closed-month correction (FR-90); the closed month itself is not reopened. Δ > 0 raises their dues; Δ < 0 credits them. The carried bill is updated to the actual amount. A member who has already left gets their share on their Past members record (FR-92).
+
+Example: October gas estimated ৳600, 3 members; the actual bill ৳750 arrives on 6 November → each member gets "October gas adjustment" +৳50 on their November bill, and Bills to pay shows ৳750 for October gas.
+
 ### Verification: October 2026 cycle
 
 Total meals 107.0, grocery ৳10,430.00, cost per meal ৳97.4766 (shown ৳97.48).
@@ -532,7 +561,13 @@ Each home is small (roughly 5–15 members) but the platform holds many homes an
 
 * Every active member has an override in a category → no standard members; any leftover becomes a visible shortfall instead of dividing by zero.
 * Guest meals (2.0+ in one slot) are charged to the host member at the normal cost per meal.
-* Groceries from the grocery fund costs more than is in the grocery fund (or more than a shopper was given) → blocked; the rest is recorded as paid from the shopper's own pocket.
+* Groceries from the grocery fund costs more than is in the grocery fund (or more than a shopper was given) → the fund part is capped at what is available and the rest is the shopper's own pocket, in the same entry (FR-98).
+* Month closes with a bill unpaid (e.g. gas) → carried into next month's Bills to pay; the money stays in home fund cash; paying it next month is not charged to members again (FR-99).
+* Month closes on an estimate and the actual bill is higher or lower → the difference is added to the open month as an adjustment line for the members of the closed month (BR-22).
+* Actual bill entered in the same month as its estimate → the actual replaces the estimate; no adjustment line.
+* Estimate removed for one month → that category is charged only when an actual bill is entered, like a category without an estimate.
+* Estimate lower than the category's overrides added up → blocked like an override that exceeds the bill (other members' share would go negative).
+* Split entry with a 0 pocket part → saved as paid fully from the shared source; with a 0 shared part → saved as own pocket.
 * First month on the app → manager imports October balances; without them, everyone starts at 0.
 
 - Rent share rises after deposit is paid → the gap is charged in the covered months, or a top-up is requested, per home rule.
@@ -561,7 +596,7 @@ Each home is small (roughly 5–15 members) but the platform holds many homes an
 ### Release plan
 
 - One manager runs the money in each home; members trust the manager's payment entries.
-- Utilities are charged at actual billed amounts. The fixed floors from the 2 Nov version (Electricity 1,000, Gas 600, Internet 1,050, Cook 4,000) are dropped (confirmed 12 Nov 2026): no minimum charge per utility.
+- Utilities are charged at actual billed amounts. The fixed floors from the 2 Nov version (Electricity 1,000, Gas 600, Internet 1,050, Cook 4,000) are dropped (confirmed 12 Nov 2026): no minimum charge per utility. Updated 14 Nov 2026: a manager may instead set an optional **estimate** per category (FR-100); it is replaced by the actual bill, and any difference after close is adjusted (BR-22). It is never a floor.
 - bKash / Nagad payments are entered manually.
 
 ### Open questions
@@ -575,6 +610,12 @@ All open questions were decided on 12 Nov 2026:
 - **Repair deductions at move-out:** split equally among the members living there at move-out.
 - **Editing past meals:** members up to 2 days back; managers and the owner anytime until the month is closed.
 - **Balance visibility:** every member sees everyone's totals; ID documents and contact details stay with the owner and managers.
+
+Decided on 14 Nov 2026:
+
+- **Estimated bills:** optional, per category; estimate-and-adjust, not a minimum floor. One default for every month, changeable for a single month (FR-100, BR-21, BR-22).
+- **Month close carry-forward:** home fund cash, grocery fund cash, money with shoppers and unpaid bills move into the next month along with member balances (FR-99).
+- **Split funding:** one entry can mix one shared source with the payer's own pocket (FR-98).
 
 ### Release plan
 
