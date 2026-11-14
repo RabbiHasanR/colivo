@@ -29,19 +29,29 @@ In scope:
 - Anyone logs in with a phone or email and a one-time code.
 - The **owner** sets up **rooms**, **rent**, **home rules** (deposit months,
   notice period, rent-gap policy) and **bills**.
+- The **owner** or a **manager** can set an optional **estimate** for any
+  bill (once for every month, or changed for one month); members see their
+  share from the 1st, the actual bill replaces it, and any difference after
+  close is adjusted next month.
 - **Members** log daily **meals** (lunch, dinner, guests).
 - **Members** add **groceries**; the app shows the live **cost per meal**.
+  One entry can be paid partly from a fund and partly from the member's own
+  pocket.
 - A **fund keeper** holds the **grocery fund** and gives money to shoppers;
   nobody spends more than they were given.
 - **Members** report anything they paid in one **I paid** flow, with a
   required receipt; a **manager** or the **owner** confirms or rejects it.
+  A payment can mix a shared source with the member's own pocket; only the
+  pocket part is credited.
 - A **manager** gives **home fund** money to a member to pay a **bill**.
 - The **owner** or a **manager** changes **rent** for the home, a room or a
   member, from a chosen month.
 - Every **member** sees their **bill** by purpose; the **owner** or a
   **manager** sees the **monthly statement** for everyone.
-- The **owner** or a **manager** closes a **month**: credits and dues carry
-  into the next month; a closed month can't be reopened, only corrected.
+- The **owner** or a **manager** closes a **month**: member credits and
+  dues, **home fund** and **grocery fund** cash, money still with shoppers
+  and unpaid bills carry into the next month; unpaid bills are never charged
+  to members twice; a closed month can't be reopened, only corrected.
 - **Members** pay a **deposit** on joining, give **notice** to leave, and get
   a **final settlement**; past members stay on record.
 - Every role has an **inbox**; members can **message** each other.

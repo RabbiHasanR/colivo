@@ -11,8 +11,8 @@ every phase's UI meets the
 The mobile app comes after web v1 works and reuses the same API. Each phase is
 tagged with the parts it touches: `[backend]`, `[web]`, `[mobile]`.
 
-Screen designs: `docs/design/web/` and `docs/design/mobile/` (index in
-`docs/design/README.md`). Behaviour rules: `docs/design/requirements.md`.
+Screen designs: `colivo-design/web/` and `colivo-design/mobile/` (index in
+`colivo-design/README.md`). Behaviour rules: `colivo-design/requirements.md`.
 
 ## Phase 0 — Project skeleton ⏳ Not started
 
@@ -62,7 +62,10 @@ After this phase, the owner can describe the home the app will calculate for.
 ### Bills and starting balances
 
 - **Bill** categories: rent, prepaid, postpaid, other; custom deals.
-- **Starting balances** imported once from the old spreadsheet.
+- Optional default **estimate** per bill category, used every month.
+- **Starting balances** imported once from the old spreadsheet: member
+  balances, home fund cash, grocery fund cash, money with shoppers and unpaid
+  bills.
 
 ## Phase 3 — Meals and cost per meal ⏳ Not started
 
@@ -91,6 +94,9 @@ After this phase, groceries are recorded with who paid and from where.
 - Model **grocery entry** with source: own pocket, grocery fund, home fund,
   money given.
 - Receipt required; entries count toward the cost per meal.
+- **Split funding**: one entry mixes a shared source (grocery fund, home
+  fund or money given) with own pocket; the shared part is capped at what is
+  available and only the pocket part is credited.
 
 ### Grocery fund and give money first
 
@@ -114,6 +120,8 @@ After this phase, every money movement is reported with proof and confirmed.
 
 - **Bills to pay** list; mark paid; give home fund money to a member to pay a
   bill; member reports it paid.
+- Split funding for bills (home fund or given money + own pocket).
+- Carried bills shown as "From \<month>"; estimated bills tagged "Estimated".
 
 ## Phase 6 — Statement and month close ⏳ Not started
 
@@ -129,9 +137,20 @@ After this phase, a month can be closed and balances carry forward.
 ### Month close and corrections
 
 - Pre-close checklist; close the month; credits and dues carry over.
+- Close writes carry-forward records: home fund and grocery fund opening cash,
+  money with shoppers, unpaid bills. Paying a carried bill lowers cash only
+  and is never split among members again.
 - A closed month is never reopened; owner or manager corrects an entry and the
   difference goes into the open month.
 - Previous month balances (view only).
+
+### Estimated bills
+
+- Change one month's estimate without changing the default.
+- Members are charged the estimate until the actual bill is entered; the
+  actual replaces it.
+- Month closed on an estimate: the difference is added to the open month as
+  an adjustment line (reuses the correction logic above).
 
 ### Rent changes
 
