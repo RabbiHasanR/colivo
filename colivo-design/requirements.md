@@ -177,7 +177,7 @@ The MVP (P1) covers everything the October and November spreadsheets do, organis
 | Payments | General lump-sum payment not tied to a category | P1 | Manager |
 | Payments | Refund disbursement with balance and cash checks | P1 | Manager |
 | Payments | Moved to P1 (FR-75): member reports "I paid" with proof; manager confirms | P2 | Member, Manager |
-| 4. Prior balance rollover | Manual entry and file import of prior balances (month, year, member, Due / Credit, amount, date-time) | P1 | Manager |
+| 4. Prior balance rollover | Manual entry and file import of prior balances (month, year, member, Due / Credit, amount, date-time), plus opening home fund and grocery fund cash, money with shoppers and unpaid bills | P1 | Manager |
 | 4. Prior balance rollover | Automatic rollover on month close | P1 | Manager |
 | 4. Prior balance rollover | Correct an entry in a closed month (owner or manager, reason required; the difference goes into the open month) | P2 | Manager |
 | 5. Monthly statement | Per member: room, meals, meal cost, utility share (overrides shown), rent, total cost, itemised credits, prior due/credit, net balance, refund action | P1 | All |
@@ -335,7 +335,14 @@ The system SHALL meet these requirements for v1; each maps to a feature above.
 
 ### Month cycle and audit
 
-- **FR-24** The manager shall enter or import prior-month balances (month, year, member, Due or Credit, amount, date-time), at most one of each type per member per month.
+- **FR-24** The manager shall enter or import prior-month balances for the first month on the app, at most one of each per month (and per member or bill where relevant):
+  - **Member balances:** month, year, member, Due or Credit, amount, date-time.
+  - **Home fund opening cash:** amount the manager holds for the home.
+  - **Grocery fund opening cash:** amount the fund keeper holds.
+  - **Money still with shoppers:** member and amount given but not yet spent or returned.
+  - **Unpaid bills:** category, month, amount owed, and whether it is an estimate.
+
+  Imported records are the same carry-forward records month close writes (FR-25, FR-99), so the first month works like any other: paying an imported bill lowers home fund cash and is not split among members again. The import shows a check that imported cash and bills match what the manager and fund keeper actually hold.
 - **FR-25** Closing a month shall lock its entries and write one prior-month record per member with a non-zero balance: Due for negative, Credit for positive.
 - **FR-26** The next cycle shall start with empty meal, expense and payment logs, the rolled-over balances and carry-forward records (FR-99), the same rooms, members and categories, and each bill category's default estimate (FR-100).
 - **FR-99** Closing a month shall also write carry-forward records for the home, so no money disappears between months:
@@ -568,7 +575,7 @@ Each home is small (roughly 5–15 members) but the platform holds many homes an
 * Estimate removed for one month → that category is charged only when an actual bill is entered, like a category without an estimate.
 * Estimate lower than the category's overrides added up → blocked like an override that exceeds the bill (other members' share would go negative).
 * Split entry with a 0 pocket part → saved as paid fully from the shared source; with a 0 shared part → saved as own pocket.
-* First month on the app → manager imports October balances; without them, everyone starts at 0.
+* First month on the app → manager imports October member balances, home fund and grocery fund cash, money with shoppers and unpaid bills (FR-24); without them, everyone and every fund starts at 0 with no bills to pay.
 
 - Rent share rises after deposit is paid → the gap is charged in the covered months, or a top-up is requested, per home rule.
 - Rent share falls, or the member leaves early with deposit left over → the remainder is refunded in final settlement.
