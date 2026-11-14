@@ -26,7 +26,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
     </div>
   </header>
 
-  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+  <main style="flex: 1; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
     <section aria-label="Month closed" style="background: #E3F0EC; border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0E6656" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>
       <div style="display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: #0A4E42">
@@ -61,10 +61,24 @@ a{color:#0E6656}a:hover{color:#0A4E42}
       </sc-for>
     </section>
 
+    <section aria-label="Home and funds" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <h2 style="margin: 0; padding: 12px 0 6px; font-size: 15px; font-weight: 600">Home and funds</h2>
+      <sc-for list="{{homeRows}}" as="h" hint-placeholder-count="4">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 14px; font-weight: 500">{{h.name}}</span>
+            <span style="font-size: 12px; color: #5B6461">{{h.sub}}</span>
+          </div>
+          <span style="font-size: 14px; font-weight: 600">{{h.amount}}</span>
+        </div>
+      </sc-for>
+      <p style="margin: 0; padding: 4px 0 12px; font-size: 12px; color: #5B6461; line-height: 1.45">Unpaid bills were already charged to members, so paying them later isn't split again.</p>
+    </section>
+
     <section aria-label="Manual entry" style="background: #FFFFFF; border: 1px dashed #C9C6BB; border-radius: 14px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px">
       <div style="display: flex; flex-direction: column; gap: 2px">
         <span style="font-size: 14px; font-weight: 600">First month on the app?</span>
-        <span style="font-size: 12px; color: #5B6461">Enter or import balances from your old spreadsheet</span>
+        <span style="font-size: 12px; color: #5B6461; line-height: 1.45">Enter or import member balances, home fund and grocery fund cash, money with shoppers and unpaid bills. The app checks the cash matches what the manager and fund keeper hold.</span>
       </div>
       <button style="min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid #0E6656; background: #FFFFFF; color: #0E6656; font-size: 13px; font-weight: 600; font-family: inherit; white-space: nowrap">Add</button>
     </section>
@@ -89,17 +103,23 @@ class Component extends DCLogic {
     }));
     const dep = (name, amount) => ({ name, amount, tag: 'Credit', tagBg: '#E3F0EC', tagFg: '#0A4E42', color: '#0E6656' });
     const due = (name, amount) => ({ name, amount, tag: 'Due', tagBg: '#FBEFE3', tagFg: '#7A3A0C', color: '#9A4A10' });
+    // Home carry-forward records written at close or imported for the first month (FR-24, FR-99)
+    const home = (name, sub, amount) => ({ name, sub, amount });
     const settled = (name) => ({ name, amount: '৳0.00', tag: 'Settled', tagBg: '#F1F0EA', tagFg: '#3E4744', color: '#5B6461' });
     const data = {
       nov: {
         closedLine: 'October closed · carried into November',
         rows: [dep('Hijam Shusil', '+৳3,713.77'), dep('Rabbi Hasan', '+৳293.65'), due('Maruf', '−৳1,240.00')],
-        depCount: '2', depTotal: '৳4,007.42', dueCount: '1', dueTotal: '৳1,240.00'
+        depCount: '2', depTotal: '৳4,007.42', dueCount: '1', dueTotal: '৳1,240.00',
+        homeRows: [home('Home fund cash', 'With Rabbi (manager) · ৳2,500 is deposits', '৳4,120.00'), home('Grocery fund cash', 'With Hijam (fund keeper)', '৳140.00'),
+          home('Money with shoppers', 'Maruf · grocery money', '৳500.00'), home('Unpaid bills · 2', 'Cook ৳2,500 · service charge ৳581', '৳3,081.00')]
       },
       oct: {
         closedLine: 'September closed · carried into October',
         rows: [dep('Maruf', '+৳270.93'), settled('Hijam Shusil'), settled('Rabbi Hasan')],
-        depCount: '1', depTotal: '৳270.93', dueCount: '0', dueTotal: '৳0.00'
+        depCount: '1', depTotal: '৳270.93', dueCount: '0', dueTotal: '৳0.00',
+        homeRows: [home('Home fund cash', 'Kept for September gas', '৳600.00'), home('Grocery fund cash', 'With Hijam (fund keeper)', '৳1,450.00'),
+          home('Money with shoppers', 'None', '৳0.00'), home('Unpaid bills · 1', 'September gas · paid 3 Oct', '৳600.00')]
       }
     };
     const d = data[m];
@@ -107,6 +127,7 @@ class Component extends DCLogic {
       tabs,
       closedLine: d.closedLine,
       rows: d.rows,
+      homeRows: d.homeRows,
       depCount: d.depCount,
       depTotal: d.depTotal,
       dueCount: d.dueCount,

@@ -23,7 +23,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
     <span style="font-size: 12px; font-weight: 600; color: #0E6656; background: #E3F0EC; border-radius: 999px; padding: 6px 10px">Closed</span>
   </header>
 
-  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+  <main style="flex: 1; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
     <section aria-label="Net balance" style="background: #0E6656; color: #FFFFFF; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 6px">
       <span style="font-size: 13px; opacity: 0.85">You have a credit of</span>
       <span style="font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 600">৳293.65</span>
@@ -45,6 +45,17 @@ a{color:#0E6656}a:hover{color:#0A4E42}
       <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-top: 1px solid #EFEDE6"><span>Internet bill you paid</span><span>৳1,050.00</span></div>
       <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-top: 1px solid #EFEDE6"><span>Rent payment</span><span>৳6,670.00</span></div>
       <div style="display: flex; justify-content: space-between; padding: 10px 0; font-size: 14px; font-weight: 600; border-top: 1px solid #E3E1D9"><span>Total paid</span><span>৳11,410.00</span></div>
+    </section>
+
+    <section aria-label="November so far" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px">
+        <h2 style="margin: 0; font-size: 14px; font-weight: 600">November so far</h2>
+        <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #E3F0EC; color: #0E6656">Open</span>
+      </div>
+      <sc-for list="{{nextMonth}}" as="l" hint-placeholder-count="3">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 13px; border-top: 1px solid #EFEDE6; gap: 8px"><span>{{l.label}} <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: {{l.tagBg}}; color: {{l.tagFg}}">{{l.tag}}</span></span><span style="color: {{l.color}}">{{l.amount}}</span></div>
+      </sc-for>
+      <p style="margin: 0; padding: 4px 0 12px; font-size: 12px; color: #5B6461; line-height: 1.45">Estimated shares change to your real share when the actual bill is entered.</p>
     </section>
 
     <section aria-label="Deposit" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px">
@@ -71,7 +82,15 @@ a{color:#0E6656}a:hover{color:#0A4E42}
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   renderVals() {
-    return {};
+    // November opens with October's credit (FR-25) and the default estimates (FR-100, BR-21): Cook ৳2,500 ÷ 3, Internet ৳1,050 ÷ 3
+    const EST = { tag: 'Estimated', tagBg: '#FBEFE3', tagFg: '#7A3A0C', color: '#17201D' };
+    return {
+      nextMonth: [
+        { label: 'Credit from October', tag: 'Carried', tagBg: '#F1F0EA', tagFg: '#3E4744', amount: '+৳293.65', color: '#0E6656' },
+        { label: 'Cook (cook)', amount: '৳833.33', ...EST },
+        { label: 'Internet', amount: '৳350.00', ...EST }
+      ]
+    };
   }
 }
 </script>

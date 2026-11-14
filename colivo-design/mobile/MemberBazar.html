@@ -91,11 +91,14 @@ class Component extends DCLogic {
       pick: () => this.setState({ view: k })
     }));
     const srcKey = isKeeper ? 'kSource' : 'mSource';
-    const options = isKeeper
-      ? [['box', 'Grocery fund (৳' + BOX + ' in it)'], ['pocket', 'My pocket']]
-      : [['given', 'Money given to me (৳' + GIVEN + ')'], ['pocket', 'My pocket']];
+    // One shared source per view (FR-98): the fund keeper spends from the grocery fund, a member from money given to them
+    const shared = isKeeper
+      ? { key: 'box', limit: BOX, label: 'Grocery fund (৳' + BOX + ' in it)', both: 'Grocery fund + my pocket', name: 'the grocery fund' }
+      : { key: 'given', limit: GIVEN, label: 'Money given to me (৳' + GIVEN + ')', both: 'Given money + my pocket', name: 'the given money' };
+    const options = [[shared.key, shared.label], ['pocket', 'My pocket'], ['both', shared.both]];
     const sources = options.map(([k, label]) => ({
-      label, on: s[srcKey] === k ? 'true' : 'false', style: s[srcKey] === k ? on : off,
+      label, on: s[srcKey] === k ? 'true' : 'false',
+      style: (s[srcKey] === k ? on : off) + (k === 'both' ? '; grid-column: 1 / -1' : ''),
       pick: () => this.setState({ [srcKey]: k })
     }));
     const src = s[srcKey];
@@ -103,12 +106,17 @@ class Component extends DCLogic {
     let hint, blocked = false;
     if (src === 'pocket') {
       hint = 'You\'ll be credited ৳' + fmt(a) + '. It counts toward the cost per meal.';
-    } else if (isKeeper) {
-      if (a > BOX) { blocked = true; hint = 'The grocery fund has only ৳' + BOX + '. Spend ৳' + BOX + ' from the grocery fund and ৳' + fmt(a - BOX) + ' from your pocket, or ask members to put money in first.'; }
-      else hint = 'Taken from the grocery fund. ৳' + (BOX - a) + ' will be left. No credit to you.';
+    } else if (src === 'both') {
+      const fromShared = Math.min(a, shared.limit);
+      const fromPocket = a - fromShared;
+      hint = 'One entry: ৳' + fmt(fromShared) + ' from ' + shared.name + (fromPocket > 0 ? ' + ৳' + fmt(fromPocket) + ' from your pocket. You\'ll be credited ৳' + fmt(fromPocket) + '.' : '. Nothing from your pocket.');
+    } else if (a > shared.limit) {
+      blocked = true;
+      hint = (isKeeper ? 'The grocery fund has only ৳' : 'You were given only ৳') + shared.limit + '. Choose "' + shared.both + '" to pay the extra ৳' + fmt(a - shared.limit) + ' yourself.';
     } else {
-      if (a > GIVEN) { blocked = true; hint = 'You were given only ৳' + GIVEN + '. Record ৳' + GIVEN + ' from it and ৳' + fmt(a - GIVEN) + ' from your pocket.'; }
-      else hint = 'Taken from the ৳' + GIVEN + ' Hijam gave you. ৳' + (GIVEN - a) + ' left; return it to the grocery fund when you\'re done.';
+      hint = isKeeper
+        ? 'Taken from the grocery fund. ৳' + (BOX - a) + ' will be left. No credit to you.'
+        : 'Taken from the ৳' + GIVEN + ' Hijam gave you. ৳' + (GIVEN - a) + ' left; return it to the grocery fund when you\'re done.';
     }
     return {
       views,

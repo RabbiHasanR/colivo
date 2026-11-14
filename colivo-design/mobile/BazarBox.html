@@ -22,7 +22,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
     <span style="font-size: 13px; color: #5B6461">Shared cash kept for shopping · October</span>
   </header>
 
-  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+  <main style="flex: 1; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
     <section aria-label="Grocery fund balance" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; justify-content: space-between; align-items: center">
       <div style="display: flex; flex-direction: column; gap: 2px">
         <span style="font-size: 13px; color: #5B6461">In the grocery fund · with Maruf</span>
@@ -36,8 +36,15 @@ a{color:#0E6656}a:hover{color:#0A4E42}
 
     <section aria-label="Money put in" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px">
-        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Who put money in</h2>
-        <span style="font-size: 13px; font-weight: 600; color: #0E6656">+৳2,000</span>
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Money in</h2>
+        <span style="font-size: 13px; font-weight: 600; color: #0E6656">+৳3,450</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6">
+        <div style="display: flex; flex-direction: column; gap: 3px">
+          <span style="font-size: 14px; font-weight: 500">From September <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #F1F0EA; color: #3E4744">Carried</span></span>
+          <span style="font-size: 12px; color: #5B6461">Left in the fund when September closed</span>
+        </div>
+        <span style="font-size: 14px; font-weight: 600; color: #0E6656">+৳1,450</span>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6">
         <div style="display: flex; flex-direction: column; gap: 3px">
@@ -69,7 +76,22 @@ a{color:#0E6656}a:hover{color:#0A4E42}
       </div>
     </section>
 
-    <p style="margin: 0; font-size: 12px; color: #5B6461; line-height: 1.5">Money put in is credited to whoever gave it. Spending from the grocery fund counts toward the cost per meal but gives no credit to the shopper, because it wasn't their money.</p>
+    <section aria-label="Given to shoppers" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Given to shoppers</h2>
+        <span style="font-size: 13px; font-weight: 600">−৳1,950</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Rabbi</span><span style="font-size: 12px; color: #5B6461">2 Oct · all spent</span></div>
+        <span style="font-size: 14px; font-weight: 600">−৳1,450</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Maruf</span><span style="font-size: 12px; color: #5B6461">11 Oct · ৳450 waiting, ৳50 left</span></div>
+        <span style="font-size: 14px; font-weight: 600">−৳500</span>
+      </div>
+    </section>
+
+    <p style="margin: 0; font-size: 12px; color: #5B6461; line-height: 1.5">Money put in is credited to whoever gave it. Spending from the grocery fund counts toward the cost per meal but gives no credit to the shopper, because it wasn't their money. Whatever is left when the month closes opens next month's fund.</p>
 
     <a href="Payments.html" style="height: 48px; border-radius: 12px; background: #0E6656; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">Put money in the grocery fund</a>
   </main>

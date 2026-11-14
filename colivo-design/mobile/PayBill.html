@@ -21,14 +21,15 @@ a{color:#0E6656}a:hover{color:#0A4E42}
     <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">I paid a bill</h1>
   </header>
 
-  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+  <main style="flex: 1; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
     <section aria-label="Bill" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
       <div style="display: flex; justify-content: space-between; align-items: center">
         <div style="display: flex; flex-direction: column; gap: 3px">
-          <span style="font-size: 15px; font-weight: 600">Service charge <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #EFEDFF; color: #4B3FA3">Postpaid</span></span>
+          <span style="font-size: 15px; font-weight: 600">Service charge <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #EFEDFF; color: #4B3FA3">Postpaid</span> <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #F1F0EA; color: #3E4744">From October</span></span>
           <span style="font-size: 12px; color: #5B6461">Due 5 Nov · you were given ৳581 for it</span>
         </div>
       </div>
+      <div style="background: #F1F0EA; color: #3E4744; border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.45">October's bill, moved here when October closed. Members were already charged for it in October, so paying it now isn't charged to anyone again.</div>
       <div style="display: flex; justify-content: space-between; align-items: center">
         <span style="font-size: 12px; color: #5B6461">Amount you actually paid</span>
         <div style="display: flex; align-items: center; background: #F6F5F0; border-radius: 10px">
@@ -78,7 +79,7 @@ class Component extends DCLogic {
       hint = 'You\'ll be credited ৳' + fmt(a) + '. Return the ৳' + GIVEN + ' you were given to the home fund.';
     } else if (s.src === 'given') {
       if (a > GIVEN) { blocked = true; hint = 'You were given only ৳' + GIVEN + '. Choose "Given money + my pocket" to pay the extra ৳' + fmt(a - GIVEN) + ' yourself.'; }
-      else hint = a < GIVEN ? 'Bill marked paid. Return the leftover ৳' + fmt(GIVEN - a) + ' to the home fund.' : 'Bill marked paid with the money you were given.';
+      else hint = a < GIVEN ? 'Bill marked paid. Return the leftover ৳' + fmt(GIVEN - a) + ' to the home fund.' : 'Bill marked paid with the money you were given. It leaves November\'s Bills to pay.';
     } else {
       const fromGiven = Math.min(a, GIVEN);
       const fromPocket = a - fromGiven;

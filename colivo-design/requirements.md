@@ -523,7 +523,7 @@ Example: cook estimate ৳4,000, 4 members, no deals → each member's bill show
 
 **BR-22 Estimate adjustment after close.** If a month closed on an estimate and the actual bill later differs, the difference Δ = actual − estimate is split among the members charged in that closed month, by that month's split (BR-4: members with an override keep exactly their override, so Δ goes to the standard members). Each share is added to the open month as an "\<month> \<category> adjustment" line, the same way as a closed-month correction (FR-90); the closed month itself is not reopened. Δ > 0 raises their dues; Δ < 0 credits them. The carried bill is updated to the actual amount. A member who has already left gets their share on their Past members record (FR-92).
 
-Example: October gas estimated ৳600, 3 members; the actual bill ৳750 arrives on 6 November → each member gets "October gas adjustment" +৳50 on their November bill, and Bills to pay shows ৳750 for October gas.
+Example: November cook estimated ৳2,500, 3 members, November closed on the estimate; the actual bill ৳2,800 arrives on 4 December → each member gets "November cook adjustment" +৳100 on their December bill, and Bills to pay shows ৳2,800 for the November cook.
 
 ### Verification: October 2026 cycle
 

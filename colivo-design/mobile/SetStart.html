@@ -19,10 +19,10 @@ a{color:#0E6656}a:hover{color:#0A4E42}
     <a href="Settings.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home settings</a>
     <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Starting balances</h1>
-    <span style="font-size: 13px; color: #5B6461; line-height: 1.45">Used once, when you start. Enter what each member owed or had extra at the end of your old spreadsheet.</span>
+    <span style="font-size: 13px; color: #5B6461; line-height: 1.45">Used once, when you start. Enter what each member owed or had extra, the cash the home holds and any bills still unpaid at the end of your old spreadsheet.</span>
   </header>
 
-  <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+  <main style="flex: 1; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
     <label style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #5B6461">Balances at the end of
       <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>September 2026</option></select>
     </label>
@@ -43,9 +43,32 @@ a{color:#0E6656}a:hover{color:#0A4E42}
       </sc-for>
     </section>
 
+    <section aria-label="Home and funds" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 0 14px; display: flex; flex-direction: column">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 0">
+          <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Home fund cash</span><span style="font-size: 12px; color: #5B6461">Held by the manager</span></span>
+          <input type="text" inputmode="decimal" aria-label="Home fund cash" value="600" style="width: 96px; height: 40px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 10px; font-size: 14px; font-weight: 600; color: #17201D; font-family: inherit; box-sizing: border-box; text-align: right">
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid #EFEDE6">
+          <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Grocery fund cash</span><span style="font-size: 12px; color: #5B6461">Held by the fund keeper</span></span>
+          <input type="text" inputmode="decimal" aria-label="Grocery fund cash" value="1,450" style="width: 96px; height: 40px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 10px; font-size: 14px; font-weight: 600; color: #17201D; font-family: inherit; box-sizing: border-box; text-align: right">
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 0; border-top: 1px solid #EFEDE6">
+          <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 600">Money with shoppers</span><span style="font-size: 12px; color: #5B6461">Given but not spent or returned</span></span>
+          <input type="text" inputmode="decimal" aria-label="Money with shoppers" value="0" style="width: 96px; height: 40px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 10px; font-size: 14px; font-weight: 600; color: #17201D; font-family: inherit; box-sizing: border-box; text-align: right">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid #EFEDE6">
+          <span style="font-size: 14px; font-weight: 600">Unpaid bills</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; background: #F6F5F0; border-radius: 10px; padding: 8px 10px; font-size: 13px"><span>Gas · September · actual</span><span style="font-weight: 600">৳600</span></div>
+          <button type="button" style="min-height: 44px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 600; font-family: inherit">+ Add unpaid bill</button>
+          <span style="font-size: 12px; color: #5B6461; line-height: 1.45">Members were already charged for these, so paying them later isn't split again.</span>
+        </div>
+    </section>
+
+    <section aria-label="Cash check" style="background: #F1F0EA; border-radius: 14px; padding: 12px 14px; font-size: 13px; color: #3E4744; line-height: 1.45">Cash check: count what Rabbi (manager) and Hijam (fund keeper) actually hold. It should match the cash above.</section>
+
     <button style="height: 48px; border-radius: 12px; border: 1px dashed #0E6656; background: transparent; color: #0E6656; font-size: 14px; font-weight: 600; font-family: inherit">Import from spreadsheet (.xlsx or .csv)</button>
 
-    <section style="background: #E3F0EC; border-radius: 14px; padding: 12px 14px; font-size: 13px; color: #0A4E42; line-height: 1.45">After this, balances carry forward by themselves each time you close a month.</section>
+    <section style="background: #E3F0EC; border-radius: 14px; padding: 12px 14px; font-size: 13px; color: #0A4E42; line-height: 1.45">After this, balances, fund cash and unpaid bills carry forward by themselves each time you close a month.</section>
 
     <button style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit">Save starting balances</button>
   </main>

@@ -34,7 +34,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
         <div style="display: flex; flex-direction: column; gap: 6px">
           <sc-for list="{{bills}}" as="b" hint-placeholder-count="3">
             <button type="button" aria-pressed="{{b.on}}" onClick="{{b.pick}}" style="{{b.style}}">
-              <span style="display: flex; align-items: center; gap: 6px">{{b.name}} <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: {{b.tagBg}}; color: {{b.tagFg}}">{{b.tag}}</span></span>
+              <span style="display: flex; align-items: center; gap: 6px">{{b.name}} <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: {{b.tagBg}}; color: {{b.tagFg}}">{{b.tag}}</span><sc-if value="{{b.carried}}" hint-placeholder-val="{{false}}"><span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #F1F0EA; color: #3E4744">From Oct</span></sc-if></span>
               <span style="font-weight: 600">{{b.amountText}}</span>
             </button>
           </sc-for>
@@ -77,9 +77,10 @@ class Component extends DCLogic {
     const chipOn = 'min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit';
     const chipOff = 'min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit';
     const list = [
-      { key: 'service', name: 'Service charge', tag: 'Postpaid', tagBg: '#EFEDFF', tagFg: '#4B3FA3', amount: 581 },
-      { key: 'khala', name: 'Cook (cook)', tag: 'Postpaid', tagBg: '#EFEDFF', tagFg: '#4B3FA3', amount: 2500 },
-      { key: 'rent', name: 'November rent', tag: 'Rent', tagBg: '#ECEAE2', tagFg: '#3E4744', amount: 15645 }
+      // carried: unpaid at October close, moved into November's Bills to pay (FR-99)
+      { key: 'service', name: 'Service charge', tag: 'Postpaid', tagBg: '#EFEDFF', tagFg: '#4B3FA3', amount: 581, carried: true },
+      { key: 'khala', name: 'Cook (cook)', tag: 'Postpaid', tagBg: '#EFEDFF', tagFg: '#4B3FA3', amount: 2500, carried: true },
+      { key: 'rent', name: 'November rent', tag: 'Rent', tagBg: '#ECEAE2', tagFg: '#3E4744', amount: 15645, carried: false }
     ];
     const bills = list.map((b) => Object.assign({}, b, {
       amountText: fmt(b.amount), on: s.bill === b.key ? 'true' : 'false', style: s.bill === b.key ? rowOn : rowOff,
@@ -97,7 +98,8 @@ class Component extends DCLogic {
       people,
       note: blocked
         ? 'The home fund has only ' + fmt(FREE) + ' free, but this bill is ' + fmt(bill.amount) + '. Collect dues first (Maruf owes ৳1,240), or give part now.'
-        : first + ' gets ' + fmt(bill.amount) + ' to pay the ' + bill.name.toLowerCase() + '. ' + fmt(FREE - bill.amount) + ' stays free in the home fund.',
+        : first + ' gets ' + fmt(bill.amount) + ' to pay the ' + bill.name.toLowerCase() + '. ' + fmt(FREE - bill.amount) + ' stays free in the home fund.'
+          + (bill.carried ? ' October\'s bill: members were charged for it in October, so it isn\'t split again.' : ''),
       noteBg: blocked ? '#FBEFE3' : '#F1F0EA',
       noteFg: blocked ? '#7A3A0C' : '#3E4744',
       btnLabel: blocked ? 'Give ' + fmt(FREE) + ' now (part)' : 'Give ' + fmt(bill.amount) + ' to ' + first,
