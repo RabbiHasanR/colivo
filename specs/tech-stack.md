@@ -31,8 +31,10 @@ Why FastAPI:
   contract that the Ember and Flutter clients use.
 - **Typed requests and responses** — Pydantic v2 validates every input, which
   matters for money and role checks.
-- **Fast and async** — handles the inbox, OTP and notification flows without
-  blocking.
+- **Fast enough, simple first** — endpoints are sync and use SQLModel
+  sessions, which FastAPI runs in its threadpool; slow work (OTP,
+  notifications) goes to background jobs, and an endpoint can be made async
+  later if it needs to be.
 
 Why Ember.js for the web:
 
@@ -46,67 +48,92 @@ Why Flutter for mobile:
 
 ## Stack summary
 
-| Layer           | Choice                                                         |
-| --------------- | -------------------------------------------------------------- |
-| Language        | Python 3.12 (backend), TypeScript (web), Dart (mobile)         |
-| Framework       | FastAPI (backend), Ember.js Octane (web), Flutter (mobile)     |
-| UI (web)        | Ember components + Tailwind CSS _(to confirm)_                 |
-| UI (mobile)     | Flutter Material 3 widgets                                     |
-| Backend         | REST API under `/api/v1/`, JSON, OpenAPI from FastAPI          |
-| Validation      | Pydantic v2                                                    |
-| Data access     | SQLAlchemy 2.0 ORM + Alembic migrations _(to confirm)_         |
-| Database        | PostgreSQL 16                                                  |
-| Background jobs | Celery + Redis for OTP, notifications, month close _(to confirm)_ |
-| File storage    | Private S3 bucket; MinIO locally _(to confirm)_                |
-| Auth            | Phone/email one-time code; JWT access + refresh _(to confirm)_ |
-| Web data layer  | Typed client from OpenAPI in an Ember service _(to confirm)_   |
-| Mobile data layer | Dart client from OpenAPI _(to confirm)_                      |
-| Python tooling  | uv (packages), Ruff (lint + format), mypy _(to confirm)_       |
-| Web lint/format | ESLint, ember-template-lint, Prettier, Glint (types)           |
-| Mobile lint     | `flutter analyze`, `dart format`                               |
-| Tests           | pytest + httpx (backend); Ember QUnit (web); `flutter test`    |
-| CI              | GitHub Actions with path filters _(to confirm)_                |
-| Local run       | Docker Compose                                                 |
+| Layer             | Choice                                                                       |
+| ----------------- | ---------------------------------------------------------------------------- |
+| Language          | Python 3.12 (backend), TypeScript (web), Dart (mobile)                       |
+| Framework         | FastAPI (backend), Ember.js Octane (web), Flutter (mobile)                   |
+| UI (web)          | Ember components + Tailwind CSS _(to confirm)_                               |
+| UI (mobile)       | Flutter Material 3 widgets                                                   |
+| Backend           | REST API under `/api/v1/`, JSON, OpenAPI from FastAPI                        |
+| Validation        | Pydantic v2                                                                  |
+| Data access       | SQLModel (on SQLAlchemy 2.0) + Alembic; `fastapi-orm-scaffold` layout        |
+| Database          | PostgreSQL 16                                                                |
+| Background jobs   | Celery + Redis for OTP, notifications, month close _(to confirm)_            |
+| File storage      | Private S3 bucket; MinIO locally _(to confirm)_                              |
+| Auth              | Phone/email one-time code; JWT access + refresh _(to confirm)_               |
+| Web data layer    | Typed client from OpenAPI in an Ember service _(to confirm)_                 |
+| Mobile data layer | Dart client from OpenAPI _(to confirm)_                                      |
+| Python tooling    | uv (`pyproject.toml` + `uv.lock`), Ruff (lint + format), mypy _(to confirm)_ |
+| Web lint/format   | ESLint, ember-template-lint, Prettier, Glint (types)                         |
+| Mobile lint       | `flutter analyze`, `dart format`                                             |
+| Tests             | pytest + httpx (backend); Ember QUnit (web); `flutter test`                  |
+| CI                | GitHub Actions with path filters _(to confirm)_                              |
+| Local run         | Docker Compose                                                               |
 
 ## Decided in Phase 0
 
-_Filled in as Phase 0 is built. Record each decision as:_
+_Filled in as Phase 0 is planned and built. Record each decision as:_
+**<Topic>:** <decision> — <why>.
 
-- **<Topic>:** <decision> — <why>.
+- **Backend layout:** follow the `fastapi-orm-scaffold` structure
+  (`app/core/`, `app/api/api_v1.py`, `app/modules/<module>/`, `alembic/`) —
+  the builder's own proven template, so every module looks the same.
+- **ORM:** SQLModel + Alembic — one class serves as table and schema base,
+  built on SQLAlchemy 2.0, and it is what the scaffold uses.
+- **Packages:** uv with `pyproject.toml` and `uv.lock` instead of the
+  scaffold's `pip` + `requirements.txt` — faster installs and a lockfile.
+- **API response envelope:** keep the scaffold's `StandardResponse` and
+  publish it in OpenAPI — see [API response format](#api-response-format).
+- **Sync endpoints:** sync SQLModel sessions, as in the scaffold — simpler
+  to write and test; slow work goes to background jobs.
+- **Phase 0 scope:** backend and infra only — the web and mobile project
+  structure is not decided yet (see [Deferred decisions](#deferred-decisions)).
 
 ## Project conventions
 
 Every phase follows this layout. Update this section when a convention changes.
 _This table is a proposal to approve._
 
-| Directory                           | Holds                                              |
-| ----------------------------------- | -------------------------------------------------- |
-| `backend/app/main.py`               | FastAPI app, routers mounted under `/api/v1`       |
-| `backend/app/core/`                 | Settings (env vars), security, auth dependencies   |
-| `backend/app/db/`                   | Engine, session, base model                        |
-| `backend/app/domains/<domain>/`     | `models.py`, `schemas.py`, `service.py`, `router.py` per domain: `accounts`, `homes`, `meals`, `groceries`, `payments`, `bills`, `statements`, `deposits`, `inbox`, `messaging` |
-| `backend/migrations/`               | Alembic migrations                                 |
-| `backend/tests/<domain>/`           | That domain's tests                                |
-| `web/app/routes/`, `web/app/templates/` | Ember routes and their templates               |
-| `web/app/components/`               | Reusable Ember components                          |
-| `web/app/services/`                 | API client, session, current home                  |
-| `web/tests/`                        | Unit, integration and acceptance tests             |
-| `mobile/lib/features/<feature>/`    | Flutter screens, state and widgets per feature     |
-| `mobile/lib/core/`                  | API client, auth, theme                            |
-| `mobile/test/`                      | Flutter tests                                      |
-| `api/openapi.json`                  | Exported API contract — never edited by hand       |
-| `infra/`                            | Docker Compose, Dockerfiles, deploy scripts        |
-| `colivo-design/`                    | Screen designs and `requirements.md`               |
-| `specs/`                            | Mission, roadmap, tech stack and one folder per phase |
+| Directory                                   | Holds                                                                                                                                                                                    |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/app/main.py`                       | FastAPI app, middleware, exception handlers; `api_router` mounted at `/api/v1`                                                                                                           |
+| `backend/app/api/api_v1.py`                 | Registers every module router; `deps.py` (auth dependencies) joins it when auth arrives                                                                                                  |
+| `backend/app/core/`                         | `config.py` (settings from env vars), `database.py` (engine, `get_session`), `router.py` (`CoreRouter`), `schemas.py` (`StandardResponse`), `exceptions.py` (error handlers), `utils.py` |
+| `backend/app/modules/<module>/`             | `models.py`, `schemas.py`, `service.py`, `router.py` per module: `accounts`, `homes`, `meals`, `groceries`, `payments`, `bills`, `statements`, `deposits`, `inbox`, `messaging`          |
+| `backend/app/utils/`                        | Shared helpers used by several modules                                                                                                                                                   |
+| `backend/alembic/`, `backend/alembic.ini`   | Alembic migrations (`alembic/versions/`) and config                                                                                                                                      |
+| `backend/tests/<module>/`                   | That module's tests                                                                                                                                                                      |
+| `backend/pyproject.toml`, `backend/uv.lock` | Python dependencies (uv)                                                                                                                                                                 |
+| `web/app/routes/`, `web/app/templates/`     | Ember routes and their templates                                                                                                                                                         |
+| `web/app/components/`                       | Reusable Ember components                                                                                                                                                                |
+| `web/app/services/`                         | API client, session, current home                                                                                                                                                        |
+| `web/tests/`                                | Unit, integration and acceptance tests                                                                                                                                                   |
+| `mobile/lib/features/<feature>/`            | Flutter screens, state and widgets per feature                                                                                                                                           |
+| `mobile/lib/core/`                          | API client, auth, theme                                                                                                                                                                  |
+| `mobile/test/`                              | Flutter tests                                                                                                                                                                            |
+| `api/openapi.json`                          | Exported API contract — never edited by hand                                                                                                                                             |
+| `infra/`                                    | Docker Compose, Dockerfiles, deploy scripts                                                                                                                                              |
+| `colivo-design/`                            | Screen designs and `requirements.md`                                                                                                                                                     |
+| `specs/`                                    | Mission, roadmap, tech stack and one folder per phase                                                                                                                                    |
 
 Rules:
 
-- A new endpoint goes in its domain's `router.py`, with request and response
-  models in `schemas.py` and tests in `backend/tests/<domain>/`.
+- A new endpoint goes in its module's `router.py`, with request and response
+  models in `schemas.py` and tests in `backend/tests/<module>/`; a new module
+  is registered in `app/api/api_v1.py`.
+- Routers use `CoreRouter`, never plain `APIRouter`. Each endpoint calls
+  `set_response_message(request, ...)`, sets the status code on the injected
+  `Response`, and declares its response model as the return type.
 - Business rules live in `service.py`; routers only parse input, check the
-  role and call the service.
-- Only `models.py`, `service.py` and `backend/app/db/` touch SQLAlchemy;
-  every money change runs inside one database transaction.
+  role and call the service. Services raise `StarletteHTTPException` and
+  commit explicitly.
+- Only `models.py`, `service.py` and `app/core/database.py` touch SQLModel;
+  the session comes from `Depends(get_session)`, and every money change runs
+  inside one database transaction.
+- New models are imported in `alembic/env.py` so autogenerate sees them.
+- Money columns are `Decimal` with `sa_type=Numeric(12, 2)`, never `float`;
+  timestamps are timezone-aware (never `datetime.utcnow`).
+- Config is read only through `app.core.config.settings`, never `os.environ`.
 - Every query is scoped to the current **home**; a member never sees another
   home's data.
 - After changing an endpoint, export `api/openapi.json` and regenerate the web
@@ -121,6 +148,35 @@ Rules:
 - Config comes from environment variables (`.env`, with `.env.example`
   committed); never hardcode secrets.
 
+## API response format
+
+Every response, success or error, uses the scaffold's `StandardResponse`
+envelope:
+
+```json
+{ "success": true, "message": "Home created", "data": { "id": "…" } }
+{ "success": false, "message": "Validation Error", "errors": ["body.name: Field required"] }
+```
+
+- `CoreRouter` wraps each endpoint's return value in the envelope, and the
+  handlers in `app/core/exceptions.py` give errors the same shape.
+- `CoreRouter` also declares `StandardResponse[<model>]` as the response model,
+  so `api/openapi.json` and the generated clients see the real wrapped shape.
+- `message` is set with `set_response_message`; error details go in `errors`
+  as a list of strings; empty fields are left out.
+
+| Code | When                                    |
+| ---- | --------------------------------------- |
+| 200  | GET, update or delete succeeded         |
+| 201  | Create succeeded                        |
+| 400  | Request breaks a business rule          |
+| 401  | Not logged in                           |
+| 403  | Logged in, but the role may not do this |
+| 404  | Not found, or belongs to another home   |
+| 409  | Duplicate or conflicting change         |
+| 422  | Input fails validation                  |
+| 500  | Unexpected error                        |
+
 ## Validation
 
 pytest, Ember QUnit and Flutter tests are how we validate every change. Work
@@ -132,8 +188,8 @@ isn't done until they pass.
 - Watch mode: `uv run ptw` (backend), `npm start` then `/tests` (web).
 - Each phase's acceptance criteria are written as tests in the relevant
   `tests/` folders.
-- Run `make lint` and `make format-check` alongside the tests: Ruff and
-  `alembic check` (backend); ESLint, ember-template-lint, Glint and Prettier
+- Run `make lint` and `make format-check` alongside the tests: `uv run ruff
+check`, `uv run ruff format --check` and `uv run alembic check` (backend); ESLint, ember-template-lint, Glint and Prettier
   (web); `flutter analyze` and `dart format --set-exit-if-changed` (mobile).
 - CI (`.github/workflows/`) runs the same checks on every push and pull
   request, only for the parts that changed; a PR merges only when CI is green.
@@ -161,7 +217,9 @@ _None yet. Add each one as it's discovered: **<Area>:** <limitation>._
 
 ## Deferred decisions
 
-- **ORM:** SQLAlchemy 2.0 + Alembic recommended; SQLModel is the alternative.
+- **Web and mobile project structure** (scaffold, layout and tooling for
+  `web/` and `mobile/`) — decide before the first phase tagged `[web]`;
+  Phase 0 has no web or mobile app.
 - **Background jobs:** Celery + Redis recommended; FastAPI background tasks or
   ARQ are lighter alternatives.
 - **Auth tokens:** JWT access + refresh for both clients, or session cookies

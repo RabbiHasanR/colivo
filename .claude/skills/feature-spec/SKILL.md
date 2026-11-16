@@ -96,7 +96,9 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
   `colivo-design/requirements.md` and who may do it (owner, fund keeper,
   member).
 - `## API`: a `| Method | Path | Role | Request | Response |` table for the
-  new or changed endpoints under `/api/v1/`, with error codes.
+  new or changed endpoints under `/api/v1/`, with error codes. Responses
+  use the `StandardResponse` envelope
+  ([tech-stack.md → API response format](../tech-stack.md#api-response-format)).
 - `## Data model` (or `## Data model changes`): a table of tables and
   columns, with types (money is `numeric(12,2)`), indexes, constraints,
   foreign-key behaviour, the `home_id` scope, and soft-delete/history columns.
@@ -104,7 +106,7 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
   answers from step 3.
 - `## Constraints`: the project conventions, plus:
   - fetch current docs with `ctx7` for every library the phase touches
-    (FastAPI, Pydantic, SQLAlchemy, Alembic, Ember, Flutter …) before coding;
+    (FastAPI, Pydantic, SQLModel, Alembic, Ember, Flutter …) before coding;
   - money is `Decimal`, never float, and every money change is one database
     transaction;
   - every query is scoped to the current home, and roles are checked in the
@@ -123,16 +125,18 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
   Co-Authored-By or AI attribution lines). For Phase 0, the gate starts once
   group 1 has created the Makefile.
 - `## 1. Groundwork`: fetch the relevant docs with `ctx7`, plus any
-  settings/env, Alembic migration, router mounting, constants, and Docker
-  Compose changes.
+  settings (`backend/app/core/config.py`, `.env.example`), Alembic
+  migration, router registration (`backend/app/api/api_v1.py`), constants,
+  and Docker Compose changes.
 - `## 2. <slice> (slice 1)`, `## 3. …`: one group per vertical slice, in
   the order the user chose. Inside each group, order the tasks data → API →
   contract → web → mobile, naming the real files
-  (`backend/app/domains/<domain>/{models,schemas,service,router}.py`,
-  `backend/migrations/…`, `api/openapi.json`, `web/app/routes/…`,
-  `web/app/components/…`, `web/app/services/…`,
+  (`backend/app/modules/<module>/{models,schemas,service,router}.py`,
+  `backend/app/api/api_v1.py`, `backend/alembic/versions/…` plus the model
+  import in `backend/alembic/env.py`, `api/openapi.json`,
+  `web/app/routes/…`, `web/app/components/…`, `web/app/services/…`,
   `mobile/lib/features/<feature>/…`). Each group ends with a **Tests:** task
-  naming files in `backend/tests/<domain>/`, `web/tests/…`, and
+  naming files in `backend/tests/<module>/`, `web/tests/…`, and
   `mobile/test/…`.
 - Last group, `## N. Verify and document`: run `validation.md`; update
   `specs/tech-stack.md` (record decisions under **Decided in Phase <N>** or
@@ -145,8 +149,8 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
 
 - Opening line: the clean-checkout setup (`cp .env.example .env`,
   `docker compose up -d`, `cd backend && uv sync && uv run alembic upgrade head`,
-  `cd web && npm ci`, and `cd mobile && flutter pub get` if the phase is
-  tagged `[mobile]`), and that the migrations apply to the previous phase's
+  `cd web && npm ci` if the phase is tagged `[web]`, and
+  `cd mobile && flutter pub get` if it is tagged `[mobile]`), and that the migrations apply to the previous phase's
   database.
 - `## Automated checks`: a `| Check | Command | Pass criteria |` table: tests
   (`make test`), lint (`make lint`: Ruff, ESLint, ember-template-lint, Glint,

@@ -16,14 +16,18 @@ Screen designs: `colivo-design/web/` and `colivo-design/mobile/` (index in
 
 ## Phase 0 — Project skeleton ⏳ Not started
 
-`[backend] [web] [infra]`
+`[backend] [infra]`
 
-- Scaffold the monorepo: `backend/`, `web/`, `api/`, `infra/`, `docs/`.
-- Backend answers `GET /api/v1/health` with the database and Redis status.
-- Web app renders the empty app shell (sidebar, top bar) and calls the
-  health endpoint through the generated API client.
-- `docker compose up` starts PostgreSQL, Redis, the backend and the web app.
-- CI runs lint, format check and tests for each part on every push.
+- Scaffold the monorepo: `backend/`, `api/`, `infra/`, `docs/`. The backend
+  follows the `fastapi-orm-scaffold` layout with uv (see
+  [tech-stack.md → Project conventions](tech-stack.md#project-conventions)).
+- Backend answers `GET /api/v1/health` with the database and Redis status,
+  inside the
+  [`StandardResponse` envelope](tech-stack.md#api-response-format).
+- `docker compose up` starts PostgreSQL, Redis and the backend.
+- CI runs lint, format check and tests for the backend on every push.
+- Web and mobile skeletons come later, once their structure is decided
+  ([tech-stack.md → Deferred decisions](tech-stack.md#deferred-decisions)).
 
 ## Phase 1 — Accounts and log-in ⏳ Not started
 
