@@ -37,8 +37,11 @@ In scope:
 - **Members** add **groceries**; the app shows the live **cost per meal**.
   One entry can be paid partly from a fund and partly from the member's own
   pocket.
-- A **fund keeper** holds the **grocery fund** and gives money to shoppers;
-  nobody spends more than they were given.
+- The **grocery fund** and **home fund** can be held by several people at
+  once (the **owner**, any **manager**, and **fund keepers** chosen per
+  fund). The app shows how much each one holds; cash paid to a person or
+  handed over counts once they confirm it, and nobody spends more than they
+  hold or were given.
 - **Members** report anything they paid in one **I paid** flow, with a
   required receipt; a **manager** or the **owner** confirms or rejects it.
   A payment can mix a shared source with the member's own pocket; only the
@@ -77,8 +80,9 @@ Nagad are recorded manually), transferring ownership, notification settings.
 - **Owner** — the person who runs the home; signs up, sets it up and can do
   everything.
 - **Manager** — handles the money day to day: records payments, confirms
-  entries, pays bills, closes the month.
-- **Fund keeper** — holds the shared grocery cash and gives it to shoppers.
+  entries, pays bills, closes the month. A home can have several.
+- **Fund keeper** — holds cash for the grocery fund, the home fund or both,
+  and gives it to shoppers or bill payers. A fund can have several.
 - **Member** — everyone who lives there (all roles are members too); logs
   meals and groceries, reports payments, sees their own bill.
 

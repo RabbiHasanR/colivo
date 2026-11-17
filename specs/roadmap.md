@@ -58,6 +58,8 @@ added to it can log in.
 - Owner or manager adds a **member** by phone or email; they get an SMS or
   email.
 - Roles: owner, manager, fund keeper, member; owner gives and removes roles.
+  Any number of managers and fund keepers; a fund keeper is chosen per fund
+  (grocery fund, home fund or both).
 - Deactivate and reactivate a member.
 - New home shows the setup checklist and empty states.
 
@@ -80,8 +82,8 @@ After this phase, the owner can describe the home the app will calculate for.
   meals); custom deals.
 - Optional default **estimate** per bill category, used every month.
 - **Starting balances** imported once from the old spreadsheet: member
-  balances, home fund cash, grocery fund cash, money with shoppers and unpaid
-  bills.
+  balances, home fund and grocery fund cash **per holder**, money with
+  shoppers and unpaid bills.
 
 ## Phase 3 — Meals and cost per meal ⏳ Not started
 
@@ -119,9 +121,13 @@ After this phase, groceries are recorded with who paid and from where.
 
 ### Grocery fund and give money first
 
-- **Grocery fund** balance, top-ups and fund keeper.
-- Fund keeper or manager gives grocery money to a shopper; spending is capped
-  at what was given; leftover is returned.
+- **Funds** as rows (grocery fund and home fund) and **cash per holder**
+  ([data-model.md → Funds and holders](data-model.md#funds-and-holders-agreed-17-nov-2026)).
+- **Grocery fund** balance and top-ups; a top-up names the holder who
+  received it, and that holder confirms it.
+- A holder gives grocery money to a shopper; nobody gives out more than they
+  hold; spending is capped at what was given; leftover is handed back.
+- **Handover** of cash between holders, confirmed by the receiver.
 
 ## Phase 5 — Bills, payments and confirmation ⏳ Not started
 
@@ -137,8 +143,11 @@ After this phase, every money movement is reported with proof and confirmed.
 
 ### Bills to pay
 
-- **Bills to pay** list; mark paid; give home fund money to a member to pay a
-  bill; member reports it paid.
+- **Bills to pay** list; mark paid; a home fund holder pays a bill or gives
+  money for it, capped at what they hold and at free-to-spend cash; member
+  reports it paid.
+- Every payment into the home fund names who received it; that holder
+  confirms it.
 - Split funding for bills (home fund or given money + own pocket).
 - Carried bills shown as "From \<month>"; estimated bills tagged "Estimated".
 
@@ -176,6 +185,8 @@ After this phase, a month can be closed and balances carry forward.
   open month.
 - The checklist also lists returns and corrections waiting for confirmation
   and refunds waiting for the member.
+- Cash count and carry-forward **per holder** for each fund; payments and
+  handovers still waiting for their receiver are listed.
 - Previous month balances (view only).
 
 ### Estimated bills
