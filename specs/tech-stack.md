@@ -48,27 +48,27 @@ Why Flutter for mobile:
 
 ## Stack summary
 
-| Layer             | Choice                                                                   |
-| ----------------- | ------------------------------------------------------------------------ |
-| Language          | Python 3.12 (backend), TypeScript (web), Dart (mobile)                   |
-| Framework         | FastAPI (backend), Ember.js Octane (web), Flutter (mobile)               |
-| UI (web)          | Ember components + Tailwind CSS _(to confirm)_                           |
-| UI (mobile)       | Flutter Material 3 widgets                                               |
-| Backend           | REST API under `/api/v1/`, JSON, OpenAPI from FastAPI                    |
-| Validation        | Pydantic v2                                                              |
-| Data access       | SQLModel (on SQLAlchemy 2.0) + Alembic; `fastapi-orm-scaffold` layout    |
-| Database          | PostgreSQL 16                                                            |
-| Background jobs   | Celery + Redis for OTP, notifications, month close _(to confirm)_        |
-| File storage      | Private S3 bucket; MinIO locally _(to confirm)_                          |
-| Auth              | Phone/email one-time code; JWT access + refresh _(to confirm)_           |
-| Web data layer    | Typed client from OpenAPI in an Ember service _(to confirm)_             |
-| Mobile data layer | Dart client from OpenAPI _(to confirm)_                                  |
-| Python tooling    | uv (`pyproject.toml` + `uv.lock`), Ruff (lint + format), pyright (types) |
-| Web lint/format   | ESLint, ember-template-lint, Prettier, Glint (types)                     |
-| Mobile lint       | `flutter analyze`, `dart format`                                         |
-| Tests             | pytest + httpx (backend); Ember QUnit (web); `flutter test`              |
-| CI                | GitHub Actions with path filters _(to confirm)_                          |
-| Local run         | Docker Compose                                                           |
+| Layer             | Choice                                                                                                               |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Language          | Python 3.12 (backend), TypeScript (web), Dart (mobile)                                                               |
+| Framework         | FastAPI (backend), Ember.js Octane (web), Flutter (mobile)                                                           |
+| UI (web)          | Ember `.gts` components + Tailwind CSS v4; `ember-scaffold` layout                                                   |
+| UI (mobile)       | Flutter Material 3 widgets                                                                                           |
+| Backend           | REST API under `/api/v1/`, JSON, OpenAPI from FastAPI                                                                |
+| Validation        | Pydantic v2                                                                                                          |
+| Data access       | SQLModel (on SQLAlchemy 2.0) + Alembic; `fastapi-orm-scaffold` layout                                                |
+| Database          | PostgreSQL 16                                                                                                        |
+| Background jobs   | Celery + Redis for OTP, notifications, month close _(to confirm)_                                                    |
+| File storage      | Private S3 bucket; MinIO locally _(to confirm)_                                                                      |
+| Auth              | Phone/email one-time code; JWT access + refresh _(to confirm)_                                                       |
+| Web data layer    | WarpDrive (EmberData) request builders + handlers; types generated from `api/openapi.json` with `openapi-typescript` |
+| Mobile data layer | Dart client from OpenAPI _(to confirm)_                                                                              |
+| Python tooling    | uv (`pyproject.toml` + `uv.lock`), Ruff (lint + format), pyright (types)                                             |
+| Web tooling       | pnpm, Vite; ESLint (+ `eslint-plugin-boundaries`), ember-template-lint, Prettier (+ Tailwind plugin), Glint (types)  |
+| Mobile lint       | `flutter analyze`, `dart format`                                                                                     |
+| Tests             | pytest + `TestClient` (backend); QUnit + MSW (web); Playwright (end-to-end); `flutter test`                          |
+| CI                | GitHub Actions with path filters _(to confirm)_                                                                      |
+| Local run         | Docker Compose                                                                                                       |
 
 ## Decided in Phase 0
 
@@ -91,8 +91,32 @@ _Filled in as Phase 0 is planned and built. Record each decision as:_
 - **Testing process:** outside-in TDD as described in [testing.md](testing.md);
   real PostgreSQL with per-test rollback, not SQLite, because exact money
   depends on `numeric` behaviour.
-- **Phase 0 scope:** backend and infra only — the web and mobile project
-  structure is not decided yet (see [Deferred decisions](#deferred-decisions)).
+- **Phase 0 scope:** backend, web skeleton and infra — the web is scaffolded
+  in Phase 0 so Phase 1 starts on behaviours with a proven red/green setup.
+  The mobile structure is still deferred.
+- **Web layout:** follow the `ember-scaffold` skill (official blueprint,
+  TypeScript, `.gts`, Glint, Vite) — the builder's own template, the web
+  counterpart of `fastapi-orm-scaffold`.
+- **Web packages:** pnpm — the blueprint default; faster, strict installs.
+- **Web data layer:** WarpDrive Model classes + `store.request` with request
+  builders and handlers, no adapters or serializers (the legacy path). Only
+  `web/app/data/` talks HTTP; only `data/handlers/api-envelope.ts` knows the
+  `StandardResponse` envelope and only `data/handlers/errors.ts` knows the
+  error body.
+- **Web errors:** keep the scaffold's string `errors` list
+  (`"body.name: Field required"`); `errors.ts` parses `<loc>: <msg>` into
+  field errors and maps 400 → business rule, 409 → conflict. One file knows
+  the format, and the backend stays on its scaffold.
+- **Web CSS:** Tailwind CSS v4 through its Vite plugin; tokens from
+  `colivo-design/README.md` in `@theme` in `web/app/styles/app.css`; utility
+  classes live in `components/ui/`.
+- **Web tests:** QUnit + MSW (only the HTTP boundary is mocked, typed from
+  the generated API types) and Playwright for end-to-end — see
+  [testing.md → Web](testing.md#web).
+- **Build order:** one `plan.md` group at a time — the group's backend with
+  full TDD, then its API contract, then its web with full TDD — not the whole
+  backend of a phase first. API mistakes show up while the code is fresh, and
+  every group is demoable.
 
 ## Project conventions
 
@@ -109,10 +133,17 @@ _This table is a proposal to approve._
 | `backend/alembic/`, `backend/alembic.ini`   | Alembic migrations (`alembic/versions/`) and config                                                                                                                                      |
 | `backend/tests/<module>/`                   | That module's tests                                                                                                                                                                      |
 | `backend/pyproject.toml`, `backend/uv.lock` | Python dependencies (uv)                                                                                                                                                                 |
-| `web/app/routes/`, `web/app/templates/`     | Ember routes and their templates                                                                                                                                                         |
-| `web/app/components/`                       | Reusable Ember components                                                                                                                                                                |
-| `web/app/services/`                         | API client, session, current home                                                                                                                                                        |
-| `web/tests/`                                | Unit, integration and acceptance tests                                                                                                                                                   |
+| `web/app/data/`                             | The whole web data layer: `config.ts`, `handlers/` (errors, auth, envelope), `builders/<resource>.ts`, `lifetimes.ts`, `types/api.generated.ts` (never edited by hand)                   |
+| `web/app/models/`                           | WarpDrive Model classes, one per resource                                                                                                                                                |
+| `web/app/services/`                         | Store, session, current home                                                                                                                                                             |
+| `web/app/routes/`, `web/app/templates/`     | Thin: load data, guard access, compose components; everything behind login under `authenticated/`                                                                                        |
+| `web/app/components/ui/`                    | Domain-free design system (button, field, card, modal); the only place with Tailwind class lists                                                                                         |
+| `web/app/components/layout/`                | Page shell, sidebar, navbar                                                                                                                                                              |
+| `web/app/components/<feature>/`             | One folder per feature (`meals`, `groceries`, `payments`, …)                                                                                                                             |
+| `web/app/utils/`                            | Pure functions, no Ember imports (money formatting, dates)                                                                                                                               |
+| `web/app/styles/app.css`                    | Tailwind import and `@theme` tokens from `colivo-design/README.md`                                                                                                                       |
+| `web/tests/`                                | `unit/`, `integration/components/`, `acceptance/` (MSW), `helpers/` (`msw.ts`, `login.ts`, factories)                                                                                    |
+| `web/e2e/`                                  | Playwright end-to-end journeys against the real backend                                                                                                                                  |
 | `mobile/lib/features/<feature>/`            | Flutter screens, state and widgets per feature                                                                                                                                           |
 | `mobile/lib/core/`                          | API client, auth, theme                                                                                                                                                                  |
 | `mobile/test/`                              | Flutter tests                                                                                                                                                                            |
@@ -142,9 +173,15 @@ Rules:
 - Every query is scoped to the current **home**; a member never sees another
   home's data.
 - After changing an endpoint, export `api/openapi.json` and regenerate the web
-  and mobile clients; CI fails if the contract is out of date.
-- Ember pages and Flutter screens call the API only through their client
-  (`web/app/services/`, `mobile/lib/core/`).
+  types (`make api-types`) and the mobile client; CI fails if the contract is
+  out of date.
+- Ember pages and Flutter screens call the API only through their data layer
+  (`web/app/data/` via `store.request`, `mobile/lib/core/`).
+- Web dependencies point one way: routes → components → services → data →
+  utils, enforced by `eslint-plugin-boundaries`. `components/ui/` never
+  imports a feature folder. The full rules are in the `ember-scaffold` skill.
+- Web: no hex colours or one-off sizes in components (tokens only); tests
+  select elements by `data-test-*`, never by CSS class.
 - Names: Python `snake_case`; Ember files `kebab-case`, classes
   `PascalCase`; Dart files `snake_case`, classes `PascalCase`; URLs and JSON
   fields `snake_case`.
@@ -188,16 +225,16 @@ pytest, Ember QUnit and Flutter tests are how we validate every change. Work
 isn't done until they pass.
 
 - `make test` runs every suite once. Use it before committing and in CI.
-  Per part: `cd backend && uv run pytest`, `cd web && npm test`,
+  Per part: `cd backend && uv run pytest`, `cd web && pnpm test`,
   `cd mobile && flutter test`.
-- Watch mode: `uv run ptw` (backend), `npm start` then `/tests` (web).
+- Watch mode: `uv run ptw` (backend), `pnpm start` then `/tests` (web).
 - Every behaviour is built test-first. The process, test levels, settings
   and rules are in [testing.md](testing.md); the `/tdd` skill runs it.
 - Fast loop: `make test-fast` (unit + integration, no `slow` tests).
 - Each phase's behaviours are listed in its `validation.md` and written as
   tests in the relevant `tests/` folders.
 - Run `make lint` and `make format-check` alongside the tests: `uv run ruff
-check`, `uv run ruff format --check` and `uv run alembic check` (backend); ESLint, ember-template-lint, Glint and Prettier
+check`, `uv run ruff format --check` and `uv run alembic check` (backend); `pnpm lint` (ESLint, ember-template-lint, Glint) and Prettier
   (web); `flutter analyze` and `dart format --set-exit-if-changed` (mobile).
 - CI (`.github/workflows/`) runs the same checks on every push and pull
   request, only for the parts that changed; a PR merges only when CI is green.
@@ -225,16 +262,14 @@ _None yet. Add each one as it's discovered: **<Area>:** <limitation>._
 
 ## Deferred decisions
 
-- **Web and mobile project structure** (scaffold, layout and tooling for
-  `web/` and `mobile/`) — decide before the first phase tagged `[web]`;
-  Phase 0 has no web or mobile app.
+- **Mobile project structure** (scaffold, layout and tooling for
+  `mobile/`) — decide before the first phase tagged `[mobile]`.
 - **Background jobs:** Celery + Redis recommended; FastAPI background tasks or
   ARQ are lighter alternatives.
-- **Auth tokens:** JWT access + refresh for both clients, or session cookies
-  for web plus tokens for mobile.
-- **Web data layer:** generated OpenAPI client in an Ember service, or
-  ember-data with a REST adapter.
-- **Web CSS:** Tailwind CSS or plain CSS with design tokens.
+- **Auth tokens:** JWT access + refresh for both clients, or httpOnly session
+  cookies for web plus tokens for mobile — decide in Phase 1. The scaffold
+  keeps a bearer token in `localStorage`, which an XSS bug can steal; only
+  `web/app/data/handlers/auth.ts` and `web/app/services/session.ts` change.
 - **Flutter state management** (Riverpod, Bloc, or other) — decide before
   Phase 10.
 - **SMS provider** for one-time codes in Bangladesh, and the email provider.

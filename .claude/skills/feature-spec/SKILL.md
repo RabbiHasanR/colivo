@@ -21,6 +21,10 @@ Read all of these before deciding anything:
 - `specs/tech-stack.md`: the stack, **Decided in Phase 0**, **Project
   conventions**, **Validation**, **Responsive design**, **Known limitations**,
   and **Deferred decisions**. Note every item still marked _(to confirm)_.
+- `specs/testing.md`: the TDD process, test levels per part, the build order
+  (one group at a time: backend → contract → web), and the commands. The
+  spec must fit it: behaviours in `validation.md`, test cases later in
+  `tests.md`.
 - `colivo-design/requirements.md`: the behaviour rules for this phase's
   features.
 - `colivo-design/README.md`, then the screens for this phase in
@@ -53,9 +57,10 @@ Call `AskUserQuestion` once, with one question per file you will write:
 
 1. **requirements.md:** scope. Which items are in this phase? Use
    `multiSelect` and give each option's trade-off in its description.
-2. **plan.md:** task ordering and slicing, e.g. backend then web per slice
-   in one spec, a sub-branch per slice, or the thinnest end-to-end version
-   first.
+2. **plan.md:** how to slice the phase into groups, e.g. one group per
+   feature, the thinnest end-to-end version first, or a sub-branch per
+   group. The order inside a group is fixed by `testing.md` (backend →
+   contract → web), so don't ask about it.
 3. **validation.md:** the merge bar beyond the existing gate, e.g. current
    checks only, plus CI green, or plus new tooling.
 
@@ -75,7 +80,8 @@ Rules for the questions:
 
 ## 4. Write the spec
 
-Create `specs/<today>-<slug>/` with three files. Title each file
+Create `specs/<today>-<slug>/` with three files. A fourth, `tests.md`, is
+written later by `/tdd`, one group at a time; don't create it here. Title each file
 `# Phase <N> — <Feature Name>: <Requirements|Plan|Validation>`.
 
 Use the design's words (home, owner, fund keeper, grocery fund, home fund,
@@ -106,21 +112,27 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
   answers from step 3.
 - `## Constraints`: the project conventions, plus:
   - fetch current docs with `ctx7` for every library the phase touches
-    (FastAPI, Pydantic, SQLModel, Alembic, Ember, Flutter …) before coding;
+    (FastAPI, Pydantic, SQLModel, Alembic, Ember, WarpDrive, Tailwind CSS,
+    MSW, Playwright, Flutter …) before coding;
+  - every behaviour is built test-first, as in `../testing.md`;
   - money is `Decimal`, never float, and every money change is one database
     transaction;
   - every query is scoped to the current home, and roles are checked in the
     router;
   - nothing is erased: edits and deletes keep history;
-  - `api/openapi.json` is exported and the web/mobile clients regenerated
-    after any endpoint change;
+  - `api/openapi.json` is exported, the web types regenerated
+    (`make api-types`) and the mobile client regenerated after any endpoint
+    change;
   - config comes from env vars, with `.env.example` updated and no secrets
     committed;
   - Alembic migrations apply cleanly to the previous phase's database.
 
 ### `plan.md`: numbered task groups
 
-- Short intro: the branch, and the per-group gate (`make test`, `make lint`,
+- Short intro: the branch; that each group is built with `/tdd` as in
+  [testing.md → Build time](../testing.md#build-time-tdd-one-planmd-group-per-run)
+  (Gate 2 on `tests.md`, then backend → contract → web, one test at a time);
+  and the per-behaviour gate (`make test-fast`, `make lint`,
   `make format-check` green, then a conventional commit with no
   Co-Authored-By or AI attribution lines). For Phase 0, the gate starts once
   group 1 has created the Makefile.
@@ -129,15 +141,29 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
   migration, router registration (`backend/app/api/api_v1.py`), constants,
   and Docker Compose changes.
 - `## 2. <slice> (slice 1)`, `## 3. …`: one group per vertical slice, in
-  the order the user chose. Inside each group, order the tasks data → API →
-  contract → web → mobile, naming the real files
-  (`backend/app/modules/<module>/{models,schemas,service,router}.py`,
-  `backend/app/api/api_v1.py`, `backend/alembic/versions/…` plus the model
-  import in `backend/alembic/env.py`, `api/openapi.json`,
-  `web/app/routes/…`, `web/app/components/…`, `web/app/services/…`,
-  `mobile/lib/features/<feature>/…`). Each group ends with a **Tests:** task
-  naming files in `backend/tests/<module>/`, `web/tests/…`, and
-  `mobile/test/…`.
+  the order the user chose. Each group starts with:
+  - **Behaviours:** the `validation.md` IDs it delivers (e.g. B1–B4).
+  - **Acceptance:** the backend acceptance test (file and test name) and,
+    for a `[web]` phase, the web acceptance test.
+
+  Then the tasks in build order, naming the real files:
+  - **Backend:** `backend/app/modules/<module>/{models,schemas,service,router}.py`,
+    `backend/app/api/api_v1.py`, `backend/alembic/versions/…` plus the model
+    import in `backend/alembic/env.py`; tests in
+    `backend/tests/<module>/{test_service,test_api}.py`.
+  - **Contract:** export `api/openapi.json`, `make api-types`.
+  - **Web:** `web/app/models/<resource>.ts`,
+    `web/app/data/builders/<resource>.ts`, `web/app/routes/…` and
+    `web/app/templates/…` (under `authenticated/` when behind login),
+    `web/app/components/<feature>/…`, new `web/app/components/ui/…` only when
+    a pattern repeats; tests in `web/tests/{unit,integration,acceptance}/…`.
+  - **Mobile:** `mobile/lib/features/<feature>/…`; tests in `mobile/test/…`.
+
+  No separate **Tests:** task: tests are written first, inside each task,
+  by `/tdd`. The last slice group also names the phase's one end-to-end test
+  (`web/e2e/<journey>.spec.ts` for a `[web]` phase, otherwise
+  `backend/tests/<module>/test_e2e.py`).
+
 - Last group, `## N. Verify and document`: run `validation.md`; update
   `specs/tech-stack.md` (record decisions under **Decided in Phase <N>** or
   the relevant section, turn _(to confirm)_ into decided, remove resolved
@@ -149,21 +175,34 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
 
 - Opening line: the clean-checkout setup (`cp .env.example .env`,
   `docker compose up -d`, `cd backend && uv sync && uv run alembic upgrade head`,
-  `cd web && npm ci` if the phase is tagged `[web]`, and
+  `cd web && pnpm install --frozen-lockfile` if the phase is tagged `[web]`, and
   `cd mobile && flutter pub get` if it is tagged `[mobile]`), and that the migrations apply to the previous phase's
   database.
-- `## Automated checks`: a `| Check | Command | Pass criteria |` table: tests
-  (`make test`), lint (`make lint`: Ruff, ESLint, ember-template-lint, Glint,
-  `flutter analyze`), format (`make format-check`), `alembic check` (no
-  missing migration), OpenAPI contract up to date, web build, plus anything
-  the user added, such as CI green.
-- `### Required tests`: grouped by feature or layer (service, API, web,
-  mobile). Each bullet is a concrete, checkable behaviour, including edge
-  cases and failure paths. Always include, where they apply:
+- `## Behaviours`: **Gate 1** of
+  [testing.md](../testing.md#spec-time-feature-spec). Numbered `B1`, `B2`, …
+  across the whole phase, grouped under `### <feature>`. Each is one short
+  plain sentence a non-developer can check, ending with the parts it touches,
+  e.g. `B3 — Log-in locks after 5 wrong codes. [backend] [web]`. Include
+  error and permission cases as their own behaviours. Always include, where
+  they apply:
   - wrong role → 403; another home's data → 404 and never leaked;
   - invalid input → 422 with a clear message;
   - money results match the October 2026 spreadsheet to the paisa;
   - edits and deletes keep history.
+
+  No test names or levels here; `/tdd` turns behaviours into test cases in
+  `tests.md`, one group at a time.
+
+- `## Automated checks`: a `| Check | Command | Pass criteria |` table:
+  fast tests (`make test-fast`), all tests with end-to-end (`make test`),
+  lint (`make lint`: Ruff, pyright, ESLint, ember-template-lint, Glint,
+  `flutter analyze`), format (`make format-check`), `alembic check` (no
+  missing migration), OpenAPI contract and web API types up to date
+  (`make api-types` leaves no diff), web build, plus anything the user added,
+  such as CI green.
+- `## TDD record`: every group's `tests.md` section is complete: each
+  selected test is ✅, each unticked test has a reason, and no xfail or
+  `test.todo` mark is left.
 - `## Manual checks`: numbered. Always include an end-to-end walkthrough
   against the `colivo-design` screens; web at **320px / 768px / 1280px** in
   every colour scheme the design supports; Flutter on a small phone
@@ -183,6 +222,8 @@ Don't commit. Tell the user:
 - one line per file on what it covers;
 - a numbered list of the decisions **you** made (the ones they weren't asked
   about), so they can push back;
+- that `validation.md → ## Behaviours` is Gate 1: they should review it
+  closely, and add, remove or reword behaviours before any code is written;
 - that they can say "commit it". The commit is then
   `docs(specs): add phase <N> <slug> spec` with only the spec directory
   staged, and no Co-Authored-By or AI attribution lines.

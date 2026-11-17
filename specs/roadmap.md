@@ -16,17 +16,27 @@ Screen designs: `colivo-design/web/` and `colivo-design/mobile/` (index in
 
 ## Phase 0 — Project skeleton ⏳ Not started
 
-`[backend] [infra]`
+`[backend] [web] [infra]`
 
-- Scaffold the monorepo: `backend/`, `api/`, `infra/`, `docs/`. The backend
-  follows the `fastapi-orm-scaffold` layout with uv (see
+- Scaffold the monorepo: `backend/`, `web/`, `api/`, `infra/`, `docs/`. The
+  backend follows the `fastapi-orm-scaffold` layout with uv, the web follows
+  the `ember-scaffold` layout with pnpm (see
   [tech-stack.md → Project conventions](tech-stack.md#project-conventions)).
+- Test setup for both parts as in [testing.md](testing.md): pytest with a
+  rolled-back test database, QUnit + MSW, Playwright, and the root `Makefile`
+  targets (`test-fast`, `test`, `lint`, `format-check`, `api-types`).
 - Backend answers `GET /api/v1/health` with the database and Redis status,
   inside the
   [`StandardResponse` envelope](tech-stack.md#api-response-format).
+- `api/openapi.json` is exported and the web's API types are generated from it.
+- Web: the store is wired with the error, auth and envelope handlers; the
+  Colivo design tokens are in `@theme`; the app shell renders.
 - `docker compose up` starts PostgreSQL, Redis and the backend.
-- CI runs lint, format check and tests for the backend on every push.
-- Web and mobile skeletons come later, once their structure is decided
+- Smoke end-to-end test: Playwright opens the web app against the running
+  backend.
+- CI runs lint, format check and tests for the backend and the web on every
+  push.
+- The mobile skeleton comes later, once its structure is decided
   ([tech-stack.md → Deferred decisions](tech-stack.md#deferred-decisions)).
 
 ## Phase 1 — Accounts and log-in ⏳ Not started
