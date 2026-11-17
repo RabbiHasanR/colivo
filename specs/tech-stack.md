@@ -48,27 +48,27 @@ Why Flutter for mobile:
 
 ## Stack summary
 
-| Layer             | Choice                                                                       |
-| ----------------- | ---------------------------------------------------------------------------- |
-| Language          | Python 3.12 (backend), TypeScript (web), Dart (mobile)                       |
-| Framework         | FastAPI (backend), Ember.js Octane (web), Flutter (mobile)                   |
-| UI (web)          | Ember components + Tailwind CSS _(to confirm)_                               |
-| UI (mobile)       | Flutter Material 3 widgets                                                   |
-| Backend           | REST API under `/api/v1/`, JSON, OpenAPI from FastAPI                        |
-| Validation        | Pydantic v2                                                                  |
-| Data access       | SQLModel (on SQLAlchemy 2.0) + Alembic; `fastapi-orm-scaffold` layout        |
-| Database          | PostgreSQL 16                                                                |
-| Background jobs   | Celery + Redis for OTP, notifications, month close _(to confirm)_            |
-| File storage      | Private S3 bucket; MinIO locally _(to confirm)_                              |
-| Auth              | Phone/email one-time code; JWT access + refresh _(to confirm)_               |
-| Web data layer    | Typed client from OpenAPI in an Ember service _(to confirm)_                 |
-| Mobile data layer | Dart client from OpenAPI _(to confirm)_                                      |
-| Python tooling    | uv (`pyproject.toml` + `uv.lock`), Ruff (lint + format), mypy _(to confirm)_ |
-| Web lint/format   | ESLint, ember-template-lint, Prettier, Glint (types)                         |
-| Mobile lint       | `flutter analyze`, `dart format`                                             |
-| Tests             | pytest + httpx (backend); Ember QUnit (web); `flutter test`                  |
-| CI                | GitHub Actions with path filters _(to confirm)_                              |
-| Local run         | Docker Compose                                                               |
+| Layer             | Choice                                                                   |
+| ----------------- | ------------------------------------------------------------------------ |
+| Language          | Python 3.12 (backend), TypeScript (web), Dart (mobile)                   |
+| Framework         | FastAPI (backend), Ember.js Octane (web), Flutter (mobile)               |
+| UI (web)          | Ember components + Tailwind CSS _(to confirm)_                           |
+| UI (mobile)       | Flutter Material 3 widgets                                               |
+| Backend           | REST API under `/api/v1/`, JSON, OpenAPI from FastAPI                    |
+| Validation        | Pydantic v2                                                              |
+| Data access       | SQLModel (on SQLAlchemy 2.0) + Alembic; `fastapi-orm-scaffold` layout    |
+| Database          | PostgreSQL 16                                                            |
+| Background jobs   | Celery + Redis for OTP, notifications, month close _(to confirm)_        |
+| File storage      | Private S3 bucket; MinIO locally _(to confirm)_                          |
+| Auth              | Phone/email one-time code; JWT access + refresh _(to confirm)_           |
+| Web data layer    | Typed client from OpenAPI in an Ember service _(to confirm)_             |
+| Mobile data layer | Dart client from OpenAPI _(to confirm)_                                  |
+| Python tooling    | uv (`pyproject.toml` + `uv.lock`), Ruff (lint + format), pyright (types) |
+| Web lint/format   | ESLint, ember-template-lint, Prettier, Glint (types)                     |
+| Mobile lint       | `flutter analyze`, `dart format`                                         |
+| Tests             | pytest + httpx (backend); Ember QUnit (web); `flutter test`              |
+| CI                | GitHub Actions with path filters _(to confirm)_                          |
+| Local run         | Docker Compose                                                           |
 
 ## Decided in Phase 0
 
@@ -86,6 +86,11 @@ _Filled in as Phase 0 is planned and built. Record each decision as:_
   publish it in OpenAPI — see [API response format](#api-response-format).
 - **Sync endpoints:** sync SQLModel sessions, as in the scaffold — simpler
   to write and test; slow work goes to background jobs.
+- **Type checker:** pyright instead of mypy — faster, and better inference
+  for Pydantic v2 and SQLModel.
+- **Testing process:** outside-in TDD as described in [testing.md](testing.md);
+  real PostgreSQL with per-test rollback, not SQLite, because exact money
+  depends on `numeric` behaviour.
 - **Phase 0 scope:** backend and infra only — the web and mobile project
   structure is not decided yet (see [Deferred decisions](#deferred-decisions)).
 
@@ -186,8 +191,11 @@ isn't done until they pass.
   Per part: `cd backend && uv run pytest`, `cd web && npm test`,
   `cd mobile && flutter test`.
 - Watch mode: `uv run ptw` (backend), `npm start` then `/tests` (web).
-- Each phase's acceptance criteria are written as tests in the relevant
-  `tests/` folders.
+- Every behaviour is built test-first. The process, test levels, settings
+  and rules are in [testing.md](testing.md); the `/tdd` skill runs it.
+- Fast loop: `make test-fast` (unit + integration, no `slow` tests).
+- Each phase's behaviours are listed in its `validation.md` and written as
+  tests in the relevant `tests/` folders.
 - Run `make lint` and `make format-check` alongside the tests: `uv run ruff
 check`, `uv run ruff format --check` and `uv run alembic check` (backend); ESLint, ember-template-lint, Glint and Prettier
   (web); `flutter analyze` and `dart format --set-exit-if-changed` (mobile).
