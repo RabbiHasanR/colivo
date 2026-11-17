@@ -7,7 +7,7 @@ Use these files as the visual and behavioural reference when building the app.
 
 - `requirements.md` — project requirements, user stories, functional rules (FR-xx) and business rules (BR-xx). **Source of truth for behaviour.**
 - `mobile/` — 52 phone screens (390 px wide).
-- `web/` — 42 responsive web pages (sidebar + content, collapse to one column on narrow screens).
+- `web/` — 43 responsive web pages (sidebar + content, collapse to one column on narrow screens).
 
 ## How to read the screen files
 
@@ -126,7 +126,7 @@ Confirmation rules, give-money-first flows and deletion rules are in `requiremen
 | 15 · My bill (member) | `WebMyBill.html` |  |
 | 16 · Member detail | `WebMemberDetail.html` |  |
 | 17 · Bills to pay | `WebBillsToPay.html` |  |
-| 18 · Grocery fund | `WebGroceryFund.html` |  |
+| 18 · Funds (who holds the cash) | `WebGroceryFund.html` |  |
 | 19 · Deposits | `WebDeposits.html` |  |
 | 20 · Utilities | `WebUtilities.html` |  |
 | 21 · Rent | `WebRent.html` |  |
@@ -148,6 +148,7 @@ Confirmation rules, give-money-first flows and deletion rules are in `requiremen
 | 37 · Settings · Rooms | `WebSetRooms.html` |  |
 | 38 · Settings · Bills & categories | `WebSetBills.html` |  |
 | 39 · Settings · Custom deals | `WebSetDeals.html` |  |
-| 40 · Settings · Grocery fund | `WebSetGroceryFund.html` |  |
+| 40 · Settings · Funds and keepers | `WebSetGroceryFund.html` |  |
 | 41 · Settings · Starting balances | `WebSetStart.html` |  |
 | 42 · Return or exchange | `WebReturn.html` | yes |
+| 43 · Hand over cash | `WebHandover.html` | yes |
