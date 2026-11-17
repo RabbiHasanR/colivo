@@ -15,7 +15,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
 input::placeholder{color:#6E7673}
 </style>
 </helmet>
-<div style="width: 390px; height: 1180px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+<div style="width: 390px; height: 1270px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
   <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 8px">
     <a href="{{homeHref}}" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
@@ -66,6 +66,16 @@ input::placeholder{color:#6E7673}
           <span style="font-size: 12px; color: #5B6461; line-height: 1.45">{{splitHint}}</span>
         </label>
       </sc-if>
+      <sc-if value="{{showTo}}" hint-placeholder-val="{{ true }}">
+        <fieldset style="border: 0; margin: 0; padding: 0">
+          <legend style="font-size: 12px; color: #5B6461; padding: 0; margin-bottom: 8px">Who got the money?</legend>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
+            <sc-for list="{{receivers}}" as="r" hint-placeholder-count="2">
+              <button type="button" aria-pressed="{{r.on}}" onClick="{{r.pick}}" style="{{r.style}}">{{r.label}}</button>
+            </sc-for>
+          </div>
+        </fieldset>
+      </sc-if>
       <sc-if value="{{showMethod}}" hint-placeholder-val="{{ true }}">
         <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
           <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Method
@@ -93,11 +103,11 @@ input::placeholder{color:#6E7673}
   </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1270}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { role: 'member', purpose: 'rent', amount: 3887.5 };
+    this.state = { role: 'member', purpose: 'rent', amount: 3887.5, to: 'rabbi' };
   }
   renderVals() {
     const s = this.state;
@@ -119,26 +129,36 @@ class Component extends DCLogic {
     }));
     const p = s.purpose;
     const toMess = ['rent', 'prepaid', 'postpaid', 'general', 'advance'].indexOf(p) >= 0;
-    let toLine = 'Sent to Rabbi Hasan (manager) · bKash/Nagad 01XXXXXXXXX or cash';
-    if (p === 'box') toLine = 'Given to Hijam Shusil (fund keeper) · cash or bKash';
+    // Holders of each fund (FR-104): the owner, managers and that fund's fund keepers. Hijam keeps both funds.
+    const toFund = toMess || p === 'box';
+    const NAMES = { rabbi: 'Rabbi', hijam: 'Hijam' };
+    const receivers = [['rabbi', 'Rabbi · manager'], ['hijam', 'Hijam · fund keeper']].map(([k, label]) => ({
+      label, on: s.to === k ? 'true' : 'false', style: s.to === k ? on : off,
+      pick: () => this.setState({ to: k })
+    }));
+    const toName = NAMES[s.to];
+    let toLine = 'Paid to a home fund holder · bKash/Nagad or cash';
+    if (p === 'box') toLine = 'Put into the grocery fund · given to one of its holders';
     if (p === 'bazar') toLine = 'Food you bought for the home';
     if (p === 'bill') toLine = 'Paid straight to the landlord or provider';
     let confirm, icon = '!', bg = '#FBEFE3', fg = '#7A3A0C', cta = 'Send for confirmation';
     if (s.role === 'manager') {
       confirm = 'Saved right away. Managers and the owner don\'t need confirmation; it still shows in everyone\'s history.';
       icon = '✓'; bg = '#E3F0EC'; fg = '#0A4E42'; cta = 'Save';
-    } else if (p === 'box' && s.role === 'member') {
-      confirm = 'Hijam (fund keeper), Rabbi (manager) or the owner confirms once they get the money. It counts after that.';
+    } else if (toFund) {
+      confirm = toName + ' confirms once they get the money. It then counts toward your balance and in ' + toName + '\'s cash for the ' + (p === 'box' ? 'grocery' : 'home') + ' fund.';
     } else {
       confirm = 'Rabbi (manager) or the owner confirms. It counts toward your balance after that.';
     }
-    if (s.role === 'keeper' && p === 'box') confirm = 'You keep the grocery fund, but money you put in yourself still needs Rabbi (manager) or the owner to confirm.';
+    if (s.role === 'keeper' && toFund && s.to === 'hijam') confirm = 'You can\'t confirm money you paid to yourself. Choose who you gave it to, or Rabbi (manager) or the owner confirms it.';
     const fmt = (n) => n.toLocaleString('en-US', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
     const keeperBuys = s.role === 'keeper' && p === 'bazar';
     return {
       roles,
       purposes,
       toLine,
+      showTo: toFund && s.role !== 'manager',
+      receivers,
       amount: fmt(s.amount),
       plus: () => this.setState({ amount: s.amount + 50 }),
       minus: () => this.setState({ amount: Math.max(50, s.amount - 50) }),

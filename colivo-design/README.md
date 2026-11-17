@@ -6,7 +6,7 @@ Colivo design reference: the design source for the Colivo MVP (shared-home meal,
 Use these files as the visual and behavioural reference when building the app.
 
 - `requirements.md` — project requirements, user stories, functional rules (FR-xx) and business rules (BR-xx). **Source of truth for behaviour.**
-- `mobile/` — 51 phone screens (390 px wide).
+- `mobile/` — 52 phone screens (390 px wide).
 - `web/` — 42 responsive web pages (sidebar + content, collapse to one column on narrow screens).
 
 ## How to read the screen files
@@ -60,7 +60,7 @@ Confirmation rules, give-money-first flows and deletion rules are in `requiremen
 | 6 · Monthly statement | `Statement.html` |  |
 | 24 · My profile | `Profile.html` | yes |
 | 7 · Deposits held | `Advance.html` |  |
-| 8 · Grocery fund | `BazarBox.html` |  |
+| 8 · Funds (who holds the cash) | `BazarBox.html` | yes |
 | 9 · Bills to pay | `BillsToPay.html` |  |
 | 10 · Member detail | `MemberDetail.html` | yes |
 | 11 · Previous month balances | `PrevMonth.html` | yes |
@@ -74,7 +74,7 @@ Confirmation rules, give-money-first flows and deletion rules are in `requiremen
 | 19 · Home rules | `SetRules.html` | yes |
 | 20 · Bills & categories | `SetBills.html` |  |
 | 21 · Custom deals | `SetDeals.html` |  |
-| 22 · Grocery fund settings | `SetBazarBox.html` | yes |
+| 22 · Funds and keepers (settings) | `SetBazarBox.html` | yes |
 | 23 · Starting balances | `SetStart.html` |  |
 | 25 · Home (member) | `MemberHome.html` | yes |
 | 26 · Add groceries (member / keeper) | `MemberBazar.html` | yes |
@@ -103,6 +103,7 @@ Confirmation rules, give-money-first flows and deletion rules are in `requiremen
 | 60 · Log-in problems | `LoginErrors.html` | yes |
 | 61 · Confirmations | `Confirm.html` | yes |
 | 62 · Return or exchange | `Return.html` | yes |
+| 63 · Hand over cash | `Handover.html` | yes |
 
 ## Web pages
 

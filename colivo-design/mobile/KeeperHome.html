@@ -14,7 +14,7 @@ body{margin:0}
 a{color:#0E6656}a:hover{color:#0A4E42}
 </style>
 </helmet>
-<div style="width: 390px; height: 1420px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+<div style="width: 390px; height: 1650px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
   <header style="padding: 20px 20px 12px; display: flex; justify-content: space-between; align-items: center">
     <div style="display: flex; flex-direction: column; gap: 2px">
       <span style="font-size: 13px; color: #5B6461">Our Flat · Fund keeper</span>
@@ -30,12 +30,12 @@ a{color:#0E6656}a:hover{color:#0A4E42}
     </nav>
     <section aria-label="Grocery fund" style="background: #0E6656; color: #FFFFFF; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
       <div style="display: flex; justify-content: space-between; align-items: baseline">
-        <span style="font-size: 13px; opacity: 0.85">Grocery fund · you keep it</span>
+        <span style="font-size: 13px; opacity: 0.85">Grocery fund · you hold</span>
         <a href="BazarBox.html" style="font-size: 12px; color: #FFFFFF; font-weight: 600; text-decoration: none">Details ›</a>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: baseline">
         <div style="display: flex; flex-direction: column; gap: 2px">
-          <span style="font-size: 12px; opacity: 0.85">In the grocery fund</span>
+          <span style="font-size: 12px; opacity: 0.85">Your cash</span>
           <span style="font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 600">৳140</span>
         </div>
         <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
@@ -48,7 +48,20 @@ a{color:#0E6656}a:hover{color:#0A4E42}
         <a href="MemberBazar.html" style="min-height: 44px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.6); color: #FFFFFF; text-decoration: none; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center">I spent from the grocery fund</a>
       </div>
       <button style="min-height: 40px; border-radius: 12px; border: 0; background: rgba(255,255,255,0.12); color: #FFFFFF; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer">+ Money put in by a member</button>
-      <span style="font-size: 12px; opacity: 0.9">Running low. You can spend or give out only what's in the grocery fund.</span>
+      <span style="font-size: 12px; opacity: 0.9">Running low. You can spend or give out only the cash you hold.</span>
+    </section>
+
+    <section aria-label="Home fund you hold" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <span style="font-size: 13px; color: #5B6461">Home fund · you hold</span>
+        <a href="BazarBox.html" style="font-size: 12px; font-weight: 600; text-decoration: none">All holders ›</a>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">৳1,000</span>
+        <span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #FBEFE3; color: #7A3A0C">Handing to Rabbi · waiting</span>
+      </div>
+      <span style="font-size: 12px; color: #5B6461; line-height: 1.45">Maruf's rent cash, which you confirmed. It stays with you, locked, until Rabbi confirms he got it.</span>
+      <a href="Handover.html" style="min-height: 44px; border-radius: 12px; border: 1px solid #0E6656; color: #0E6656; text-decoration: none; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center">Hand over cash</a>
     </section>
 
     <section aria-label="My balance" style="background: #E3F0EC; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
@@ -130,7 +143,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
   </nav>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1420}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1650}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);

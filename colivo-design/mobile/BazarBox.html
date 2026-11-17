@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Grocery fund</title>
+<title>Funds</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -14,26 +14,50 @@ body{margin:0}
 a{color:#0E6656}a:hover{color:#0A4E42}
 </style>
 </helmet>
-<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+<div style="width: 390px; height: 1400px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
   <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
     <a href="Main.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
-    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Grocery fund</h1>
-    <span style="font-size: 13px; color: #5B6461">Shared cash kept for shopping · October</span>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Funds</h1>
+    <span style="font-size: 13px; color: #5B6461">Who holds the home's cash · October</span>
+    <div role="tablist" aria-label="Fund" style="display: flex; gap: 4px; background: #ECEAE2; border-radius: 12px; padding: 4px">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="2">
+        <button role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+      </sc-for>
+    </div>
   </header>
 
   <main style="flex: 1; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+  <sc-if value="{{isGrocery}}" hint-placeholder-val="{{true}}">
     <section aria-label="Grocery fund balance" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; justify-content: space-between; align-items: center">
       <div style="display: flex; flex-direction: column; gap: 2px">
         <span style="font-size: 13px; color: #5B6461">In the grocery fund · with Maruf</span>
         <span style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600; color: #0E6656">৳140 <span style="font-size: 16px; color: #6B4A0B">+ ৳500</span></span>
       </div>
       <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
-        <span style="font-size: 12px; color: #5B6461">Kept by</span>
+        <span style="font-size: 12px; color: #5B6461">Fund keeper</span>
         <span style="font-size: 14px; font-weight: 600">Hijam Shusil</span>
       </div>
     </section>
 
+    <section aria-label="Who holds the grocery fund" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Who holds the grocery fund</h2>
+        <span style="font-size: 13px; font-weight: 600">৳640</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Hijam Shusil</span><span style="font-size: 12px; color: #5B6461">Fund keeper · cash in hand</span></div>
+        <span style="font-size: 14px; font-weight: 600; color: #17201D">৳140</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Rabbi Hasan</span><span style="font-size: 12px; color: #5B6461">Owner · manager</span></div>
+        <span style="font-size: 14px; font-weight: 600; color: #17201D">৳0</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Maruf</span><span style="font-size: 12px; color: #5B6461">Given for groceries · not spent yet</span></div>
+        <span style="font-size: 14px; font-weight: 600; color: #6B4A0B">৳500</span>
+      </div>
+    </section>
     <section aria-label="Money put in" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px">
         <h2 style="margin: 0; font-size: 15px; font-weight: 600">Money in</h2>
@@ -91,16 +115,65 @@ a{color:#0E6656}a:hover{color:#0A4E42}
       </div>
     </section>
 
-    <p style="margin: 0; font-size: 12px; color: #5B6461; line-height: 1.5">Money put in is credited to whoever gave it. Spending from the grocery fund counts toward the cost per meal but gives no credit to the shopper, because it wasn't their money. Whatever is left when the month closes opens next month's fund.</p>
+    <p style="margin: 0; font-size: 12px; color: #5B6461; line-height: 1.5">Money put in is credited to whoever gave it and counts in the cash of the holder who received it, once they confirm. Spending from the grocery fund counts toward the cost per meal but gives no credit to the shopper, because it wasn't their money. Whatever is left when the month closes opens next month's fund.</p>
 
     <a href="Payments.html" style="height: 48px; border-radius: 12px; background: #0E6656; color: #FFFFFF; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">Put money in the grocery fund</a>
+    <a href="Handover.html" style="height: 48px; border-radius: 12px; border: 1px solid #0E6656; background: #FFFFFF; color: #0E6656; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">Hand over cash</a>
+  </sc-if>
+  <sc-if value="{{isHome}}" hint-placeholder-val="{{false}}">
+    <section aria-label="Home fund balance" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; justify-content: space-between; align-items: center">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <span style="font-size: 13px; color: #5B6461">Home fund cash</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600; color: #0E6656">৳4,120</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
+        <span style="font-size: 12px; color: #5B6461">Free to spend</span>
+        <span style="font-size: 14px; font-weight: 600">৳1,620</span>
+      </div>
+    </section>
+    <section aria-label="Who holds the home fund" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Who holds the home fund</h2>
+        <span style="font-size: 13px; font-weight: 600">৳4,120</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Rabbi Hasan</span><span style="font-size: 12px; color: #5B6461">Owner · manager</span></div>
+        <span style="font-size: 14px; font-weight: 600; color: #17201D">৳3,120</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Hijam Shusil</span><span style="font-size: 12px; color: #5B6461">Fund keeper · ৳1,000 being handed to Rabbi</span></div>
+        <span style="font-size: 14px; font-weight: 600; color: #7A3A0C">৳1,000</span>
+      </div>
+      <div style="background: #FBEFE3; color: #7A3A0C; border-radius: 10px; padding: 10px 12px; margin: 0 0 12px; font-size: 12px; line-height: 1.45">Hijam is handing ৳1,000 (Maruf's rent cash) to Rabbi. It stays with Hijam, locked, until Rabbi confirms.</div>
+    </section>
+    <section aria-label="Reserved" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Reserved</h2>
+        <span style="font-size: 13px; font-weight: 600">৳2,500</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid #EFEDE6; gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 3px"><span style="font-size: 14px; font-weight: 500">Member deposits in hand</span><span style="font-size: 12px; color: #5B6461">Part of the holders' cash above; can't be spent (FR-32)</span></div>
+        <span style="font-size: 14px; font-weight: 600; color: #17201D">৳2,500</span>
+      </div>
+    </section>
+    <p style="margin: 0; font-size: 12px; color: #5B6461; line-height: 1.5">Each holder can pay bills or give money only from the cash they hold, and never more than the home's free-to-spend cash. Money paid to a holder counts once they confirm it.</p>
+    <a href="Handover.html" style="height: 48px; border-radius: 12px; border: 1px solid #0E6656; background: #FFFFFF; color: #0E6656; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center">Hand over cash</a>
+  </sc-if>
   </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1400}}'>
 class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { tab: 'grocery' };
+  }
   renderVals() {
-    return {};
+    const on = 'flex: 1; min-height: 40px; padding: 0 10px; border: 0; border-radius: 9px; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit';
+    const off = 'flex: 1; min-height: 40px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: #5B6461; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit';
+    const tab = this.state.tab;
+    const tabs = [['grocery', 'Grocery fund ৳640'], ['home', 'Home fund ৳4,120']].map(([k, label]) => ({ label, on: tab === k ? 'true' : 'false', style: tab === k ? on : off, pick: () => this.setState({ tab: k }) }));
+    return { tabs, isGrocery: tab === 'grocery', isHome: tab === 'home' };
   }
 }
 </script>

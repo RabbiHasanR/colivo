@@ -15,7 +15,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
 input::placeholder,textarea::placeholder{color:#6E7673}
 </style>
 </helmet>
-<div style="width: 390px; height: 1460px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column; position: relative; overflow: hidden">
+<div style="width: 390px; height: 1500px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column; position: relative; overflow: hidden">
   <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 8px">
     <a href="MemberHome.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
@@ -81,6 +81,11 @@ input::placeholder,textarea::placeholder{color:#6E7673}
           <div role="img" aria-label="Receipt photo" style="width: 56px; height: 56px; border-radius: 8px; background: #E8E5DC; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #5B6461">Receipt</div>
           <div style="display: flex; gap: 8px"><button type="button" style="flex: 1; min-height: 40px; border: 0; border-radius: 10px; background: #0E6656; color: #FFFFFF; font-size: 13px; font-weight: 600; font-family: inherit; display: flex; align-items: center; justify-content: center; cursor: pointer">I received it</button><a href="RejectPayment.html" style="flex: 1; min-height: 40px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 600; font-family: inherit; text-decoration: none; display: flex; align-items: center; justify-content: center; cursor: pointer">Not received</a></div>
         </div>
+        <div style="padding: 12px 0; border-top: 1px solid #EFEDE6; display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; justify-content: space-between; gap: 8px; align-items: flex-start"><span style="font-size: 14px; font-weight: 600">Maruf says he paid you ৳1,000</span><span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #FBEFE3; color: #7A3A0C; white-space: nowrap">Confirm</span></div>
+          <span style="font-size: 13px; color: #3E4744; line-height: 1.45">Rent · cash · today 5:30 pm. Confirm only if you have the money: it then counts in your home fund cash.</span>
+          <div style="display: flex; gap: 8px"><button type="button" style="flex: 1; min-height: 40px; border: 0; border-radius: 10px; background: #0E6656; color: #FFFFFF; font-size: 13px; font-weight: 600; font-family: inherit; display: flex; align-items: center; justify-content: center; cursor: pointer">I received it</button><a href="RejectPayment.html" style="flex: 1; min-height: 40px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 600; font-family: inherit; text-decoration: none; display: flex; align-items: center; justify-content: center; cursor: pointer">Not received</a></div>
+        </div>
       </section>
       <span style="font-size: 12px; font-weight: 600; color: #5B6461; padding: 4px 2px 0">To confirm · grocery fund</span>
       <section aria-label="To confirm · grocery fund" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 0 14px; display: flex; flex-direction: column">
@@ -111,12 +116,12 @@ input::placeholder,textarea::placeholder{color:#6E7673}
           <span style="font-size: 13px; color: #3E4744; line-height: 1.45">Rabbi confirmed your ৳12,535 October payment.</span>
         </div>
       </section>
-      <section style="background: #FFFFFF; border: 1px dashed #C9C6BB; border-radius: 14px; padding: 12px 14px; font-size: 12px; color: #5B6461; line-height: 1.5">As fund keeper, Hijam confirms money put into or returned to the grocery fund. His own entries are confirmed by the owner or a manager.</section>
+      <section style="background: #FFFFFF; border: 1px dashed #C9C6BB; border-radius: 14px; padding: 12px 14px; font-size: 12px; color: #5B6461; line-height: 1.5">Hijam keeps both funds, so he confirms money paid or handed to him for either fund. His own entries are confirmed by the owner or a manager.</section>
     </sc-if>
   </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1460}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1500}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);

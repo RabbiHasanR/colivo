@@ -19,12 +19,12 @@ a{color:#0E6656}a:hover{color:#0A4E42}
     <a href="KeeperHome.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
     <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Give money for groceries</h1>
-    <span style="font-size: 13px; color: #5B6461; line-height: 1.45">Hand cash from the grocery fund to whoever is shopping. They can spend only what you give them.</span>
+    <span style="font-size: 13px; color: #5B6461; line-height: 1.45">Hand grocery fund cash you hold to whoever is shopping. They can spend only what you give them.</span>
   </header>
 
   <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
     <section aria-label="Grocery fund now" style="background: #0E6656; color: #FFFFFF; border-radius: 16px; padding: 14px; display: flex; justify-content: space-between; align-items: center">
-      <span style="font-size: 13px; opacity: 0.85">In the grocery fund now</span>
+      <span style="font-size: 13px; opacity: 0.85">Grocery fund cash you hold</span>
       <span style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 600">৳640</span>
     </section>
 
@@ -54,7 +54,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
       <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px; gap: 10px">
         <span>Rabbi · given 2 Oct · spent ৳1,450</span><span style="font-weight: 600; color: #5B6461">Settled</span>
       </div>
-      <p style="margin: 0; padding: 8px 0 12px; font-size: 12px; color: #5B6461; line-height: 1.45">When the shopper is done, any leftover goes back into the grocery fund.</p>
+      <p style="margin: 0; padding: 8px 0 12px; font-size: 12px; color: #5B6461; line-height: 1.45">When the shopper is done, any leftover is handed back to a grocery fund holder, who confirms it.</p>
     </section>
   </main>
 </div>
@@ -83,8 +83,8 @@ class Component extends DCLogic {
       plus: () => this.setState({ amount: Math.min(BOX, s.amount + 100 > BOX ? BOX : s.amount + 100) }),
       minus: () => this.setState({ amount: Math.max(100, s.amount - 100) }),
       note: atMax
-        ? 'That\'s everything in the grocery fund. You can\'t give more than ৳640.'
-        : s.who + ' can spend up to ৳' + s.amount.toLocaleString('en-US') + ' on groceries. ৳' + left + ' stays in the grocery fund.',
+        ? 'That\'s all the grocery fund cash you hold. You can\'t give more than ৳640, even if another holder has more.'
+        : s.who + ' can spend up to ৳' + s.amount.toLocaleString('en-US') + ' on groceries. You keep ৳' + left + '.',
       noteBg: atMax ? '#FBEFE3' : '#F1F0EA',
       noteFg: atMax ? '#7A3A0C' : '#3E4744'
     };

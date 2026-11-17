@@ -137,9 +137,9 @@ class Component extends DCLogic {
     const on = 'min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit';
     const off = 'min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit';
     const s = this.state;
-    let roleNote = 'You can add members and choose the fund keeper. Only the owner can make someone a manager.';
+    let roleNote = 'You can add members and choose fund keepers. Only the owner can make someone a manager; a home can have several.';
     let roleNoteColor = '#5B6461';
-    if (s.box) { roleNote = 'Only one fund keeper at a time. Saving moves the grocery fund from Hijam Shusil to this person.'; roleNoteColor = '#7A3A0C'; }
+    if (s.box) { roleNote = 'A home can have several fund keepers, and Hijam Shusil stays one. Choose which funds this person keeps (grocery, home or both) in Funds and keepers.'; roleNoteColor = '#3E4744'; }
     return {
       members: [
         { rowStyle: row(true), initials: 'RH', avatarBg: '#E7F1FB', avatarFg: '#1D4F86', name: 'Rabbi Hasan', sub: 'Room A', tags: [T.admin], id: 'NID ✓', idColor: '#0E6656', editLabel: 'Change roles for Rabbi Hasan', action: 'Deactivate', actionHref: '#', actionBorder: '#D6D3C9', actionColor: '#9A4A10' },
@@ -157,10 +157,10 @@ class Component extends DCLogic {
       roleNote,
       roleNoteColor,
       perms: [
-        { role: 'Owner · 1 person', bg: '#17201D', fg: '#FFFFFF', can: 'Everything, including all member, manager and fund keeper jobs. Gives and removes roles, chooses managers and the fund keeper, changes home settings, and can hand the owner role to someone else.' },
-        { role: 'Manager', bg: '#E7F1FB', fg: '#1D4F86', can: 'Adds new members, chooses the fund keeper, gives home-fund money to a member to pay a bill, records payments and bills, changes rent, closes the month. Cannot make someone a manager. If no manager is set, the owner does these jobs.' },
-        { role: 'Fund keeper', bg: '#F9EEDA', fg: '#6B4A0B', can: 'Everything a member can, plus records groceries paid from the grocery fund and money put into it. If no keeper is set, the manager keeps the grocery fund (or the owner if there\'s no manager).' },
-        { role: 'Member', bg: '#E3F0EC', fg: '#0A4E42', can: 'Logs own meals and groceries, pays bills with money given to them or from their own pocket, sees own bill, gives notice. Cannot add members. The owner, managers and fund keeper are all members too.' }
+        { role: 'Owner · 1 person', bg: '#17201D', fg: '#FFFFFF', can: 'Everything, including all member, manager and fund keeper jobs. Gives and removes roles, chooses managers and fund keepers, holds either fund, changes home settings, and can hand the owner role to someone else.' },
+        { role: 'Manager', bg: '#E7F1FB', fg: '#1D4F86', can: 'A home can have several. Adds new members, chooses fund keepers, holds either fund and gives out only the cash they hold, records payments and bills, changes rent, closes the month. Cannot make someone a manager. If no manager is set, the owner does these jobs.' },
+        { role: 'Fund keeper', bg: '#F9EEDA', fg: '#6B4A0B', can: 'Chosen per fund (grocery, home or both); a fund can have several. Everything a member can, plus receives and confirms money paid to them, spends or gives out the cash they hold and hands it to other holders. A fund with no keeper is held by the owner and managers.' },
+        { role: 'Member', bg: '#E3F0EC', fg: '#0A4E42', can: 'Logs own meals and groceries, pays bills with money given to them or from their own pocket, sees own bill, gives notice. Cannot add members. The owner, managers and fund keepers are all members too.' }
       ]
     };
   }

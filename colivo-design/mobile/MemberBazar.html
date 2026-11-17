@@ -93,7 +93,7 @@ class Component extends DCLogic {
     const srcKey = isKeeper ? 'kSource' : 'mSource';
     // One shared source per view (FR-98): the fund keeper spends from the grocery fund, a member from money given to them
     const shared = isKeeper
-      ? { key: 'box', limit: BOX, label: 'Grocery fund (৳' + BOX + ' in it)', both: 'Grocery fund + my pocket', name: 'the grocery fund' }
+      ? { key: 'box', limit: BOX, label: 'Grocery fund cash I hold (৳' + BOX + ')', both: 'My grocery fund cash + my pocket', name: 'the grocery fund cash you hold' }
       : { key: 'given', limit: GIVEN, label: 'Money given to me (৳' + GIVEN + ')', both: 'Given money + my pocket', name: 'the given money' };
     const options = [[shared.key, shared.label], ['pocket', 'My pocket'], ['both', shared.both]];
     const sources = options.map(([k, label]) => ({
@@ -112,11 +112,11 @@ class Component extends DCLogic {
       hint = 'One entry: ৳' + fmt(fromShared) + ' from ' + shared.name + (fromPocket > 0 ? ' + ৳' + fmt(fromPocket) + ' from your pocket. You\'ll be credited ৳' + fmt(fromPocket) + '.' : '. Nothing from your pocket.');
     } else if (a > shared.limit) {
       blocked = true;
-      hint = (isKeeper ? 'The grocery fund has only ৳' : 'You were given only ৳') + shared.limit + '. Choose "' + shared.both + '" to pay the extra ৳' + fmt(a - shared.limit) + ' yourself.';
+      hint = (isKeeper ? 'You hold only ৳' : 'You were given only ৳') + shared.limit + '. Choose "' + shared.both + '" to pay the extra ৳' + fmt(a - shared.limit) + ' yourself.';
     } else {
       hint = isKeeper
-        ? 'Taken from the grocery fund. ৳' + (BOX - a) + ' will be left. No credit to you.'
-        : 'Taken from the ৳' + GIVEN + ' Hijam gave you. ৳' + (GIVEN - a) + ' left; return it to the grocery fund when you\'re done.';
+        ? 'Taken from the grocery fund cash you hold. You\'ll have ৳' + (BOX - a) + ' left. No credit to you.'
+        : 'Taken from the ৳' + GIVEN + ' Hijam gave you. ৳' + (GIVEN - a) + ' left; hand it back to a grocery fund holder when you\'re done (they confirm it).';
     }
     return {
       views,
@@ -130,8 +130,8 @@ class Component extends DCLogic {
       saveLabel: blocked ? 'Can\'t save: not enough money' : 'Send for confirmation',
       saveStyle: 'height: 48px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 600; font-family: inherit; ' + (blocked ? 'background: #D6D3C9; color: #3E4744; cursor: not-allowed' : 'background: #0E6656; color: #FFFFFF; cursor: pointer'),
       rule: isKeeper
-        ? 'As fund keeper (or manager) you can spend straight from the grocery fund, but never more than what\'s in it. You can also give money from the grocery fund to a member who is shopping.'
-        : 'Members can\'t take money from the grocery fund themselves. The fund keeper or manager gives you grocery money first, and you can spend only that much.',
+        ? 'As a grocery fund holder you can spend straight from the cash you hold, but never more than that, even if other holders have more. You can also give some of it to a member who is shopping.'
+        : 'Members can\'t take money from the grocery fund themselves. A holder (a fund keeper, a manager or the owner) gives you grocery money first, and you can spend only that much.',
       homeHref: isKeeper ? 'KeeperHome.html' : 'MemberHome.html'
     };
   }
