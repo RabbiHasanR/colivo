@@ -18,7 +18,8 @@ tables don't block later money flows. Expected entities: user, home,
 membership (role per home), room, room assignment, home rules, bill
 category, meal, grocery entry, grocery fund, home fund, payment, bill,
 statement, credit, deposit, inbox item, message, and the linked entries
-that change money later: return, correction and refund.
+that change money later: return, correction and refund. Funds and their
+holders are decided below ([Funds and holders](#funds-and-holders-agreed-17-nov-2026)).
 
 Money storage is decided: a ledger (see [Decisions](#decisions)).
 
@@ -90,8 +91,40 @@ Why a ledger instead of stored balances:
 
 Entry kinds expected so far (columns at each phase's Gate 0): grocery
 purchase, grocery fund top-up, bill, payment, refund, money given, money
-handed back, return, correction, and adjustment (closed-month correction,
-estimate adjustment).
+handed back, handover, return, correction, and adjustment (closed-month
+correction, estimate adjustment).
+
+### Funds and holders _(agreed 17 Nov 2026)_
+
+From `colivo-design/requirements.md` FR-62–FR-67, FR-104, FR-105, BR-23.
+
+- **A fund is a row, not a hard-coded name.** A `fund` table per home
+  starts with two rows, grocery fund and home fund. Custom funds (Release
+  plan) then need no schema change, which keeps early tables from blocking
+  later money flows.
+- **Every money entry that moves fund cash names its fund and its holder**
+  (the person who received or paid the cash). A handover names two holders.
+  Cash per holder (BR-23) and each fund's balance are sums over these
+  entries; nothing is stored as a balance.
+- **Money with shoppers is a holder balance** limited to one purpose (given
+  for groceries or for a bill), so it is computed the same way as any
+  holder's cash.
+- **Who may hold a fund** comes from roles: the owner and managers hold any
+  fund; fund keepers hold the funds they are chosen for. "Fund keeper of
+  fund X" is a link between a membership and a fund, so one person can keep
+  both funds and a fund can have several keepers.
+- **The spending cap is per holder.** A holder's cash can't go below 0, and
+  for the home fund free-to-spend (FR-32) can't either. Like the return cap,
+  this compares rows, so the service checks it inside the transaction after
+  locking the holder's fund rows; two spends at the same moment can't both
+  pass.
+- **A waiting handover or payment counts for nobody new:** until the
+  receiver confirms, the money stays with the giver (and is locked) or, for
+  a payment in, is in nobody's cash.
+
+Why per holder instead of one total per fund: with two people holding the
+same fund, one total lets a holder give out cash someone else has, and the
+month-close cash count has no single person to check it against (G4).
 
 ### History of money entries _(agreed 17 Nov 2026)_
 
@@ -126,6 +159,7 @@ and the query each serves, and its status mark._
 
 ## Change log
 
-| Phase                | Change                                                                        |
-| -------------------- | ----------------------------------------------------------------------------- |
-| Design (17 Nov 2026) | Money storage decided as a ledger; returns and corrections are linked entries |
+| Phase                | Change                                                                          |
+| -------------------- | ------------------------------------------------------------------------------- |
+| Design (17 Nov 2026) | Money storage decided as a ledger; returns and corrections are linked entries   |
+| Design (17 Nov 2026) | Funds are rows; fund cash is tracked per holder; fund keeper is chosen per fund |
