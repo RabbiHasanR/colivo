@@ -20,19 +20,19 @@ Mobile targets are added in the first `[mobile]` phase.
 
 ## Backend
 
-| Setting                 | Value                                                                                                                                                 |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| System type             | REST API (FastAPI)                                                                                                                                    |
-| Language and framework  | Python 3.12, FastAPI, SQLModel, Pydantic v2                                                                                                           |
-| Test framework          | pytest; FastAPI `TestClient` for API tests (endpoints are sync)                                                                                       |
-| Fast tests              | `make backend-test-fast` → `cd backend && uv run pytest -m "not slow"`                                                                                |
-| Coverage                | `cd backend && uv run pytest --cov=app --cov-report=term-missing`                                                                                     |
-| Fast-test time budget   | Under 60 seconds                                                                                                                                      |
-| Where tests live        | `backend/tests/<module>/test_service.py` (unit), `test_api.py` (integration), `test_e2e.py` (end-to-end); shared setup in `backend/tests/conftest.py` |
-| Slow marker             | `@pytest.mark.slow`                                                                                                                                   |
-| Expected-failure marker | `@pytest.mark.xfail(strict=True, reason="acceptance: <requirement>")`                                                                                 |
-| Test database           | Real PostgreSQL 16 from Docker Compose, a separate test database. Each test runs in a transaction that is rolled back.                                |
-| May be mocked           | SMS provider, email provider, any third-party API. PostgreSQL and Redis are ours, so tests use the real ones from Compose.                            |
+| Setting                 | Value                                                                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| System type             | REST API (FastAPI)                                                                                                                                                                                                       |
+| Language and framework  | Python 3.12, FastAPI, SQLModel, Pydantic v2                                                                                                                                                                              |
+| Test framework          | pytest; FastAPI `TestClient` for API tests (endpoints are sync)                                                                                                                                                          |
+| Fast tests              | `make backend-test-fast` → `cd backend && uv run pytest -m "not slow"`                                                                                                                                                   |
+| Coverage                | `cd backend && uv run pytest --cov=app --cov-report=term-missing`                                                                                                                                                        |
+| Fast-test time budget   | Under 60 seconds                                                                                                                                                                                                         |
+| Where tests live        | `backend/tests/<module>/test_service.py` (unit), `test_api.py` (integration), `test_e2e.py` (end-to-end); shared setup in `backend/tests/conftest.py`                                                                    |
+| Slow marker             | `@pytest.mark.slow`                                                                                                                                                                                                      |
+| Expected-failure marker | `@pytest.mark.xfail(strict=True, reason="acceptance: <requirement>")`                                                                                                                                                    |
+| Test database           | Real PostgreSQL 16 from Docker Compose, a separate test database built with `alembic upgrade head` once per test session (so every run also checks the migrations). Each test runs in a transaction that is rolled back. |
+| May be mocked           | SMS provider, email provider, any third-party API. PostgreSQL and Redis are ours, so tests use the real ones from Compose.                                                                                               |
 
 Why `strict=True`: when the acceptance test starts passing, pytest fails the
 run (XPASS), which forces the mark to be removed. Without it, a forgotten
@@ -132,6 +132,10 @@ real backend too), an HTTP journey in a backend-only phase.
 
 ### Spec time (`/feature-spec`)
 
+**Gate 0:** when a phase changes tables, its data model is discussed and
+approved with the user first, then recorded in [data-model.md](data-model.md).
+Its database rules become behaviours.
+
 `validation.md → ## Behaviours` lists every behaviour as a numbered plain
 sentence (`B1`, `B2`, …), including error and permission cases. One list
 covers backend and web. **Gate 1:** the user approves this list with the
@@ -180,6 +184,12 @@ after 5 wrong codes` and `feat(web): show locked log-in message`. No
 - **If the web needs an API change,** go back to the backend: a red test,
   the fix, then the contract step. Never work around the API in the web.
 - **Backend-only groups and phases** skip steps 5–8.
+- **The schema follows the agreed data model**
+  ([data-model.md](data-model.md), agreed at Gate 0). A test adds a column or
+  table only in the agreed shape, in the group's one migration. If a test
+  shows the model is wrong, stop and ask; never change the schema silently.
+- **Database rules are behaviours.** A unique, check or foreign-key rule
+  gets its own test, like any other rule.
 
 For a bug fix: first a failing test that reproduces the bug, then the fix.
 The test stays as a regression test.

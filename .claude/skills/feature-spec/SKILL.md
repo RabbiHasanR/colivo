@@ -1,14 +1,15 @@
 ---
 name: feature-spec
-description: Start the next Colivo roadmap phase. Find it in specs/roadmap.md, create its branch, ask the user grouped questions, then write specs/YYYY-MM-DD-<feature>/{requirements,plan,validation}.md. Run manually with an optional feature hint.
+description: Start the next Colivo roadmap phase. Find it in specs/roadmap.md, create its branch, ask the user grouped questions, agree the data model with the user, then write specs/YYYY-MM-DD-<feature>/{requirements,plan,validation}.md and update specs/data-model.md. Run manually with an optional feature hint.
 disable-model-invocation: true
-allowed-tools: Bash(git status *), Bash(git branch *), Bash(git switch *), Bash(git log *), Bash(date *), Bash(ls *), Bash(npx prettier *), Read, Glob, Grep, Write, AskUserQuestion
+allowed-tools: Bash(git status *), Bash(git branch *), Bash(git switch *), Bash(git log *), Bash(date *), Bash(ls *), Bash(npx prettier *), Read, Glob, Grep, Write, Edit, AskUserQuestion
 ---
 
 Write the feature spec for the next piece of Colivo work. Extra instructions
 from the user, if any: $ARGUMENTS
 
-Never write a file before step 4. The user answers the questions first.
+Never write a file before step 5. The user answers the questions and approves
+the data model first.
 
 ## 1. Gather context
 
@@ -25,14 +26,18 @@ Read all of these before deciding anything:
   (one group at a time: backend → contract → web), and the commands. The
   spec must fit it: behaviours in `validation.md`, test cases later in
   `tests.md`.
+- `specs/data-model.md`: the domain sketch, the current schema, its
+  conventions and open questions.
 - `colivo-design/requirements.md`: the behaviour rules for this phase's
   features.
 - `colivo-design/README.md`, then the screens for this phase in
   `colivo-design/web/` and `colivo-design/mobile/`.
 - Every existing `specs/YYYY-MM-DD-*/` directory. Read the newest one in full;
   it is the template for tone, structure, and level of detail. If there is
-  none yet, this skill's step 4 is the template.
-- What code exists: `ls backend web mobile api infra` and `git log --oneline -15`.
+  none yet, this skill's step 5 is the template.
+- What code exists: `ls backend web mobile api infra`, the models in
+  `backend/app/modules/*/models.py`, the migrations in
+  `backend/alembic/versions/`, and `git log --oneline -15`.
 - `git status` and `git branch -a`.
 
 ## 2. Pick the feature and branch
@@ -72,17 +77,51 @@ Rules for the questions:
 - Ask a 4th question only for a decision that changes the spec's shape and
   can't be settled by a sensible default. The usual case: a **Deferred
   decision** or _(to confirm)_ item in `tech-stack.md` that this phase is the
-  first to depend on (e.g. ORM, auth tokens, web CSS, Flutter state
-  management). If several apply, put the most important one in the question
-  and propose defaults for the rest.
+  first to depend on (e.g. auth tokens, Flutter state management). If several
+  apply, put the most important one in the question and propose defaults for
+  the rest. Data model choices are not asked here; they belong to step 4.
 - Make smaller decisions yourself. Record them in the Decisions table and
-  point them out in step 5.
+  point them out in step 6.
 
-## 4. Write the spec
+## 4. Agree the data model (Gate 0, required when tables change)
+
+Skip this step only when the phase adds or changes no table, column, index
+or constraint; say so to the user. If `specs/data-model.md → Domain sketch`
+is still pending, stop: the domain sketch is agreed with the user first, in
+its own discussion.
+
+This is a discussion, not a form. Present a draft in chat, discuss it, revise
+it, and repeat until the user approves it. Write nothing to disk until then.
+
+The draft, for the tables this phase adds or changes:
+
+1. **ER diagram** in Mermaid (`erDiagram`): the new and changed tables, and
+   the existing tables they link to.
+2. **One table per database table:** `| Column | Type | Null | Default |
+Constraint | Why |`. Money is `numeric(12,2)`, timestamps are `timestamptz`,
+   every home-owned table has `home_id`, and history follows the convention
+   in `specs/data-model.md`.
+3. **Indexes**, each tied to the query it serves.
+4. **Contested choices only**, each as numbered options with pros and cons
+   and your recommendation first, e.g. history as an audit table or versioned
+   rows; a PostgreSQL enum, a `CHECK` or a lookup table; stored balances or
+   balances computed from entries.
+5. **Migration impact:** what happens to the previous phase's data, and the
+   one Alembic migration per `plan.md` group.
+6. **Database rules that become behaviours:** each unique, check and
+   foreign-key rule a user could notice, worded as a behaviour for
+   `validation.md`.
+
+Settle small choices yourself and list them so the user can push back. When
+the user approves, the agreed model is the target for `/tdd`: schema changes
+follow it, and a test that shows it is wrong means stopping to ask.
+
+## 5. Write the spec
 
 Create `specs/<today>-<slug>/` with three files. A fourth, `tests.md`, is
-written later by `/tdd`, one group at a time; don't create it here. Title each file
-`# Phase <N> — <Feature Name>: <Requirements|Plan|Validation>`.
+written later by `/tdd`, one group at a time; don't create it here. Title
+each file `# Phase <N> — <Feature Name>: <Requirements|Plan|Validation>`.
+Also update `specs/data-model.md` with the agreed model.
 
 Use the design's words (home, owner, fund keeper, grocery fund, home fund,
 cost per meal, deposit, credit). Write sections only for the parts the phase
@@ -105,16 +144,19 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
   new or changed endpoints under `/api/v1/`, with error codes. Responses
   use the `StandardResponse` envelope
   ([tech-stack.md → API response format](../tech-stack.md#api-response-format)).
-- `## Data model` (or `## Data model changes`): a table of tables and
-  columns, with types (money is `numeric(12,2)`), indexes, constraints,
-  foreign-key behaviour, the `home_id` scope, and soft-delete/history columns.
+- `## Data model changes`: only the delta agreed in step 4: tables and
+  columns added or changed, the migration per group, and the reason for each
+  contested choice. Link `../data-model.md` for the full schema and the ER
+  diagram; don't copy them.
 - `## Decisions`: a `| Decision | Choice | Why |` table, including the user's
-  answers from step 3.
+  answers from steps 3 and 4.
 - `## Constraints`: the project conventions, plus:
   - fetch current docs with `ctx7` for every library the phase touches
     (FastAPI, Pydantic, SQLModel, Alembic, Ember, WarpDrive, Tailwind CSS,
     MSW, Playwright, Flutter …) before coding;
   - every behaviour is built test-first, as in `../testing.md`;
+  - the schema follows `../data-model.md`; a change to it is agreed with the
+    user first;
   - money is `Decimal`, never float, and every money change is one database
     transaction;
   - every query is scoped to the current home, and roles are checked in the
@@ -127,6 +169,15 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
     committed;
   - Alembic migrations apply cleanly to the previous phase's database.
 
+### `specs/data-model.md`: the living schema
+
+- Add the new tables and change the existing ones in `## Tables`, marked
+  `_(Phase <N>, planned)_`.
+- Update the ER diagram in `## ER diagram`.
+- Add a row to `## Change log` for this phase.
+- Move any open question the phase settled from `## Open questions` into the
+  table it affects.
+
 ### `plan.md`: numbered task groups
 
 - Short intro: the branch; that each group is built with `/tdd` as in
@@ -137,19 +188,22 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
   Co-Authored-By or AI attribution lines). For Phase 0, the gate starts once
   group 1 has created the Makefile.
 - `## 1. Groundwork`: fetch the relevant docs with `ctx7`, plus any
-  settings (`backend/app/core/config.py`, `.env.example`), Alembic
-  migration, router registration (`backend/app/api/api_v1.py`), constants,
-  and Docker Compose changes.
+  settings (`backend/app/core/config.py`, `.env.example`), router
+  registration (`backend/app/api/api_v1.py`), constants, and Docker Compose
+  changes. No migration here; each slice group owns its own.
 - `## 2. <slice> (slice 1)`, `## 3. …`: one group per vertical slice, in
   the order the user chose. Each group starts with:
   - **Behaviours:** the `validation.md` IDs it delivers (e.g. B1–B4).
   - **Acceptance:** the backend acceptance test (file and test name) and,
     for a `[web]` phase, the web acceptance test.
+  - **Tables:** the tables from `../data-model.md` this group creates or
+    changes, and its one migration,
+    `backend/alembic/versions/<rev>_<group-slug>.py`.
 
   Then the tasks in build order, naming the real files:
   - **Backend:** `backend/app/modules/<module>/{models,schemas,service,router}.py`,
-    `backend/app/api/api_v1.py`, `backend/alembic/versions/…` plus the model
-    import in `backend/alembic/env.py`; tests in
+    `backend/app/api/api_v1.py`, the group's migration plus the model import
+    in `backend/alembic/env.py`; tests in
     `backend/tests/<module>/{test_service,test_api}.py`.
   - **Contract:** export `api/openapi.json`, `make api-types`.
   - **Web:** `web/app/models/<resource>.ts`,
@@ -165,26 +219,27 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
   `backend/tests/<module>/test_e2e.py`).
 
 - Last group, `## N. Verify and document`: run `validation.md`; update
-  `specs/tech-stack.md` (record decisions under **Decided in Phase <N>** or
-  the relevant section, turn _(to confirm)_ into decided, remove resolved
-  **Deferred decisions**, add **Known limitations**), `README.md`, and
-  `specs/roadmap.md` (mark the phase `✅ Complete`); add a `CHANGELOG.md`
-  entry.
+  `specs/data-model.md` (change this phase's tables from _planned_ to
+  _built_, and match them to the real migrations), `specs/tech-stack.md`
+  (record decisions under **Decided in Phase <N>** or the relevant section,
+  turn _(to confirm)_ into decided, remove resolved **Deferred decisions**,
+  add **Known limitations**), `README.md`, and `specs/roadmap.md` (mark the
+  phase `✅ Complete`); add a `CHANGELOG.md` entry.
 
 ### `validation.md`: how to know it's done and mergeable
 
 - Opening line: the clean-checkout setup (`cp .env.example .env`,
   `docker compose up -d`, `cd backend && uv sync && uv run alembic upgrade head`,
-  `cd web && pnpm install --frozen-lockfile` if the phase is tagged `[web]`, and
-  `cd mobile && flutter pub get` if it is tagged `[mobile]`), and that the migrations apply to the previous phase's
-  database.
+  `cd web && pnpm install --frozen-lockfile` if the phase is tagged `[web]`,
+  and `cd mobile && flutter pub get` if it is tagged `[mobile]`), and that
+  the migrations apply to the previous phase's database.
 - `## Behaviours`: **Gate 1** of
   [testing.md](../testing.md#spec-time-feature-spec). Numbered `B1`, `B2`, …
   across the whole phase, grouped under `### <feature>`. Each is one short
   plain sentence a non-developer can check, ending with the parts it touches,
   e.g. `B3 — Log-in locks after 5 wrong codes. [backend] [web]`. Include
-  error and permission cases as their own behaviours. Always include, where
-  they apply:
+  error and permission cases as their own behaviours, and the database rules
+  from step 4. Always include, where they apply:
   - wrong role → 403; another home's data → 404 and never leaked;
   - invalid input → 422 with a clear message;
   - money results match the October 2026 spreadsheet to the paisa;
@@ -197,9 +252,10 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
   fast tests (`make test-fast`), all tests with end-to-end (`make test`),
   lint (`make lint`: Ruff, pyright, ESLint, ember-template-lint, Glint,
   `flutter analyze`), format (`make format-check`), `alembic check` (no
-  missing migration), OpenAPI contract and web API types up to date
-  (`make api-types` leaves no diff), web build, plus anything the user added,
-  such as CI green.
+  missing migration), migrations upgrade and downgrade cleanly
+  (`alembic downgrade base && alembic upgrade head` on the test database),
+  OpenAPI contract and web API types up to date (`make api-types` leaves no
+  diff), web build, plus anything the user added, such as CI green.
 - `## TDD record`: every group's `tests.md` section is complete: each
   selected test is ✅, each unticked test has a reason, and no xfail or
   `test.todo` mark is left.
@@ -208,22 +264,24 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
   every colour scheme the design supports; Flutter on a small phone
   (360×640) and a large phone if `[mobile]`; keyboard-only use on web; and a
   polish/Lighthouse check.
-- `## Done means`: all checks pass; tech-stack, README, roadmap, and
-  changelog are updated; `api/openapi.json` is current; no secrets, `.env`,
-  or database files are committed.
+- `## Done means`: all checks pass; data-model, tech-stack, README, roadmap,
+  and changelog are updated; `api/openapi.json` is current; no secrets,
+  `.env`, or database files are committed.
 
-Then run `npx prettier --write specs/<today>-<slug>`.
+Then run `npx prettier --write specs/<today>-<slug> specs/data-model.md`.
 
-## 5. Stop for review
+## 6. Stop for review
 
 Don't commit. Tell the user:
 
 - the branch and directory created;
-- one line per file on what it covers;
+- one line per file on what it covers, including the `specs/data-model.md`
+  changes;
 - a numbered list of the decisions **you** made (the ones they weren't asked
   about), so they can push back;
 - that `validation.md → ## Behaviours` is Gate 1: they should review it
   closely, and add, remove or reword behaviours before any code is written;
 - that they can say "commit it". The commit is then
-  `docs(specs): add phase <N> <slug> spec` with only the spec directory
-  staged, and no Co-Authored-By or AI attribution lines.
+  `docs(specs): add phase <N> <slug> spec` with only the spec directory and
+  `specs/data-model.md` staged, and no Co-Authored-By or AI attribution
+  lines.

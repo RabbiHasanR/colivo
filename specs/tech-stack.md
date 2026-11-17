@@ -117,6 +117,14 @@ _Filled in as Phase 0 is planned and built. Record each decision as:_
   full TDD, then its API contract, then its web with full TDD — not the whole
   backend of a phase first. API mistakes show up while the code is fresh, and
   every group is demoable.
+- **Data model:** designed with the user before each phase's spec is
+  written (`/feature-spec` Gate 0) and recorded in the living
+  [data-model.md](data-model.md); a one-time domain sketch for all phases is
+  agreed before Phase 1 — data is far costlier to change than code, and
+  Colivo's money lives in the database.
+- **Migrations:** one Alembic migration per `plan.md` group, edited on the
+  phase branch until the group is done — a clean history of one migration
+  per slice instead of one per behaviour.
 
 ## Project conventions
 
@@ -150,7 +158,7 @@ _This table is a proposal to approve._
 | `api/openapi.json`                          | Exported API contract — never edited by hand                                                                                                                                             |
 | `infra/`                                    | Docker Compose, Dockerfiles, deploy scripts                                                                                                                                              |
 | `colivo-design/`                            | Screen designs and `requirements.md`                                                                                                                                                     |
-| `specs/`                                    | Mission, roadmap, tech stack and one folder per phase                                                                                                                                    |
+| `specs/`                                    | Mission, roadmap, tech stack, testing, data model (`data-model.md`, the living schema) and one folder per phase                                                                          |
 
 Rules:
 
@@ -167,6 +175,9 @@ Rules:
   the session comes from `Depends(get_session)`, and every money change runs
   inside one database transaction.
 - New models are imported in `alembic/env.py` so autogenerate sees them.
+- Tables, columns and constraints follow [data-model.md](data-model.md);
+  a schema change not agreed there is agreed with the user first. One
+  migration per `plan.md` group; a migration merged to `main` is never edited.
 - Money columns are `Decimal` with `sa_type=Numeric(12, 2)`, never `float`;
   timestamps are timezone-aware (never `datetime.utcnow`).
 - Config is read only through `app.core.config.settings`, never `os.environ`.
