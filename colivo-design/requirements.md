@@ -19,7 +19,7 @@ Mess Manager is a shared-home web app that replaces the monthly shared-home spre
 | G1 | Remove manual calculation | Recalculating October 2026 gives Rabbi Hasan +৳293.65 and Hijam Shusil +৳3,713.77, matching the sheet |
 | G2 | Books always balance | Every month, member charges + bills to pay = total home expenditure (shared cost invariant) |
 | G3 | Let members self-serve | Members log their own meals and check their own balance without asking the manager |
-| G4 | Keep the fund honest | Central cash and grocery fund shown by the app equal the cash the manager and fund keeper actually have |
+| G4 | Keep the fund honest | Home fund and grocery fund cash shown by the app equal the cash each holder (owner, managers, fund keepers, shoppers) actually has |
 | G5 | Fast month close | Close the month and roll balances over in under 10 minutes |
 
 ### Scope
@@ -36,10 +36,12 @@ The app uses plain words that people understand in any country. The earlier Sout
 | Home | The shared flat or house; one per account in the MVP | Mess, flat |
 | Owner | The person who signed up and created the home; can do everything | Super admin |
 | Manager | Runs the money day to day | Manager |
-| Fund keeper | Holds the shared grocery cash | Bazar box keeper |
+| Fund keeper | A member chosen to hold cash for the grocery fund or the home fund; a home can have several | Bazar box keeper |
+| Holder | Anyone holding a fund's cash: the owner, a manager or one of that fund's fund keepers | — |
+| Handover | Fund cash passed from one holder to another | — |
 | Groceries | Food shopping that counts toward the cost per meal | Bazar |
 | Grocery fund | Shared cash kept aside for grocery shopping | Bazar box |
-| Home fund | Money the manager holds for rent and bills | Mess fund, cash in hand |
+| Home fund | Money held for rent and bills by the owner, managers or home fund keepers | Mess fund, cash in hand |
 | Cost per meal | Grocery spending ÷ total meals | Meal rate |
 | Deposit | Rent a member pays before moving in; pays their last months' rent | Advance rent |
 | Landlord deposit | One-time money paid to the landlord when the home was rented | Landlord advance |
@@ -53,13 +55,13 @@ Prepaid and postpaid utilities keep their names for now.
 
 ## 2. Users and their needs
 
-Each home is its own account; everyone is a member, and the owner can add the Manager and Fund keeper roles on top (FR-62 to FR-67).
+Each home is its own account; everyone is a member, and the owner can add the Manager and Fund keeper roles on top, any number of each (FR-62 to FR-67, FR-104).
 
 | Role | Who | Main need | Pain point today | Device |
 | --- | --- | --- | --- | --- |
 | Owner | One person per home, usually whoever set it up | Full control: settings, roles, rules, and fixing anything | Everything depends on one spreadsheet only they can edit | Laptop + phone |
-| Manager | Chosen by the owner (optional) | Record bills and payments, add members, close the month | Chasing members for money and receipts | Phone + laptop |
-| Fund keeper | One member chosen to hold the shared groceries cash (optional) | Know what's in the grocery fund and who has money from it | Arguments over whose money paid for groceries | Phone |
+| Manager | Chosen by the owner (optional; a home can have several) | Record bills and payments, add members, close the month | Chasing members for money and receipts | Phone + laptop |
+| Fund keeper | Members chosen to hold cash for the grocery fund or the home fund (optional; several per fund) | Know how much of each fund they hold and who has money from it | Arguments over whose money paid for groceries | Phone |
 | Member | Everyone, including the three roles above | Log meals, record what they paid with proof, see what they owe and why | No visibility into cost per meal, shares or balance until month end | Phone |
 
 ### What every user needs from the system
@@ -144,7 +146,7 @@ Each story is written as "As a … I want … so that …" with its acceptance c
 | US-E1 | As a new member, I want to log in with the phone or email the manager added me with, so that I don't need to sign up | An SMS or email arrives; a one-time code logs me in |
 | US-E2 | As a member, I want to record anything I paid (rent, utilities, grocery fund, groceries, a bill) with a receipt, so that it counts toward my balance | Entry saved as Waiting until confirmed |
 | US-E3 | As a manager, I want an inbox of payments to confirm with their receipts, so that nothing counts without proof | Confirm or Reject in one tap |
-| US-E4 | As the fund keeper or manager, I want to give cash from the grocery fund or home fund to a shopper or bill payer, so that they spend only what they were given | Given amount shows on their home; overspending is blocked |
+| US-E4 | As anyone holding fund cash, I want to give cash from the grocery fund or home fund to a shopper or bill payer, so that they spend only what they were given | Given amount shows on their home; I can't give more than I hold; overspending is blocked |
 | US-E5 | As anyone, I want to fix a wrong entry with a reason, so that mistakes are corrected without hiding them | History shows who changed what and when |
 | US-E6 | As a manager, I want a checklist before closing the month, so that I don't carry forward surprises | Dues, unpaid bills and money with shoppers are listed |
 | US-E7 | As the owner or a manager, I want to deactivate members and see past members with their documents and settlements | Leaving members are deactivated at settlement and listed as past members |
@@ -155,6 +157,9 @@ Each story is written as "As a … I want … so that …" with its acceptance c
 | US-E12 | As a member, I want to record that something I bought went back to the shop, for money back or in exchange for something else, so that the home is charged only for what it kept | The original entry shows "Returned ৳X"; after confirmation my credit and the totals use the amount kept |
 | US-E13 | As a member, I want to send a correction for my own confirmed entry, so that a mistake I made is fixed without asking the manager to retype it | The correction waits for confirmation; the old amount counts until then; history shows both |
 | US-E14 | As a member, I want to confirm that I received a refund the manager paid me, so that "I gave it back" is never argued about | The refund counts only after I confirm it |
+| US-E15 | As a member, I want to say who I gave my cash to (Rabbi, Karim or Hijam), so that the app knows who holds it | The person I name confirms they received it; it then counts in their cash |
+| US-E16 | As anyone holding fund cash, I want to hand it over to another holder in the app, so that the app always matches who really has the money | The receiver confirms; my cash goes down and theirs goes up; the fund total stays the same |
+| US-E17 | As a member, I want to see how much of each fund every holder has, so that I know the money is safe and accounted for | The Funds view lists every holder's cash and money with shoppers, adding up to the fund total |
 
 ## 4. Features
 
@@ -213,7 +218,7 @@ These features make one app fit any home: each home sets its own rules instead o
 | Final settlement | Final statement: meals, utilities, rent, deposit applied or refunded, refund or due; member set to Left | P1 | Manager, Member |
 | Landlord deposit | One-time landlord deposit at lease start: date, amount, months of home rent it covers, receipt; funded from the founding members' deposits | P1 | Manager |
 | Landlord deposit | Untouched by member changes; at home move-out the landlord adjusts it against last months' rent, returns it, or deducts repair costs, in any mix; itemised repair deductions shared among members; top-up if rent rises; status Held / Settled at move-out | P1 | Manager |
-| Fund view | Shows member deposits held, landlord deposit held and cash free to spend, and checks they reconcile | P1 | Manager (visible to all) |
+| Fund view | Shows member deposits held, landlord deposit held and cash free to spend, and checks they reconcile; cash is shown per holder | P1 | Manager (visible to all) |
 | Seat vacancy | Seat shows vacant from the leave date; incoming replacement's deposit can fund the leaving member's refund | P2 | Manager |
 | Deposit | Top-up request when a member's rent share rises | P2 | Manager |
 | Leave notice | Withdraw a notice before the leave date | P2 | Member, Manager |
@@ -236,10 +241,11 @@ These features make one app fit any home: each home sets its own rules instead o
 
 | Module | Feature | Priority | Users |
 | --- | --- | --- | --- |
-| Roles | Owner, Manager, Fund keeper on top of Member; defaults when a role is empty | P1 | Owner |
+| Roles | Owner, Manager, Fund keeper on top of Member; any number of managers and fund keepers; fund keepers chosen per fund; defaults when a role is empty | P1 | Owner |
+| Fund holders | Cash per holder for each fund; pay to a named holder who confirms; hand over cash between holders (FR-104, FR-105) | P1 | All |
 | Members | Add by phone or email with SMS/email notice; photo; required ID document; activate / deactivate | P1 | Owner, Manager |
 | Members | Past members list with documents, bills and settlement | P1 | Owner, Manager |
-| Grocery fund | Give cash from the grocery fund to a shopper; grocery fund can't go below ৳0 | P1 | Fund keeper, Manager |
+| Grocery fund | Give cash from the grocery fund to a shopper; nobody gives out more than they hold | P1 | Fund keeper, Manager |
 | Bills | Give home-fund cash to a member to pay a bill | P1 | Manager, Owner |
 | I paid | One screen for every payment, with purpose, proof and confirmation by role | P1 | All |
 | Inbox | Payments to confirm, edits to review, notices, grocery fund alerts | P1 | All |
@@ -287,35 +293,38 @@ The system SHALL meet these requirements for v1; each maps to a feature above.
 - **FR-12** The system shall record bills with date, category, amount (0 or more), description, paid by (a member, or the central fund when empty) and whether it has been paid to the landlord or provider.
 - **FR-13** The system shall record grocery entries of two kinds: a grocery purchase (with funding source: own pocket, grocery fund, central fund, money given to the shopper, or a split of one shared source plus own pocket, see FR-98) and a top-up of the grocery fund (shared cash members put aside for shopping).
 - **FR-14** Only grocery purchases, less their returns (FR-102), shall count towards the cost per meal; grocery fund top-ups and Household items shall not.
-- **FR-15** The system shall show the grocery fund balance: opening balance carried from last month (FR-99) plus top-ups in, minus purchases paid from the grocery fund.
+- **FR-15** The system shall show the grocery fund balance: opening balance carried from last month (FR-99) plus top-ups in, minus purchases paid from the grocery fund. The balance is split by who holds it: each holder's cash (BR-23) plus money with shoppers.
 
-* **FR-68** Only the fund keeper or a manager can take money out of the grocery fund. They can spend it directly on groceries, or give an amount to another member who is shopping.
-* **FR-69** A member given grocery money can record groceries paid from that money, up to the amount given. Anything above it is paid from their own pocket, in the same entry (FR-98). Leftover money is returned to the grocery fund.
-* **FR-70** No one can spend or give out more than is in the grocery fund; the grocery fund can never go below ৳0. The grocery fund view shows money in the grocery fund and money currently with shoppers.
+* **FR-68** Only a holder of the grocery fund (one of its fund keepers, a manager or the owner) can take money out of it, and only from the cash they hold. They can spend it directly on groceries, or give an amount to another member who is shopping.
+* **FR-69** A member given grocery money can record groceries paid from that money, up to the amount given. Anything above it is paid from their own pocket, in the same entry (FR-98). Leftover money is returned to a grocery fund holder, who confirms it (FR-105).
+* **FR-70** No one can spend or give out more of a fund than they hold; no holder's cash can go below ৳0 (BR-23). The Funds view shows each holder's cash and the money currently with shoppers.
 
-- **FR-71** A manager or the owner can give money from the home fund to a member to pay a specific bill (rent, a utility, the cook's salary), never more than the fund's free-to-spend cash.
-- **FR-72** The member records the payment as paid from the given money, from their own pocket, or both. Given money can't be exceeded; any extra is credited to the member as paid from their pocket. Leftover given money goes back to the home fund. The bill is then marked paid.
-- **FR-73** Every person, including the owner, managers and the fund keeper, is also a member and has the same member features: own meals, own groceries, paying bills, own bill and balance. The owner can do everything any role can.
+- **FR-71** A holder of the home fund (the owner, a manager or a home fund keeper) can give money from it to a member to pay a specific bill (rent, a utility, the cook's salary), or pay a bill from it themselves. Never more than they hold, and never more than the home fund's free-to-spend cash (FR-32).
+- **FR-72** The member records the payment as paid from the given money, from their own pocket, or both. Given money can't be exceeded; any extra is credited to the member as paid from their pocket. Leftover given money goes back to a home fund holder, who confirms it (FR-105). The bill is then marked paid.
+- **FR-73** Every person, including the owner, managers and fund keepers, is also a member and has the same member features: own meals, own groceries, paying bills, own bill and balance. The owner can do everything any role can.
 
 - **FR-98** Split funding. Any grocery purchase or bill payment can be recorded as **one entry** paid from up to two sources: one shared source (grocery fund, home fund, or money given to the payer) plus the payer's own pocket. The payer enters the total; the shared part defaults to everything still available from that source (given amount left, grocery fund balance, or home fund free-to-spend cash) and can be lowered, and the rest is the pocket part. The shared part can never exceed what is available; the pocket part is credited to the payer (BR-6). The entry keeps one receipt, one history and one confirmation. The cost per meal or bill total uses the full amount, not each part. Applies to the grocery entry screen, "I paid", "I paid a bill" and the manager's bill entry.
 
 ### Everyday flows and safeguards
 
 - **FR-74** Every record of money paid (a member's payment to the manager, a bill paid, groceries bought, a payment the manager records) needs proof: a receipt, screenshot or photo. It can't be saved without one.
-- **FR-75** Members and the fund keeper record everything they pay on one "I paid" screen, choosing the purpose: rent, prepaid or postpaid utilities, general payment, deposit, money put into the grocery fund, groceries they bought, or a bill they paid. It counts only after confirmation: money put into the grocery fund by a member is confirmed by the fund keeper, a manager or the owner; everything else, and anything the fund keeper adds, by a manager or the owner. Entries by managers and the owner are saved without confirmation.
+- **FR-75** Members and fund keepers record everything they pay on one "I paid" screen, choosing the purpose: rent, prepaid or postpaid utilities, general payment, deposit, money put into the grocery fund, groceries they bought, or a bill they paid. When the money goes to a person (rent, utilities, general, deposit, grocery fund top-up), they also choose **who received it**, from that fund's holders. It counts only after confirmation:
+  - Money given to a holder is confirmed by **the holder who received it**; until then it is in nobody's cash (FR-104).
+  - Everything else (groceries or bills paid from the member's own pocket or from money given to them), and anything a fund keeper adds, is confirmed by a manager or the owner.
+  - Entries by managers and the owner are saved without confirmation; the other managers and the owner see them as updates in their inbox.
 - **FR-76** An inbox shows each person what needs them (payments to confirm, bills paid with given money, edits to review, returns and corrections to confirm, refunds to confirm receiving) and updates (notices, grocery fund low, entries the owner or a manager corrected).
 - **FR-77** Any entry can be edited or deleted with a reason; the full history (who, when, old and new value) stays visible. Closed months can't be changed. Who can change a confirmed entry, and how, is in FR-103; returns are in FR-102.
-- **FR-78** Before closing a month the app shows a checklist: unlogged meals, unpaid dues, unpaid bills, bills still on an estimate (FR-101), money still with shoppers, returns and corrections waiting for confirmation, refunds waiting for the member, grocery fund count, home fund cash count. The manager can fix items first or close anyway.
+- **FR-78** Before closing a month the app shows a checklist: unlogged meals, unpaid dues, unpaid bills, bills still on an estimate (FR-101), money still with shoppers, returns and corrections waiting for confirmation, refunds waiting for the member, handovers and payments waiting for their receiver, and a cash count of each fund **per holder** (each holder checks the cash they have against the app). The manager can fix items first or close anyway.
 - **FR-79** The owner or a manager adds a member by phone or email; the app sends an SMS or email so they can log in with a one-time code. Only the owner signs up (FR-83); members never sign up, and there is no invite link or home code.
-- **FR-80** The owner and managers can deactivate or reactivate a member. Final settlement deactivates the leaving member automatically; deactivated members can't log in.
+- **FR-80** The owner and managers can deactivate or reactivate a member. Final settlement deactivates the leaving member automatically; deactivated members can't log in. A member who still holds fund cash or given money can't be deactivated until they hand it over (FR-105).
 - **FR-81** A Past members list (owner and managers only) keeps each former member's contact details, ID documents, monthly bills and final settlement.
 - **FR-82** Members can message each other: one group chat for the home plus one-to-one chats, with photo attachments. Only people in the home can join.
 
-* **FR-89** Closing a month can't be undone and needs a final confirmation that shows what moves into the next month: member dues and credits, home fund and grocery fund opening cash, money still with shoppers, and unpaid bills (FR-99). A closed month is never reopened.
+* **FR-89** Closing a month can't be undone and needs a final confirmation that shows what moves into the next month: member dues and credits, home fund and grocery fund opening cash per holder, money still with shoppers, and unpaid bills (FR-99). A closed month is never reopened.
 * **FR-90** The owner or a manager can still correct an entry in a closed month. A reason is required; the closed month's statement shows the corrected figures, and each member's difference is added to the open month as an "\<month> correction" line. Everyone affected is told, and the change is kept in the entry's history.
 * **FR-91** Rejecting a payment or entry needs a reason (amount doesn't match, receipt not clear, money not received, wrong purpose, or other) and an optional note. The sender sees the reason in their inbox and can fix it and send again with a new receipt, or withdraw it. A rejected entry never changes any balance.
 * **FR-92** Deactivating a member needs a confirmation with the date it starts; it can be undone at any time with Reactivate, which asks for the date charges start again. Any amount the member still owes stays on their record. Changing rent (owner or manager only) also asks for confirmation and shows each member's new share before it's saved.
-* **FR-93** Every inbox is role-aware: members see payments, returns and corrections confirmed or rejected, money given to them, refunds to confirm receiving, entries of theirs the owner or a manager corrected, notices and rent changes; the fund keeper also sees grocery fund top-ups and returned money to confirm.
+* **FR-93** Every inbox is role-aware: members see payments, returns and corrections confirmed or rejected, money given to them, refunds to confirm receiving, entries of theirs the owner or a manager corrected, notices and rent changes; fund holders also see cash paid to them, handovers to them and returned money to confirm; managers and the owner see other managers' entries as updates.
 * **FR-94** Log-in codes last 5 minutes. After 5 wrong codes the phone or email is locked for 15 minutes. A new code can be sent once a minute, up to 5 times an hour.
 * **FR-95** A new home shows a setup checklist (rooms and rent, members, home rules, bills) and empty screens that explain what will appear there, instead of blank lists.
 
@@ -336,7 +345,7 @@ Confirmed money is never overwritten. A return or a correction is a new entry li
   - **Taken instead (optional):** what was taken in exchange, with its own receipt. Money back = returned − taken instead.
   - **Reason** and **proof:** the shop's return slip, or a photo of the item with a note when the shop gives none (FR-74).
   - **Confirmation:** the same as the original entry's (FR-75). A pending return changes no balance; a rejected one follows FR-91.
-  - **Split-funded entries (FR-98):** the money back lowers the pocket part first, then the shared part. Any shared part that comes back is money the payer holds for that source, shown as money with shoppers, and is returned to the grocery fund or home fund like leftover given money (FR-69, FR-72).
+  - **Split-funded entries (FR-98):** the money back lowers the pocket part first, then the shared part. Any shared part that comes back is money the payer holds for that source, shown as money with shoppers, and is returned to a holder of that fund like leftover given money (FR-69, FR-72, FR-105).
   - **Totals:** the cost per meal or bill total uses the original amount − returned + taken instead. The original entry shows "Returned ৳X" and links to the return.
   - **Closed months:** a return on an entry from a closed month is a closed-month correction (FR-90). The member can record it; the owner or a manager confirms it.
   - **Shop credit:** not tracked in v1. If the shop keeps the money as credit, nothing is recorded until all of it is used; then the return is recorded with what was taken instead, and money back is ৳0. Anything taken beyond the credit is a new entry.
@@ -344,16 +353,34 @@ Confirmed money is never overwritten. A return or a correction is a new entry li
   Example: Rahim pays ৳800 from his own pocket for wire; it is confirmed and he is credited ৳800. He returns the wire, takes a plug for ৳350 and gets ৳450 back. After the manager confirms the return, the entry counts ৳350 and Rahim's credit is ৳350; no cash moves inside the home.
 
 - **FR-103** Correcting a confirmed entry. While an entry waits for confirmation, its sender can edit or withdraw it (FR-91, FR-96). Once it is confirmed:
-  - A **member** (or the fund keeper) can't change it directly. They send a **correction** of their own entry: the new values, a reason, and a new receipt when the amount changes. It goes to whoever confirms that kind of entry (FR-75). Until it is confirmed the old values count; a rejected correction follows FR-91. A correction can also ask to remove an entry entered twice, which the owner or a manager confirms as a delete (FR-96).
+  - A **member** (or a fund keeper) can't change it directly. They send a **correction** of their own entry: the new values, a reason, and a new receipt when the amount changes. It goes to whoever confirms that kind of entry (FR-75). Until it is confirmed the old values count; a rejected correction follows FR-91. A correction can also ask to remove an entry entered twice, which the owner or a manager confirms as a delete (FR-96).
   - The **owner or a manager** can correct any entry directly, with a reason. The member it belongs to is told in their inbox, with the old and new values. In v1 there is no dispute step; the member can reply in messages.
   - Corrections by the owner or a manager to their own entries are saved without confirmation, like their other entries (FR-75), and stay in the history.
   - A member can never correct someone else's entry.
   - An entry from a closed month is corrected under FR-90.
 
+### Fund holders and handover
+
+A fund is money kept for a purpose (the grocery fund and the home fund in v1). Its cash can be with several people at once, and the app tracks how much each one has, so the cash shown always matches the cash in people's hands (G4). Custom funds come later (Release plan).
+
+- **FR-104** Fund holders.
+  - **Who can hold a fund:** the owner and every manager can hold either fund. The owner or a manager can also choose any number of members as **fund keepers** of the grocery fund, the home fund or both. A fund with no fund keeper is held by the owner and managers.
+  - **Cash per holder:** for each fund the app keeps every holder's cash (BR-23). The fund's balance is the sum of its holders' cash plus money given to members and not yet spent (money with shoppers).
+  - **Paying a holder:** money paid into a fund names the holder who received it (FR-75) and counts in their cash once they confirm it.
+  - **Spending:** a holder can spend, give out or refund only what they hold of that fund. From the home fund, the home's free-to-spend cash (FR-32) can't go below ৳0 either, because deposit cash stays reserved (BR-17).
+  - **Removing a holder:** taking the fund keeper role away, or deactivating the member (FR-80), is blocked while they hold cash or given money; they hand it over first (FR-105).
+  - **Month close:** each holder's cash is counted (FR-78) and carried into the next month with the same holder (FR-99).
+- **FR-105** Handover. A holder passes cash to another holder of the same fund (for example, Karim hands ৳4,000 of rent cash to Rabbi):
+  - The giver records the handover with an amount and optional proof; it can't be more than they hold.
+  - The **receiver confirms** it. Until then the amount stays in the giver's cash but they can't spend it; if the receiver answers "Not received", it is released back to the giver (like FR-91).
+  - The fund's total never changes; only who holds it.
+  - Leftover given money handed back by a shopper (FR-69, FR-72) and money from returns (FR-102) are handovers to a holder of that fund.
+  - Moving cash between the grocery fund and the home fund is a handover between funds that only the owner or a manager can start; both fund totals change by the same amount.
+
 ### Payments
 
 - **FR-16** The system shall record member payments with date, amount (more than 0), category (Rent, Prepaid Utility, Postpaid Utility, General, Refund, Deposit, Deposit Refund), method (Cash, Bank, bKash, Nagad) and note.
-- **FR-17** A Refund shall reduce both the member's balance and home fund balance. The owner or a manager records it with proof (FR-74); it counts only after the member confirms they received it in their inbox. The member can instead answer "Not received" with a reason, which sends it back to whoever recorded it, like a rejection (FR-91). Until then it shows as "Waiting for member", and the month-close checklist (FR-78) lists it.
+- **FR-17** A Refund shall reduce both the member's balance and home fund balance. The owner or a manager records it with proof (FR-74), paid from the home fund cash they hold (FR-104); it counts only after the member confirms they received it in their inbox. The member can instead answer "Not received" with a reason, which sends it back to whoever recorded it, like a rejection (FR-91). Until then it shows as "Waiting for member", and the month-close checklist (FR-78) lists it.
 - **FR-18** The system shall block a refund larger than the home fund balance and warn when it exceeds the member's positive balance.
 
 ### Dashboard and statements
@@ -368,8 +395,8 @@ Confirmed money is never overwritten. A return or a correction is a new entry li
 
 - **FR-24** The manager shall enter or import prior-month balances for the first month on the app, at most one of each per month (and per member or bill where relevant):
   - **Member balances:** month, year, member, Due or Credit, amount, date-time.
-  - **Home fund opening cash:** amount the manager holds for the home.
-  - **Grocery fund opening cash:** amount the fund keeper holds.
+  - **Home fund opening cash:** amount each holder (owner, managers, home fund keepers) holds for the home.
+  - **Grocery fund opening cash:** amount each grocery fund holder holds.
   - **Money still with shoppers:** member and amount given but not yet spent or returned.
   - **Unpaid bills:** category, month, amount owed, and whether it is an estimate.
 
@@ -377,8 +404,8 @@ Confirmed money is never overwritten. A return or a correction is a new entry li
 - **FR-25** Closing a month shall lock its entries and write one prior-month record per member with a non-zero balance: Due for negative, Credit for positive.
 - **FR-26** The next cycle shall start with empty meal, expense and payment logs, the rolled-over balances and carry-forward records (FR-99), the same rooms, members and categories, and each bill category's default estimate (FR-100).
 - **FR-99** Closing a month shall also write carry-forward records for the home, so no money disappears between months:
-  - **Home fund opening cash:** the closing home fund balance (BR-8).
-  - **Grocery fund opening cash:** the closing grocery fund balance (FR-15).
+  - **Home fund opening cash:** each holder's closing home fund cash (BR-8, BR-23), carried to the same holder.
+  - **Grocery fund opening cash:** each holder's closing grocery fund cash (FR-15, BR-23), carried to the same holder.
   - **Money still with shoppers:** each open given-money amount, carried to the same member; they can still record what they spent or return it.
   - **Carried bills:** each bill not yet paid to the provider (for example October gas), with category, original month, amount owed and whether it was an estimate. These show in the next month's Bills to pay as "From October".
 
@@ -393,7 +420,7 @@ Confirmed money is never overwritten. A return or a correction is a new entry li
 - **FR-29** Each member shall have a join date, an optional leave date and a status (Active, Notice served, Left), and keep a snapshot of the deposit and notice rules in force on their join date.
 - **FR-30** On join, the system shall calculate the required deposit (BR-12) and record deposit payments, including instalments, showing any amount outstanding.
 - **FR-31** Deposit money shall be kept out of the member's monthly total paid and balance; it lives in a separate deposit ledger.
-- **FR-32** The fund view shall show member deposits held, landlord deposit held and cash free to spend, and flag when they do not reconcile (BR-17).
+- **FR-32** The fund view shall show member deposits held, landlord deposit held and cash free to spend, and flag when they do not reconcile (BR-17). Free to spend = home fund cash held by all holders − member deposit cash in hand. Deposit cash is part of the cash its holder holds, marked as reserved.
 - **FR-33** A member or the manager shall submit a leave notice with notice date and planned leave date; the system shall compute the earliest allowed leave date (BR-13) and notify all members and the manager.
 - **FR-34** If the planned leave date is earlier than allowed, the system shall block it: in the MVP nobody can leave earlier than the home's minimum notice period (short-notice waivers come later).
 - **FR-35** For a member with notice served, the system shall offset rent in their last months with an Deposit Applied credit (BR-14), labelled on the statement.
@@ -436,13 +463,13 @@ Confirmed money is never overwritten. A return or a correction is a new entry li
 
 ### Roles and permissions
 
-- **FR-62** Every person in a home has the Member role. The owner can add Manager and Fund keeper on top; one person may hold several roles.
-- **FR-63** Each home has exactly one owner. The owner can do everything: give and remove roles, choose managers and the fund keeper, change all home settings, and hand the owner role to another member.
-- **FR-64** A manager can add new members, choose the fund keeper, record payments and bills, change rent and close the month. A manager cannot make someone a manager.
-- **FR-65** There is at most one fund keeper. They can record groceries paid from the grocery fund and money put into it, plus everything a member can do. Giving the role to someone else moves the grocery fund to them.
+- **FR-62** Every person in a home has the Member role. The owner can add Manager and Fund keeper on top; one person may hold several roles, and a home can have any number of managers and fund keepers.
+- **FR-63** Each home has exactly one owner. The owner can do everything: give and remove roles, choose managers and fund keepers, change all home settings, and hand the owner role to another member.
+- **FR-64** A manager can add new members, choose fund keepers, hold either fund (FR-104), record payments and bills, change rent and close the month. A manager cannot make someone a manager. Every manager has the same powers; none needs another's approval (FR-75).
+- **FR-65** A fund keeper is chosen for the grocery fund, the home fund or both, and a fund can have several. A fund keeper can receive and confirm money paid into their fund, spend from and give out the cash they hold (a home fund keeper can also pay bills and give bill money, FR-71), and hand cash over (FR-105), plus everything a member can do. Removing the role is blocked while they hold cash (FR-104).
 - **FR-66** A member can log their own meals and groceries, see their own bill and payments, and give notice. Members and fund keepers cannot add members.
 
-* **FR-67** Default fallback: while no manager is set, the owner does every manager job. While no fund keeper is set, the manager keeps the grocery fund, or the owner if there is no manager.
+* **FR-67** Default fallback: while no manager is set, the owner does every manager job. A fund with no fund keeper is held by the owner and managers (FR-104).
 
 | Action | Owner | Manager | Fund keeper | Member |
 | --- | --- | --- | --- | --- |
@@ -450,7 +477,9 @@ Confirmed money is never overwritten. A return or a correction is a new entry li
 | Change home settings and rules | Yes | No | No | No |
 | Add new members | Yes | Yes (as Member) | No | No |
 | Record payments, bills, rent changes, close month | Yes | Yes | No | No |
-| Record groceries paid from the grocery fund | Yes | No | Yes | No |
+| Hold fund cash, spend or give it out, hand it over | Yes (any fund) | Yes (any fund) | Yes (their funds) | No |
+| Confirm money paid to them | Yes | Yes | Yes | No |
+| Choose fund keepers | Yes | Yes | No | No |
 | Log own meals and groceries, see own bill | Yes | Yes | Yes | Yes |
 
 ## 6. Business rules and calculations
@@ -489,7 +518,7 @@ D_{total,i} = C_{meal,i} + C_{util,i} + C_{rent,i} + PrevDue_i
 B_i = P_{total,i} - D_{total,i} - Refund_i
 ```
 
-**BR-8 Central cash.** Opening cash carried from last month (FR-99) plus member payments (except refunds) minus carried bills paid this month, minus central-fund outlays (bills and groceries paid from the fund, less money from returns handed back to the fund, FR-102) minus refunds the member has confirmed receiving (FR-17). The grocery fund is tracked separately (FR-15).
+**BR-8 Central cash.** Opening cash carried from last month (FR-99) plus member payments (except refunds) minus carried bills paid this month, minus central-fund outlays (bills and groceries paid from the fund, less money from returns handed back to the fund, FR-102) minus refunds the member has confirmed receiving (FR-17). The grocery fund is tracked separately (FR-15). Central cash is split by holder: it equals the sum of every home fund holder's cash (BR-23) plus home fund money given to members and not yet spent.
 
 **BR-9 Bills to pay.** Per class (prepaid, postpaid, rent): bills the home owes the landlord, cook, gas, internet and other providers, minus what has already been paid to them, plus carried bills from earlier months still unpaid (FR-99). Estimated bills count at their estimate until the actual is entered. Shown to users as "Bills to pay", with carried bills marked "From \<month>" and estimates marked "Estimated".
 
@@ -556,6 +585,14 @@ Example: cook estimate ৳4,000, 4 members, no deals → each member's bill show
 
 Example: November cook estimated ৳2,500, 3 members, November closed on the estimate; the actual bill ৳2,800 arrives on 4 December → each member gets "November cook adjustment" +৳100 on their December bill, and Bills to pay shows ৳2,800 for the November cook.
 
+**BR-23 Cash per holder.** For fund f and holder h in a month: opening cash, plus confirmed money paid to them and handovers to them, minus what they spent from f, gave out from f, handed over (confirmed or waiting) and paid as refunds. It can never go below 0.
+
+```latex
+H_{f,h} = Open_{f,h} + In_{f,h} + HandIn_{f,h} - Spent_{f,h} - Given_{f,h} - HandOut_{f,h} - Refund_{f,h} \geq 0 \qquad Balance_f = \sum_h H_{f,h} + WithShoppers_f
+```
+
+Example: home fund ৳14,000 = Rabbi ৳10,000 + Karim ৳4,000 (Maruf's rent cash, confirmed by Karim). Rabbi can give at most ৳10,000 for a bill until Karim hands his ৳4,000 over; after Rabbi confirms the handover, Rabbi holds ৳14,000 and Karim ৳0, and the home fund is still ৳14,000.
+
 ### Verification: October 2026 cycle
 
 Total meals 107.0, grocery ৳10,430.00, cost per meal ৳97.4766 (shown ৳97.48).
@@ -578,7 +615,7 @@ Each home is small (roughly 5–15 members) but the platform holds many homes an
 | NFR-03 | Tenant isolation | Every table carries a home id; every query is scoped by it; unique rules (member name, room name) apply within a home, not globally |
 | NFR-04 | Usability | Logging meals or a grocery entry takes 3 taps or fewer on a 360 px wide phone screen |
 | NFR-05 | Performance | Dashboard and statement load in under 1 second for a 15-member month; meal-rate aggregates may be cached in Redis but are recomputed from PostgreSQL on any write |
-| NFR-06 | Security | Login by phone or email with a one-time code; role checks on every write (Roles and permissions); member and fund keeper entries count only after confirmation; ID documents encrypted and visible only to the owner and managers |
+| NFR-06 | Security | Login by phone or email with a one-time code; role checks on every write (Roles and permissions); member and fund keeper entries count only after confirmation, and money paid to a holder only after that holder confirms; ID documents encrypted and visible only to the owner and managers |
 | NFR-07 | Auditability | Immutable ledger / event log for all balance-affecting changes; soft delete only, with reason |
 | NFR-08 | Reliability | Idempotent writes so a retried save on slow mobile data never double-counts |
 | NFR-09 | Data safety | Daily database backup; export of any month to Excel |
@@ -615,6 +652,12 @@ Each home is small (roughly 5–15 members) but the platform holds many homes an
 * Non-food item entered as groceries → the owner or a manager corrects its purpose to Household (FR-103), which takes it out of the cost per meal.
 * Member takes back some or all of a confirmed payment → recorded as a Refund by the owner or a manager and confirmed by the member (FR-17); the original payment is never edited.
 * Refund the member never confirms → shows as "Waiting for member" and on the month-close checklist; it changes no balance until confirmed.
+* Two managers both collect rent cash → each confirms what they received; the home fund shows each one's cash, and either can hand it to the other (FR-104, FR-105).
+* Holder tries to give out more than they hold, though the fund as a whole has enough → blocked; they ask another holder for a handover first.
+* Handover the receiver says they didn't get → released back to the giver; nothing moves (FR-105).
+* Payment to a holder who never confirms → in nobody's cash; it shows on the month-close checklist.
+* Fund keeper role removed, or member leaving, while they still hold cash → blocked until they hand it over (FR-104, FR-80).
+* Member pays the wrong person (names Rabbi but gave the cash to Karim) → Rabbi answers "Not received" and the member sends it again naming Karim (FR-91).
 
 - Rent share rises after deposit is paid → the gap is charged in the covered months, or a top-up is requested, per home rule.
 - Rent share falls, or the member leaves early with deposit left over → the remainder is refunded in final settlement.
@@ -641,7 +684,7 @@ Each home is small (roughly 5–15 members) but the platform holds many homes an
 
 ### Release plan
 
-- One manager runs the money in each home; members trust the manager's payment entries.
+- Several people may hold a home's cash (owner, managers, fund keepers); members trust entries once the person who received the money confirms them.
 - Utilities are charged at actual billed amounts. The fixed floors from the 2 Nov version (Electricity 1,000, Gas 600, Internet 1,050, Cook 4,000) are dropped (confirmed 12 Nov 2026): no minimum charge per utility. Updated 14 Nov 2026: a manager may instead set an optional **estimate** per category (FR-100); it is replaced by the actual bill, and any difference after close is adjusted (BR-22). It is never a floor.
 - bKash / Nagad payments are entered manually.
 
@@ -671,10 +714,14 @@ Decided on 17 Nov 2026:
 - **Shop credit:** not tracked in v1 (FR-102).
 - **Household items:** a Household bill category, shared like other bills, not through the cost per meal (FR-05).
 - **Refunds:** count only after the member confirms receipt (FR-17).
+- **Fund holders:** any number of managers and fund keepers; a fund keeper is chosen per fund; the owner and managers can hold either fund; the app tracks cash per holder and the receiver confirms every payment or handover (FR-62–FR-67, FR-104, FR-105, BR-23).
+- **Managers' own entries:** still saved without confirmation; other managers and the owner are notified (FR-75).
+- **Deposit cash:** part of the cash its holder holds, marked as reserved; free to spend excludes it (FR-32, BR-17).
+- **Custom funds** (repair fund, cook fund): later, not v1.
 
 ### Release plan
 
-1. **Phase 1 – MVP (P1 features):** one-home account, setup, override engine, meal grid, bills and groceries with grocery fund, payments and refunds, prior-balance import, dashboard, statement, month close, home rules, deposit ledger, roles and permissions, leave notice and final settlement, give-money-first flows for the grocery fund and bills, I paid with proof and confirmation, returns and exchanges, corrections of confirmed entries, inbox, edit history, month-close checklist, past members, messaging, owner sign-up and phone/email login.
+1. **Phase 1 – MVP (P1 features):** one-home account, setup, override engine, meal grid, bills and groceries with grocery fund, payments and refunds, prior-balance import, dashboard, statement, month close, home rules, deposit ledger, roles and permissions, leave notice and final settlement, give-money-first flows for the grocery fund and bills, I paid with proof and confirmation, returns and exchanges, corrections of confirmed entries, fund holders and handover, inbox, edit history, month-close checklist, past members, messaging, owner sign-up and phone/email login.
 2. **Parallel run:** replay October 2026 as a test, then run November and December 2026 side by side with the spreadsheet; go live when every balance matches.
 3. **Phase 2:** PDF/Excel export, WhatsApp sharing, meal cut-off and default patterns, short-notice waiver vote, whole-home move-out with landlord deposit settlement.
 4. **Phase 3:** reminders, grocery shopping roster, Bangla interface, Flutter app, multiple homes per account.
@@ -686,6 +733,7 @@ Decided on 17 Nov 2026:
 - **Deposit rule per home:** use it as the final months' rent (today) or refund it on leaving, minus damage.
 - **Word packs:** neutral English by default; a South Asia pack that shows Mess, Bazar, Bazar box, Meal rate and Advance.
 - **Language and locale:** full translation (Bangla first), currency per home, number format (lakh or million), date format and time zone.
+- **Custom funds:** a home creates its own funds (repair, cook, festival) with their own holders, alongside the grocery fund and home fund.
 - **Payment methods and ID types per country:** bKash, Nagad, UPI, M-Pesa, bank transfer; NID, passport, driving licence and others.
 - **Require ID as a home setting:** on by default for Meal mess, off for Flatshare, to respect privacy laws such as GDPR.
 - **Utility names:** rename prepaid and postpaid to top-up bills and monthly bills.
