@@ -15,7 +15,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
 input::placeholder,textarea::placeholder{color:#6E7673}
 </style>
 </helmet>
-<div style="width: 390px; height: 1240px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column; position: relative; overflow: hidden">
+<div style="width: 390px; height: 1460px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column; position: relative; overflow: hidden">
   <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 8px">
     <a href="MemberHome.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Home</a>
@@ -49,6 +49,11 @@ input::placeholder,textarea::placeholder{color:#6E7673}
       <span style="font-size: 12px; font-weight: 600; color: #5B6461; padding: 4px 2px 0">Updates</span>
       <section aria-label="Updates" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 0 14px; display: flex; flex-direction: column">
         <div style="padding: 12px 0; display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; justify-content: space-between; gap: 8px; align-items: flex-start"><span style="font-size: 14px; font-weight: 600">Rabbi corrected your entry</span><span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #F1F0EA; color: #3E4744; white-space: nowrap">Correction</span></div>
+          <span style="font-size: 13px; color: #3E4744; line-height: 1.45">"Fish, onions" 14 Oct: ৳860 → ৳680. Reason: "receipt says 680". Ask in Messages if this looks wrong.</span>
+          <a href="EntryDetail.html" style="font-size: 13px; font-weight: 600; text-decoration: none; min-height: 32px; display: flex; align-items: center">See the history ›</a>
+        </div>
+        <div style="padding: 12px 0; border-top: 1px solid #EFEDE6; display: flex; flex-direction: column; gap: 8px">
           <div style="display: flex; justify-content: space-between; gap: 8px; align-items: flex-start"><span style="font-size: 14px; font-weight: 600">Payment confirmed</span><span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #E3F0EC; color: #0A4E42; white-space: nowrap">Done</span></div>
           <span style="font-size: 13px; color: #3E4744; line-height: 1.45">Rabbi confirmed your ৳2,000 grocery fund top-up.</span>
         </div>
@@ -68,6 +73,15 @@ input::placeholder,textarea::placeholder{color:#6E7673}
       </section>
     </sc-if>
     <sc-if value="{{is_keeper}}" hint-placeholder-val="{{false}}">
+      <span style="font-size: 12px; font-weight: 600; color: #5B6461; padding: 4px 2px 0">Needs you</span>
+      <section aria-label="Needs you" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 0 14px; display: flex; flex-direction: column">
+        <div style="padding: 12px 0; display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; justify-content: space-between; gap: 8px; align-items: flex-start"><span style="font-size: 14px; font-weight: 600">Did you get ৳2,000 back?</span><span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #FBEFE3; color: #7A3A0C; white-space: nowrap">Refund</span></div>
+          <span style="font-size: 13px; color: #3E4744; line-height: 1.45">Rabbi paid you ৳2,000 of your ৳3,713.77 credit from the home fund · bKash · today 6:40 pm. It counts on your bill only after you confirm.</span>
+          <div role="img" aria-label="Receipt photo" style="width: 56px; height: 56px; border-radius: 8px; background: #E8E5DC; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #5B6461">Receipt</div>
+          <div style="display: flex; gap: 8px"><button type="button" style="flex: 1; min-height: 40px; border: 0; border-radius: 10px; background: #0E6656; color: #FFFFFF; font-size: 13px; font-weight: 600; font-family: inherit; display: flex; align-items: center; justify-content: center; cursor: pointer">I received it</button><a href="RejectPayment.html" style="flex: 1; min-height: 40px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 600; font-family: inherit; text-decoration: none; display: flex; align-items: center; justify-content: center; cursor: pointer">Not received</a></div>
+        </div>
+      </section>
       <span style="font-size: 12px; font-weight: 600; color: #5B6461; padding: 4px 2px 0">To confirm · grocery fund</span>
       <section aria-label="To confirm · grocery fund" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 0 14px; display: flex; flex-direction: column">
         <div style="padding: 12px 0; display: flex; flex-direction: column; gap: 8px">
@@ -102,7 +116,7 @@ input::placeholder,textarea::placeholder{color:#6E7673}
   </main>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1240}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1460}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);

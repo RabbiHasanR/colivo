@@ -83,7 +83,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
               <optgroup label="Rent"><option>Landlord rent</option></optgroup>
               <optgroup label="Prepaid utility"><option selected>Electricity</option><option>Gas</option><option>Internet</option></optgroup>
               <optgroup label="Postpaid utility"><option>Cook (cook)</option><option>Service charge</option></optgroup>
-              <optgroup label="Other"><option>Ad-hoc</option></optgroup>
+              <optgroup label="Other"><option>Household</option><option>Ad-hoc</option></optgroup>
             </select>
           </label>
           <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Amount (৳)
@@ -107,7 +107,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
           <h2 style="margin: 0; font-size: 15px; font-weight: 600">This month</h2>
           <a href="BillsToPay.html" style="font-size: 13px; font-weight: 600; text-decoration: none">To pay ৳3,081 ›</a>
         </div>
-        <sc-for list="{{bills}}" as="b" hint-placeholder-count="5">
+        <sc-for list="{{bills}}" as="b" hint-placeholder-count="6">
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-top: 1px solid #EFEDE6; gap: 10px">
             <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
               <span style="font-size: 14px; font-weight: 500">{{b.name}} <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: {{b.tagBg}}; color: {{b.tagFg}}">{{b.tag}}</span></span>
@@ -219,7 +219,8 @@ class Component extends DCLogic {
     const tagStyle = {
       Rent: ['#ECEAE2', '#3E4744'],
       Prepaid: ['#E7F1FB', '#1D4F86'],
-      Postpaid: ['#EFEDFF', '#4B3FA3']
+      Postpaid: ['#EFEDFF', '#4B3FA3'],
+      Household: ['#ECEAE2', '#3E4744']
     };
     const bill = (name, tag, sub, amount, unpaid) => ({
       name, tag, sub, amount,
@@ -231,6 +232,7 @@ class Component extends DCLogic {
       bill('Service charge', 'Postpaid', 'Not paid · due 5 Nov', '৳581', true),
       bill('Internet', 'Prepaid', 'Paid by Rabbi', '৳1,050', false),
       bill('Electricity', 'Prepaid', 'Paid by Hijam', '৳1,000', false),
+      bill('Wire, 10 m', 'Household', 'Paid by Hijam · return pending: ৳450 back, counts ৳350 once confirmed', '৳800', false),
       bill('Landlord rent', 'Rent', 'Paid from the home fund', '৳15,645', false)
     ];
     return {

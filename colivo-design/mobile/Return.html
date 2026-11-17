@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Return or exchange</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+</style>
+</helmet>
+<div style="width: 390px; height: 1180px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 6px">
+    <a href="EntryDetail.html" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>Entry</a>
+    <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Return or exchange</h1>
+  </header>
+
+  <main style="flex: 1; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 12px; font-variant-numeric: tabular-nums">
+    <section aria-label="Original entry" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 6px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <span style="font-size: 15px; font-weight: 600">Wire, 10 m <span style="font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #ECEAE2; color: #3E4744">Household</span></span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 600">৳800</span>
+      </div>
+      <span style="font-size: 12px; color: #5B6461">20 Oct · bought by Hijam · confirmed by Rabbi</span>
+      <span style="font-size: 12px; color: #5B6461">৳300 from money given to you + ৳500 from your pocket</span>
+    </section>
+
+    <section aria-label="What went back" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 13px; font-weight: 600">Value returned to the shop</span>
+          <span style="font-size: 12px; color: #5B6461">Up to ৳800 left on this entry</span>
+        </div>
+        <div style="display: flex; align-items: center; background: #F6F5F0; border-radius: 10px">
+          <button type="button" aria-label="Less by ৳50" onClick="{{retMinus}}" style="width: 44px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #17201D">−</button>
+          <span style="min-width: 64px; text-align: center; font-size: 17px; font-weight: 600">৳{{retText}}</span>
+          <button type="button" aria-label="More by ৳50" onClick="{{retPlus}}" style="width: 44px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #0E6656">+</button>
+        </div>
+      </div>
+
+      <button type="button" role="switch" aria-checked="{{tookOn}}" onClick="{{toggleTook}}" style="min-height: 46px; padding: 0 12px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 500; color: #17201D; cursor: pointer; display: flex; justify-content: space-between; align-items: center">I took something else instead<span style="{{switchStyle}}"><span style="{{knobStyle}}"></span></span></button>
+
+      <sc-if value="{{took}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: #F6F5F0">
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #5B6461">What you took
+            <input type="text" value="Plug, 2-pin" style="height: 44px; border-radius: 10px; border: 1px solid #D6D3C9; padding: 0 12px; font-size: 14px; font-family: inherit; color: #17201D; background: #FFFFFF">
+          </label>
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <span style="font-size: 12px; color: #5B6461">Its price</span>
+            <div style="display: flex; align-items: center; background: #FFFFFF; border-radius: 10px; border: 1px solid #E3E1D9">
+              <button type="button" aria-label="Less by ৳50" onClick="{{tookMinus}}" style="width: 44px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #17201D">−</button>
+              <span style="min-width: 64px; text-align: center; font-size: 17px; font-weight: 600">৳{{tookText}}</span>
+              <button type="button" aria-label="More by ৳50" onClick="{{tookPlus}}" style="width: 44px; height: 44px; border: 0; background: transparent; font-size: 20px; cursor: pointer; color: #0E6656">+</button>
+            </div>
+          </div>
+          <button type="button" style="height: 52px; border-radius: 10px; border: 1.5px dashed #9A4A10; background: #FFFFFF; color: #7A3A0C; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer">+ Receipt for what you took (required)</button>
+        </div>
+      </sc-if>
+
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 10px; background: {{hintBg}}; color: {{hintFg}}; font-size: 13px; line-height: 1.45">
+        <sc-for list="{{lines}}" as="l" hint-placeholder-count="3">
+          <div style="display: flex; justify-content: space-between; gap: 12px"><span>{{l.label}}</span><span style="font-weight: 600; white-space: nowrap">{{l.value}}</span></div>
+        </sc-for>
+        <span style="padding-top: 4px; border-top: 1px solid rgba(0,0,0,0.08)">{{hint}}</span>
+      </div>
+    </section>
+
+    <section aria-label="Reason and proof" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+      <fieldset style="border: 0; margin: 0; padding: 0">
+        <legend style="font-size: 12px; color: #5B6461; padding: 0; margin-bottom: 8px">Reason</legend>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <sc-for list="{{reasons}}" as="r" hint-placeholder-count="4">
+            <button type="button" aria-pressed="{{r.on}}" onClick="{{r.pick}}" style="{{r.style}}">{{r.label}}</button>
+          </sc-for>
+        </div>
+      </fieldset>
+      <button type="button" style="height: 64px; border-radius: 10px; border: 1.5px dashed #9A4A10; background: #FFFFFF; color: #7A3A0C; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer">+ Shop's return slip, or a photo with a note (required)</button>
+      <button type="submit" style="{{saveStyle}}">{{saveLabel}}</button>
+      <span style="font-size: 12px; color: #5B6461; line-height: 1.45">A manager or the owner confirms it. Nothing changes until then, and the original entry stays in its history.</span>
+    </section>
+
+    <section style="background: #FFFFFF; border: 1px dashed #C9C6BB; border-radius: 14px; padding: 12px 14px; font-size: 12px; color: #5B6461; line-height: 1.5"><strong style="color: #17201D">Shop kept the money as credit?</strong> Don't record anything yet. When you've used all of the credit, come back and add what you took; money back will be ৳0.</section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { ret: 800, took: true, taken: 350, reason: 'notNeeded' };
+  }
+  renderVals() {
+    const ORIGINAL = 800, LEFT = 800, SHARED = 300, POCKET = 500;
+    const s = this.state;
+    const fmt = (n) => n.toLocaleString('en-US');
+    const taken = s.took ? s.taken : 0;
+    const back = s.ret - taken;
+    let blocked = false, hint;
+    const pocketBack = Math.max(0, Math.min(back, POCKET));
+    const sharedBack = Math.max(0, back - pocketBack);
+    const counts = ORIGINAL - s.ret + taken;
+    if (s.ret > LEFT) {
+      blocked = true;
+      hint = 'Only ৳' + fmt(LEFT) + ' is left on this entry, so you can\'t return more than that.';
+    } else if (back < 0) {
+      blocked = true;
+      hint = 'What you took costs ৳' + fmt(-back) + ' more than you returned. Return ৳' + fmt(taken > LEFT ? LEFT : taken) + ' here and add the extra ৳' + fmt(-back) + ' as a new entry.';
+    } else if (sharedBack > 0) {
+      hint = 'Your pocket part is used up, so ৳' + fmt(sharedBack) + ' of the money back belongs to the home fund. It shows as money with you until you hand it to a manager.';
+    } else {
+      hint = 'The money back comes out of your pocket part first, so you keep the cash and nothing has to be handed over.';
+    }
+    const lines = blocked ? [] : [
+      { label: 'Money back from the shop', value: '৳' + fmt(back) },
+      { label: 'This entry will count', value: '৳' + fmt(counts) + ' (was ৳' + fmt(ORIGINAL) + ')' },
+      { label: 'Your credit for it', value: '৳' + fmt(POCKET) + ' → ৳' + fmt(POCKET - pocketBack) }
+    ].concat(sharedBack > 0 ? [{ label: 'Hand back to the home fund', value: '৳' + fmt(sharedBack) }] : []);
+    const chipOn = 'min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer';
+    const chipOff = 'min-height: 40px; padding: 0 12px; border-radius: 999px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer';
+    const reasons = [['notNeeded', 'Not needed'], ['wrong', 'Wrong item'], ['damaged', 'Damaged'], ['other', 'Other']].map(([k, label]) => ({
+      label, on: s.reason === k ? 'true' : 'false', style: s.reason === k ? chipOn : chipOff,
+      pick: () => this.setState({ reason: k })
+    }));
+    return {
+      retText: fmt(s.ret),
+      retPlus: () => this.setState({ ret: s.ret + 50 }),
+      retMinus: () => this.setState({ ret: Math.max(50, s.ret - 50) }),
+      took: s.took,
+      tookOn: s.took ? 'true' : 'false',
+      toggleTook: () => this.setState({ took: !s.took }),
+      switchStyle: 'width: 44px; height: 26px; border-radius: 999px; padding: 3px; box-sizing: border-box; display: flex; ' + (s.took ? 'background: #0E6656; justify-content: flex-end' : 'background: #D6D3C9; justify-content: flex-start'),
+      knobStyle: 'width: 20px; height: 20px; border-radius: 999px; background: #FFFFFF',
+      tookText: fmt(s.taken),
+      tookPlus: () => this.setState({ taken: s.taken + 50 }),
+      tookMinus: () => this.setState({ taken: Math.max(50, s.taken - 50) }),
+      lines,
+      hint,
+      hintBg: blocked ? '#FBEFE3' : '#F1F0EA',
+      hintFg: blocked ? '#7A3A0C' : '#3E4744',
+      reasons,
+      saveLabel: blocked ? 'Can\'t send: check the amounts' : 'Send for confirmation',
+      saveStyle: 'height: 48px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 600; font-family: inherit; ' + (blocked ? 'background: #D6D3C9; color: #3E4744; cursor: not-allowed' : 'background: #0E6656; color: #FFFFFF; cursor: pointer')
+    };
+  }
+}
+</script>
+</body>
+</html>
