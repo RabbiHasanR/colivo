@@ -43,6 +43,12 @@ In scope:
   required receipt; a **manager** or the **owner** confirms or rejects it.
   A payment can mix a shared source with the member's own pocket; only the
   pocket part is credited.
+- Anything bought for the home can be **returned** or exchanged on its
+  original entry, so the home pays only for what it kept. Members send
+  **corrections** of their own confirmed entries for a **manager** or the
+  **owner** to confirm; confirmed money is never overwritten. Non-food
+  **household** items are a bill, not groceries.
+- A **refund** to a member counts only once they confirm they received it.
 - A **manager** gives **home fund** money to a member to pay a **bill**.
 - The **owner** or a **manager** changes **rent** for the home, a room or a
   member, from a chosen month.

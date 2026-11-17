@@ -75,7 +75,9 @@ After this phase, the owner can describe the home the app will calculate for.
 
 ### Bills and starting balances
 
-- **Bill** categories: rent, prepaid, postpaid, other; custom deals.
+- **Bill** categories: rent, prepaid, postpaid, other; a default
+  **Household** category for non-food items (shared like a bill, not by
+  meals); custom deals.
 - Optional default **estimate** per bill category, used every month.
 - **Starting balances** imported once from the old spreadsheet: member
   balances, home fund cash, grocery fund cash, money with shoppers and unpaid
@@ -108,6 +110,9 @@ After this phase, groceries are recorded with who paid and from where.
 - Model **grocery entry** with source: own pocket, grocery fund, home fund,
   money given.
 - Receipt required; entries count toward the cost per meal.
+- Grocery entries are the first **ledger** entries
+  ([data-model.md → Decisions](data-model.md#decisions)): once saved they are
+  never edited in place, only changed by linked entries.
 - **Split funding**: one entry mixes a shared source (grocery fund, home
   fund or money given) with own pocket; the shared part is capped at what is
   available and only the pocket part is credited.
@@ -137,6 +142,18 @@ After this phase, every money movement is reported with proof and confirmed.
 - Split funding for bills (home fund or given money + own pocket).
 - Carried bills shown as "From \<month>"; estimated bills tagged "Estimated".
 
+### Returns and corrections
+
+- **Return / exchange** on a grocery or bill entry: amount returned, an
+  optional item taken instead with its receipt, reason and proof; confirmed
+  like the original. Money back lowers the pocket part first; any shared part
+  that comes back is money with the payer until handed back.
+- A member sends a **correction** of their own confirmed entry for
+  confirmation; the owner or a manager corrects any entry directly and the
+  member is told.
+- A **refund** to a member counts only after the member confirms receipt;
+  "Not received" sends it back.
+
 ## Phase 6 — Statement and month close ⏳ Not started
 
 `[backend] [web]`
@@ -154,8 +171,11 @@ After this phase, a month can be closed and balances carry forward.
 - Close writes carry-forward records: home fund and grocery fund opening cash,
   money with shoppers, unpaid bills. Paying a carried bill lowers cash only
   and is never split among members again.
-- A closed month is never reopened; owner or manager corrects an entry and the
-  difference goes into the open month.
+- A closed month is never reopened; owner or manager corrects an entry (a
+  return on a closed month's entry included) and the difference goes into the
+  open month.
+- The checklist also lists returns and corrections waiting for confirmation
+  and refunds waiting for the member.
 - Previous month balances (view only).
 
 ### Estimated bills
