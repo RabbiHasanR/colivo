@@ -10,7 +10,7 @@ import type { Handler, NextFn, RequestContext } from './types';
  */
 export function unwrapData(body: unknown): unknown {
   if (body !== null && typeof body === 'object' && 'data' in body) {
-    return (body as { data: unknown }).data;
+    return body.data;
   }
   return body;
 }

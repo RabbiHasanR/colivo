@@ -14,7 +14,8 @@ module('Unit | Data | handlers', function () {
     // THEN  only its data comes out
     const handler = createEnvelopeHandler();
 
-    const result = await handler.request(
+    // The envelope handler changes the shape, so the result is untyped here.
+    const result: unknown = await handler.request(
       { request: {} },
       respondWith({
         success: true,
