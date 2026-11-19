@@ -428,11 +428,12 @@ and the query each serves, and its status mark._
 
 ## Change log
 
-| Phase                | Change                                                                                                                |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Design (17 Nov 2026) | Money storage decided as a ledger; returns and corrections are linked entries                                         |
-| Design (17 Nov 2026) | Funds are rows; fund cash is tracked per holder; fund keeper is chosen per fund                                       |
-| Design (19 Nov 2026) | Meal sessions are rows with a weight; own and guest meals stored apart; home guests and confirmation per session day  |
-| Design (19 Nov 2026) | One contact table with phones and emails as rows; one attachment table; payee per bill category; fund kind added      |
-| Design (19 Nov 2026) | Domain sketch agreed for all phases; ledger is one header table with detail tables; person and membership split       |
-| Design (19 Nov 2026) | UUIDv7 keys (`uuid-utils`), text + `CHECK` value sets, singular table names, effective-dated rows plus one change log |
+| Phase                | Change                                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Design (17 Nov 2026) | Money storage decided as a ledger; returns and corrections are linked entries                                            |
+| Design (17 Nov 2026) | Funds are rows; fund cash is tracked per holder; fund keeper is chosen per fund                                          |
+| Design (19 Nov 2026) | Meal sessions are rows with a weight; own and guest meals stored apart; home guests and confirmation per session day     |
+| Design (19 Nov 2026) | One contact table with phones and emails as rows; one attachment table; payee per bill category; fund kind added         |
+| Design (19 Nov 2026) | Domain sketch agreed for all phases; ledger is one header table with detail tables; person and membership split          |
+| Design (19 Nov 2026) | UUIDv7 keys (`uuid-utils`), text + `CHECK` value sets, singular table names, effective-dated rows plus one change log    |
+| Phase 0 (planned)    | No tables; Alembic set up with no revisions, the test database built with `alembic upgrade head`; first table in Phase 1 |
