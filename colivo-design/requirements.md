@@ -24,7 +24,7 @@ Mess Manager is a shared-home web app that replaces the monthly shared-home spre
 
 ### Scope
 
-- **In scope (v1):** one home per account, rooms and members, configurable expense categories, per-member per-category overrides with balanced redistribution, daily meal grid including guest meals, grocery purchases and grocery fund top-ups, utility and rent bills, member payments and refunds, prior-month balance import and rollover (member balances, fund cash and unpaid bills), optional estimated bills, split-funded entries (shared fund plus own pocket), rent revisions (home-wide, per room or per member, up or down, with effective dates), configurable home rules (deposit months, notice period, short-notice policy), deposit ledger, leave notice and final settlement, dashboard and monthly statement.
+- **In scope (v1):** one home per account, rooms and members, configurable expense categories, per-member per-category overrides with balanced redistribution, daily meal grid per meal session (breakfast, lunch, dinner, as the home sets them) with member guests, home guests and daily confirmation by the owner or a manager, home contacts (landlord, cook, internet and other providers) with their history, grocery purchases and grocery fund top-ups, utility and rent bills, member payments and refunds, prior-month balance import and rollover (member balances, fund cash and unpaid bills), optional estimated bills, split-funded entries (shared fund plus own pocket), rent revisions (home-wide, per room or per member, up or down, with effective dates), configurable home rules (deposit months, notice period, short-notice policy), deposit ledger, leave notice and final settlement, dashboard and monthly statement.
 - **Out of scope (v1):** multiple homes per account, short-notice waiver votes, whole-home move-out and landlord deposit settlement screens, bKash/Nagad gateway integration, cook salary payroll, grocery inventory, native mobile apps (the web app is mobile-first; Flutter app later).
 
 ### Words used in the app
@@ -42,7 +42,12 @@ The app uses plain words that people understand in any country. The earlier Sout
 | Groceries | Food shopping that counts toward the cost per meal | Bazar |
 | Grocery fund | Shared cash kept aside for grocery shopping | Bazar box |
 | Home fund | Money held for rent and bills by the owner, managers or home fund keepers | Mess fund, cash in hand |
-| Cost per meal | Grocery spending ÷ total meals | Meal rate |
+| Cost per meal | Grocery spending ÷ billable meals (BR-2) | Meal rate |
+| Meal session | One meal of the day the home serves: breakfast, lunch or dinner; each home picks its own and how many meals each counts as | — |
+| Guest meal | A meal for a member's own guest; counted and charged to that member | Guest meal |
+| Home guest | A guest of the whole home (not of one member); cooked for, but not charged to anyone directly | — |
+| Cook for | How many plates to cook for a session: members, their guests and home guests | — |
+| Contact | A person or company the home deals with: landlord, cook, internet, electricity or gas provider, caretaker | — |
 | Deposit | Rent a member pays before moving in; pays their last months' rent | Advance rent |
 | Landlord deposit | One-time money paid to the landlord when the home was rented | Landlord advance |
 | Credit | A positive balance carried into next month | Deposit (in balances) |
@@ -92,6 +97,10 @@ Each story is written as "As a … I want … so that …" with its acceptance c
 | US-A11 | As manager, I want to import or enter prior-month balances (month, year, member, Due/Credit, amount), so that I can start from my October sheet | Imported balances feed the Prev Month Due / Credit columns |
 | US-A12 | As manager, I want to define expense categories and their class (Rent, Prepaid, Postpaid, Ad-hoc), so that new bills fit without code changes | A new category appears in bill and override forms |
 | US-A13 | As manager, I want to edit or correct any entry with a reason, so that mistakes are fixed without losing history | Every change keeps who, when and old/new values |
+| US-A14 | As manager, I want to confirm each meal session after it is cooked (lunch, dinner, or both at once), so that only meals that were really eaten count | Confirmed sessions count in the cost per meal; members can no longer change them |
+| US-A15 | As manager, I want to add guests of the whole home to a session, so that the cook cooks enough and their food cost is shared fairly | Home guests show in Cook for; the cost per meal rises to cover them; nobody is charged directly |
+| US-A16 | As manager, I want to keep the landlord's, cook's and providers' details (several phones and emails, photo, documents, account ID), so that anyone running the home can reach them | Each contact shows all its numbers; documents are visible only to the owner and managers |
+| US-A17 | As manager, I want to mark the cook as left and add the new one, so that the old cook's details and payments stay on record | The old cook moves to Past contacts; the Cook bill is paid to the new cook from then on |
 
 ### Grocery Shopper
 
@@ -106,12 +115,13 @@ Each story is written as "As a … I want … so that …" with its acceptance c
 
 | ID | Story | Accepted when |
 | --- | --- | --- |
-| US-M1 | As a member, I want to set my lunch and dinner for a day in half-meal steps, including guest meals (2.0+), so that my meal count is accurate | Meal saved and day totals update immediately |
-| US-M2 | As a member, I want to see the live cost per meal and my meal cost so far, so that I'm not surprised at month end | Rate = total grocery purchases ÷ total meals |
+| US-M1 | As a member, I want to set my own meals for each session of a day in half-meal steps, and my guests' meals separately, so that my meal count is accurate | Meal saved and Cook for updates immediately; I can change it until the session is confirmed or the day ends |
+| US-M2 | As a member, I want to see the live cost per meal and my meal cost so far, so that I'm not surprised at month end | Rate = grocery purchases ÷ billable meals in confirmed sessions (BR-2) |
 | US-M3 | As a member, I want a bill breakdown (meals, utility share, rent, prior due), so that I understand what I owe | Breakdown adds up to my total due; overrides are labelled |
 | US-M4 | As a member, I want to see all my credits (groceries, bills I paid, payments, prior credit), so that I can check nothing is missing | History lists every credit by source |
 | US-M5 | As a member, I want to see my net balance, so that I know whether to pay more or expect a refund | Shows "You owe X", "You have X credit" or "Settled" |
 | US-M6 | As a member, I want to view past months, so that I can check old bills | Closed months are read-only and viewable |
+| US-M7 | As a member, I want to see the cook's and providers' phone numbers, so that I can tell the cook "no lunch today" or report the internet down | Home contacts shows their names and phones; landlord details and documents are hidden |
 
 ### Joining, deposit and leaving
 
@@ -174,10 +184,12 @@ The MVP (P1) covers everything the October and November spreadsheets do, organis
 | 1. Dashboard & config | Member profiles: name, room, Active / Inactive | P1 | Manager |
 | 1. Dashboard & config | Expense categories with class: Rent, Prepaid Utility, Postpaid Utility, Ad-hoc | P1 | Manager |
 | 1. Dashboard & config | Custom override form: member, category, amount, billing cycle, note; live recalculation of redistributed shares | P1 | Manager |
-| 2. Meal grid | Calendar grid: dates 1–31 × members, Lunch and Dinner sub-columns | P1 | All |
-| 2. Meal grid | Half-meal steps and guest meals (2.0+) by stepper or typed decimal | P1 | All |
-| 2. Meal grid | Footer row: per-member monthly meals and grand total; live cost per meal | P1 | All |
-| 2. Meal grid | Members edit their own column; manager edits any | P1 | All |
+| 2. Meal grid | Calendar grid: dates 1–31 × members, one sub-column per meal session the home has on (FR-106) | P1 | All |
+| 2. Meal grid | Own meals in half-meal steps and guest meals as a separate count, by stepper or typed decimal (FR-08) | P1 | All |
+| 2. Meal grid | Home guests row per session (FR-107) | P1 | Owner, Manager |
+| 2. Meal grid | Confirm a session after it is cooked, or several at once; confirmed sessions are locked for members (FR-108, FR-09) | P1 | Owner, Manager |
+| 2. Meal grid | Footer row: per-member monthly meals and grand total; Cook for per session; live cost per meal from confirmed sessions | P1 | All |
+| 2. Meal grid | Members edit their own column until the session is confirmed or the day ends; owner and managers edit any | P1 | All |
 | 2. Meal grid | Default meal pattern and meal-edit cut-off time | P2 | Member, Manager |
 | 3. Expenses & groceries | Bill entry: date, category, amount, description, paid by (member or central fund), paid to vendor yes/no | P1 | Manager |
 | 3. Expenses & groceries | Groceries tab: grocery purchases separated from money added to the grocery fund | P1 | Grocery shopper, Manager |
@@ -245,6 +257,9 @@ These features make one app fit any home: each home sets its own rules instead o
 | Fund holders | Cash per holder for each fund; pay to a named holder who confirms; hand over cash between holders (FR-104, FR-105) | P1 | All |
 | Members | Add by phone or email with SMS/email notice; photo; required ID document; activate / deactivate | P1 | Owner, Manager |
 | Members | Past members list with documents, bills and settlement | P1 | Owner, Manager |
+| Contacts | Landlord, cook and provider contacts: several phones and emails, photo, account ID, documents; past contacts kept (FR-109, FR-110) | P1 | Owner, Manager |
+| Contacts | "Paid to" contact per bill category, shown on Bills to pay (FR-111) | P1 | Owner, Manager |
+| Contacts | Read-only names and phones of the cook and providers for every member (FR-112) | P1 | All |
 | Grocery fund | Give cash from the grocery fund to a shopper; nobody gives out more than they hold | P1 | Fund keeper, Manager |
 | Bills | Give home-fund cash to a member to pay a bill | P1 | Manager, Owner |
 | I paid | One screen for every payment, with purpose, proof and confirmation by role | P1 | All |
@@ -283,14 +298,19 @@ The system SHALL meet these requirements for v1; each maps to a feature above.
 
 ### Meals
 
-- **FR-08** The system shall store one lunch and one dinner count per member per date, each 0 or more in 0.5 steps, including guest meals of 2.0 and above.
-- **FR-09** A member shall edit only their own meals; the manager shall edit anyone's.
-- **FR-10** The system shall show per-member and grand-total meals and recalculate the cost per meal on every change.
-- **FR-11** The system shall support bulk save of a whole day or week in one request.
+- **FR-08** The system shall store, per member, per date and per meal session (FR-106), the member's **own** meals (0, 0.5 or 1) and their **guest** meals (0 or more, in 0.5 steps) as two separate counts. Both are that member's meals and are charged to them at the cost per meal.
+- **FR-09** Editing meals:
+  - A member edits only their own meals, and only until that session is confirmed (FR-108) or the day ends at midnight in the home's time zone, whichever comes first. Future days are always open.
+  - The owner and managers can edit anyone's meals, and home guests, until the month is closed. An edit to a confirmed session is kept in the change log (FR-27) and counts at once without a new confirmation (FR-75).
+- **FR-10** The system shall show per-member and grand-total meals, the Cook for count of each session (BR-24), and recalculate the cost per meal whenever a confirmed session or a grocery entry changes. Sessions not yet confirmed show as "Waiting" and don't count yet.
+- **FR-11** The system shall support bulk save of a whole day or week in one request, and confirming several sessions in one action (for example lunch and dinner together).
+- **FR-106** Meal sessions. Each home has its own list of meal sessions; a new home starts with Lunch and Dinner on and Breakfast off. The owner can turn a session on or off, set the order, and set its **weight**: how many meals one serving counts as (default 1; for example Breakfast 0.5). Turning a session off keeps its past entries. A weight change applies to the whole open month; closed months keep their weights.
+- **FR-107** Home guests. The owner or a manager can record **home guests** for a date and session: guests of the whole home rather than of one member (for example the landlord, or a guest everyone invited). They count in Cook for (BR-24) but not in billable meals (BR-2), so their food cost is shared through the cost per meal; nobody is charged for them directly.
+- **FR-108** Meal confirmation. After a session is cooked, the owner or a manager confirms it for that date, first fixing members' and home-guest counts to what was really eaten. A session can't be confirmed before its date. Confirmation records who and when, and is not undone; later changes are owner or manager edits (FR-09). Only confirmed sessions count towards the cost per meal.
 
 ### Expenses and groceries
 
-- **FR-12** The system shall record bills with date, category, amount (0 or more), description, paid by (a member, or the central fund when empty) and whether it has been paid to the landlord or provider.
+- **FR-12** The system shall record bills with date, category, amount (0 or more), description, paid by (a member, or the central fund when empty) and whether it has been paid to the landlord or provider; when the category names a payee contact, also whom it was paid to (FR-111).
 - **FR-13** The system shall record grocery entries of two kinds: a grocery purchase (with funding source: own pocket, grocery fund, central fund, money given to the shopper, or a split of one shared source plus own pocket, see FR-98) and a top-up of the grocery fund (shared cash members put aside for shopping).
 - **FR-14** Only grocery purchases, less their returns (FR-102), shall count towards the cost per meal; grocery fund top-ups and Household items shall not.
 - **FR-15** The system shall show the grocery fund balance: opening balance carried from last month (FR-99) plus top-ups in, minus purchases paid from the grocery fund. The balance is split by who holds it: each holder's cash (BR-23) plus money with shoppers.
@@ -314,7 +334,7 @@ The system SHALL meet these requirements for v1; each maps to a feature above.
   - Entries by managers and the owner are saved without confirmation; the other managers and the owner see them as updates in their inbox.
 - **FR-76** An inbox shows each person what needs them (payments to confirm, bills paid with given money, edits to review, returns and corrections to confirm, refunds to confirm receiving) and updates (notices, grocery fund low, entries the owner or a manager corrected).
 - **FR-77** Any entry can be edited or deleted with a reason; the full history (who, when, old and new value) stays visible. Closed months can't be changed. Who can change a confirmed entry, and how, is in FR-103; returns are in FR-102.
-- **FR-78** Before closing a month the app shows a checklist: unlogged meals, unpaid dues, unpaid bills, bills still on an estimate (FR-101), money still with shoppers, returns and corrections waiting for confirmation, refunds waiting for the member, handovers and payments waiting for their receiver, and a cash count of each fund **per holder** (each holder checks the cash they have against the app). The manager can fix items first or close anyway.
+- **FR-78** Before closing a month the app shows a checklist: unlogged meals, meal sessions not yet confirmed (FR-108; closing anyway confirms them as logged), unpaid dues, unpaid bills, bills still on an estimate (FR-101), money still with shoppers, returns and corrections waiting for confirmation, refunds waiting for the member, handovers and payments waiting for their receiver, and a cash count of each fund **per holder** (each holder checks the cash they have against the app). The manager can fix items first or close anyway.
 - **FR-79** The owner or a manager adds a member by phone or email; the app sends an SMS or email so they can log in with a one-time code. Only the owner signs up (FR-83); members never sign up, and there is no invite link or home code.
 - **FR-80** The owner and managers can deactivate or reactivate a member. Final settlement deactivates the leaving member automatically; deactivated members can't log in. A member who still holds fund cash or given money can't be deactivated until they hand it over (FR-105).
 - **FR-81** A Past members list (owner and managers only) keeps each former member's contact details, ID documents, monthly bills and final settlement.
@@ -461,6 +481,20 @@ A fund is money kept for a purpose (the grocery fund and the home fund in v1). I
 - **FR-60** Each member shall have at least one ID document before joining: type (NID, passport, driving licence, birth certificate or student ID), number, and front and back images. The members list shows who is missing one.
 - **FR-61** ID documents shall be visible only to the manager, stored encrypted, and kept after a member leaves; members can see only their own.
 
+### Home contacts
+
+- **FR-109** Contacts. The owner or a manager keeps the home's contacts: the people and companies the home deals with. Each contact has:
+  - a kind (landlord, cook, internet, electricity, gas, caretaker or other) and a name (required);
+  - an optional photo;
+  - any number of phone numbers and email addresses, each with an optional label (for example "bKash" or "office"), one of each marked primary;
+  - an optional account or customer ID (internet customer ID, electricity meter number, gas account);
+  - a note and optional documents (lease agreement, NID, contract).
+
+  The landlord is the home's landlord contact, edited on Home & landlord together with the lease; a home has one active landlord at a time.
+- **FR-110** Contact history. When a contact stops working with the home (the cook leaves, the internet provider changes), the owner or a manager marks them as left with an end date, and they move to Past contacts with all their details and payments. Contacts are never deleted. A replacement is a new contact with its own start date.
+- **FR-111** Paid to. Each bill category may name **one** contact it is paid to (Cook → the cook, Internet → the provider). Bills to pay shows that contact's name and primary phone. Each bill payment records whom it was paid to, defaulting to the category's contact; changing the category's contact never changes past payments. A home with two cooks at once has two Cook bill categories, each with its own contact.
+- **FR-112** Contact visibility. Every member can see the names and phone numbers of active contacts other than the landlord. The landlord's contact details, account IDs, notes and all contact documents are visible only to the owner and managers. Contact documents are stored encrypted, like ID documents (FR-61).
+
 ### Roles and permissions
 
 - **FR-62** Every person in a home has the Member role. The owner can add Manager and Fund keeper on top; one person may hold several roles, and a home can have any number of managers and fund keepers.
@@ -480,7 +514,11 @@ A fund is money kept for a purpose (the grocery fund and the home fund in v1). I
 | Hold fund cash, spend or give it out, hand it over | Yes (any fund) | Yes (any fund) | Yes (their funds) | No |
 | Confirm money paid to them | Yes | Yes | Yes | No |
 | Choose fund keepers | Yes | Yes | No | No |
-| Log own meals and groceries, see own bill | Yes | Yes | Yes | Yes |
+| Set meal sessions and their weights | Yes | No | No | No |
+| Confirm meal sessions, add home guests, change meals after the lock | Yes | Yes | No | No |
+| Add, edit and end home contacts; see landlord details and documents | Yes | Yes | No | No |
+| See cook and provider names and phones | Yes | Yes | Yes | Yes |
+| Log own meals (until locked) and groceries, see own bill | Yes | Yes | Yes | Yes |
 
 ## 6. Business rules and calculations
 
@@ -488,11 +526,19 @@ The backend must reproduce the spreadsheet exactly; these rules are the acceptan
 
 **BR-1 Shared cost invariant.** Total charged to members plus bills to pay must equal total home expenditure for the cycle. Utility charges must sum exactly to the utility total.
 
-**BR-2 Cost per meal.** Grocery purchases less their returns (FR-102), not grocery fund top-ups or Household items, divided by total meals; 0 when no meals are logged.
+**BR-2 Cost per meal.** Grocery purchases less their returns (FR-102), not grocery fund top-ups or Household items, divided by billable meals; 0 when there are none. A member's billable meals are their own plus guest meals in **confirmed** sessions (FR-108), each times that session's weight (FR-106). Home guests (FR-107) are not billable, so their food cost is shared through the rate.
+
+```latex
+M_i = \sum_{s \in confirmed} w_s \,(Own_{i,s} + Guest_{i,s}) \qquad M_{total} = \sum_i M_i
+```
 
 ```latex
 R_{meal} = \begin{cases} C_{groceries} / M_{total} & M_{total} > 0 \\ 0 & M_{total} = 0 \end{cases} \qquad C_{meal,i} = M_i \times R_{meal}
 ```
+
+Example: groceries ৳10,000, 100 billable meals and 4 home-guest meals → cost per meal ৳100.00, and members are charged ৳10,000 in all. Counting the home guests as meals would give ৳96.15 and recover only ৳9,615.38, leaving ৳384.62 unpaid (BR-1).
+
+**BR-24 Cook for.** For a date and session: every member's own meals + guest meals + home guests, without weights (it is the number of plates, not the bill).
 
 **BR-3 Rent.** The member's Rent override for the cycle if one exists, otherwise room total rent ÷ occupants.
 
@@ -595,7 +641,7 @@ Example: home fund ৳14,000 = Rabbi ৳10,000 + Karim ৳4,000 (Maruf's rent ca
 
 ### Verification: October 2026 cycle
 
-Total meals 107.0, grocery ৳10,430.00, cost per meal ৳97.4766 (shown ৳97.48).
+Total meals 107.0, grocery ৳10,430.00, cost per meal ৳97.4766 (shown ৳97.48). October had lunch and dinner only, every session counts as confirmed and there were no home guests, so BR-2 gives the spreadsheet's figure unchanged.
 
 | Member | Meals | Meal cost | Prepaid | Postpaid | Rent | Total cost | Total paid | Net balance |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -635,7 +681,12 @@ Each home is small (roughly 5–15 members) but the platform holds many homes an
 - Edit after month close → only the owner or a manager, as a correction with a reason; the closed month is never reopened (FR-90).
 
 * Every active member has an override in a category → no standard members; any leftover becomes a visible shortfall instead of dividing by zero.
-* Guest meals (2.0+ in one slot) are charged to the host member at the normal cost per meal.
+* A member's guest meals are recorded in their guest count and charged to them at the normal cost per meal (FR-08).
+* A session is never confirmed → members are locked out of it at midnight anyway; it doesn't count in the cost per meal; the owner or a manager can still confirm it until month close; the month-close checklist lists it, and closing anyway confirms it as logged (FR-78).
+* A member wants to change a confirmed session → blocked; they ask the owner or a manager, who edits it (FR-09).
+* Only home guests ate in a month (no billable meals) → cost per meal is 0, as with no meals logged.
+* A session is turned off mid-month → its entries so far stay and count; no new entries.
+* The cook leaves mid-month → the old cook is marked as left; the Cook bill's contact changes to the new cook; this month's Cook bill can be paid to both, each payment naming whom it went to (FR-110, FR-111).
 * Groceries from the grocery fund costs more than is in the grocery fund (or more than a shopper was given) → the fund part is capped at what is available and the rest is the shopper's own pocket, in the same entry (FR-98).
 * Month closes with a bill unpaid (e.g. gas) → carried into next month's Bills to pay; the money stays in home fund cash; paying it next month is not charged to members again (FR-99).
 * Month closes on an estimate and the actual bill is higher or lower → the difference is added to the open month as an adjustment line for the members of the closed month (BR-22).
@@ -697,8 +748,8 @@ All open questions were decided on 12 Nov 2026:
 - **Rent override shortfall:** handled by the rent gap policy (BR-20).
 - **Short-notice waiver:** not in the MVP. A leave date can't be earlier than the home's minimum notice.
 - **Repair deductions at move-out:** split equally among the members living there at move-out.
-- **Editing past meals:** members up to 2 days back; managers and the owner anytime until the month is closed.
-- **Balance visibility:** every member sees everyone's totals; ID documents and contact details stay with the owner and managers.
+- **Editing past meals:** members up to 2 days back; managers and the owner anytime until the month is closed. _Replaced on 19 Nov 2026 by the meal lock (FR-09)._
+- **Balance visibility:** every member sees everyone's totals; ID documents and contact details stay with the owner and managers. _Members' contact details; for home contacts see FR-112 (19 Nov 2026)._
 
 Decided on 14 Nov 2026:
 
@@ -719,9 +770,22 @@ Decided on 17 Nov 2026:
 - **Deposit cash:** part of the cash its holder holds, marked as reserved; free to spend excludes it (FR-32, BR-17).
 - **Custom funds** (repair fund, cook fund): later, not v1.
 
+Decided on 19 Nov 2026:
+
+- **Meal sessions:** each home picks its sessions (breakfast, lunch, dinner) and a weight per session, so breakfast can count as half a meal (FR-106).
+- **Guest meals:** a member's own meals and their guests' meals are stored separately; both are charged to the member (FR-08).
+- **Home guests:** counted for cooking, not billable; their cost is shared through the cost per meal (FR-107, BR-2, BR-24).
+- **Daily confirmation:** the owner or a manager confirms each session after it is cooked, one or several at a time; only confirmed sessions count (FR-108).
+- **Meal lock:** members edit until the session is confirmed or the day ends; after that only the owner or a manager. Replaces the 2-day rule (FR-09).
+- **Unconfirmed sessions at month close:** listed on the checklist; closing anyway confirms them as logged, so nobody's meals are silently dropped (FR-78).
+- **Home contacts:** one list for the landlord, cook, providers and others, with several phones and emails, documents and history; never deleted (FR-109, FR-110).
+- **Paid to:** one contact per bill category; two cooks means two Cook bills; each payment keeps whom it was paid to (FR-111).
+- **Contact visibility:** every member sees cook and provider names and phones; landlord details, account IDs and documents stay with the owner and managers (FR-112).
+- **Custom funds:** still after the MVP; their shape is recorded in Phase 4 below.
+
 ### Release plan
 
-1. **Phase 1 – MVP (P1 features):** one-home account, setup, override engine, meal grid, bills and groceries with grocery fund, payments and refunds, prior-balance import, dashboard, statement, month close, home rules, deposit ledger, roles and permissions, leave notice and final settlement, give-money-first flows for the grocery fund and bills, I paid with proof and confirmation, returns and exchanges, corrections of confirmed entries, fund holders and handover, inbox, edit history, month-close checklist, past members, messaging, owner sign-up and phone/email login.
+1. **Phase 1 – MVP (P1 features):** one-home account, setup, override engine, meal grid with meal sessions, guests and daily confirmation, home contacts, bills and groceries with grocery fund, payments and refunds, prior-balance import, dashboard, statement, month close, home rules, deposit ledger, roles and permissions, leave notice and final settlement, give-money-first flows for the grocery fund and bills, I paid with proof and confirmation, returns and exchanges, corrections of confirmed entries, fund holders and handover, inbox, edit history, month-close checklist, past members, messaging, owner sign-up and phone/email login.
 2. **Parallel run:** replay October 2026 as a test, then run November and December 2026 side by side with the spreadsheet; go live when every balance matches.
 3. **Phase 2:** PDF/Excel export, WhatsApp sharing, meal cut-off and default patterns, short-notice waiver vote, whole-home move-out with landlord deposit settlement.
 4. **Phase 3:** reminders, grocery shopping roster, Bangla interface, Flutter app, multiple homes per account.
@@ -733,7 +797,12 @@ Decided on 17 Nov 2026:
 - **Deposit rule per home:** use it as the final months' rent (today) or refund it on leaving, minus damage.
 - **Word packs:** neutral English by default; a South Asia pack that shows Mess, Bazar, Bazar box, Meal rate and Advance.
 - **Language and locale:** full translation (Bangla first), currency per home, number format (lakh or million), date format and time zone.
-- **Custom funds:** a home creates its own funds (repair, cook, festival) with their own holders, alongside the grocery fund and home fund.
+- **Custom funds:** a home creates its own funds (repair, festival) with their own holders, alongside the grocery fund and home fund. Shape agreed on 19 Nov 2026:
+  - **Who takes part:** the owner or a manager picks which members pay into each fund.
+  - **Collecting:** either a set amount shared equally among the chosen members (each sees "৳500 to pay"; rounding remainder to one named member, BR-10; more can be collected later), or no set amount, where anyone pays any amount.
+  - **Paying in and spending:** the same as the home fund and grocery fund: pay to a named holder who confirms, cash per holder, give money first, handovers, receipts, returns and corrections.
+  - **Kept off the monthly bill:** what members pay in **is** their share of the cost, so spending from the fund is never charged on members' bills again, and nothing that is already a bill category (like Cook) is paid from a custom fund.
+  - **Month close:** cash per holder and each member's unpaid share carry forward.
 - **Payment methods and ID types per country:** bKash, Nagad, UPI, M-Pesa, bank transfer; NID, passport, driving licence and others.
 - **Require ID as a home setting:** on by default for Meal mess, off for Flatshare, to respect privacy laws such as GDPR.
 - **Utility names:** rename prepaid and postpaid to top-up bills and monthly bills.
