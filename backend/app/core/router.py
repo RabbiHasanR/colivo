@@ -9,6 +9,8 @@ from fastapi.routing import APIRoute
 from app.core.schemas import StandardResponse
 from app.core.utils import get_response_message
 
+JSON_MEDIA_TYPE = "application/json"
+
 
 class StandardizedRoute(APIRoute):
     """A route whose JSON result is wrapped in the ``StandardResponse`` envelope."""
@@ -23,7 +25,9 @@ class StandardizedRoute(APIRoute):
 
         async def wrapped_route_handler(request: Request) -> Response:
             result = await original_route_handler(request)
-            if not isinstance(result, JSONResponse):
+            # FastAPI serialises a declared return type into a plain Response
+            # with a JSON media type (not a JSONResponse), so check the type.
+            if result.media_type != JSON_MEDIA_TYPE:
                 return result
 
             envelope = StandardResponse(

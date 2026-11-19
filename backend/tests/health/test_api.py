@@ -1,11 +1,6 @@
-import pytest
 from fastapi.testclient import TestClient
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="acceptance: the health check reports the database and Redis",
-)
 def test_health_reports_database_and_redis_ok(client: TestClient) -> None:
     """
     GIVEN PostgreSQL and Redis are running (docker compose)

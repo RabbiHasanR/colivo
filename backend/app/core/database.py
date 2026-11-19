@@ -1,5 +1,7 @@
 from collections.abc import Iterator
+from typing import Annotated
 
+from fastapi import Depends
 from sqlmodel import Session, create_engine
 
 from app.core.config import settings
@@ -18,3 +20,7 @@ def get_session() -> Iterator[Session]:
     """
     with Session(engine) as session:
         yield session
+
+
+# The database session for an endpoint: `session: SessionDep`.
+SessionDep = Annotated[Session, Depends(get_session)]
