@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/* Self-hosted fonts (no third-party requests): Inter for body text, Space
+   Grotesk for headings and big numbers. Weights from colivo-design/README.md. */
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/600.css";
+@import "@fontsource/space-grotesk/700.css";
+
+/* Colivo design tokens, from colivo-design/README.md → Design tokens.
+   Each one becomes a utility (bg-page, text-muted, border-line, rounded-card …).
+   The only place in the web app with colour values. Light scheme only: the
+   design defines no dark one. Breakpoints are Tailwind's defaults, which match
+   specs/tech-stack.md → Responsive design (640, 768, 1024, 1280). */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-page: #f6f5f0;
+  --color-surface: #fff;
+  --color-line: #e3e1d9;
+  --color-ink: #17201d;
+  --color-muted: #5b6461;
+
+  --color-primary: #0e6656;
+  --color-primary-tint: #e3f0ec;
+  --color-primary-hover: #0a4e42;
+
+  /* Owes / warning */
+  --color-owes: #9a4a10;
+  --color-owes-tint: #fbefe3;
+  --color-owes-ink: #7a3a0c;
+
+  /* Tags */
+  --color-tag-rent: #eceae2;
+  --color-tag-rent-ink: #3e4744;
+  --color-tag-prepaid: #e7f1fb;
+  --color-tag-prepaid-ink: #1d4f86;
+  --color-tag-postpaid: #efedff;
+  --color-tag-postpaid-ink: #4b3fa3;
+  --color-tag-grocery-fund: #f9eeda;
+  --color-tag-grocery-fund-ink: #6b4a0b;
+
+  --radius-card: 16px;
+
+  /* Minimum tap target (h-touch, min-w-touch …). */
+  --spacing-touch: 44px;
+}
+
+/* Global base styles only. Component styles belong in components/ui. */
+@layer base {
+  body {
+    @apply bg-page font-sans text-ink antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+}

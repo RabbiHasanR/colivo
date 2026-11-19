@@ -8,6 +8,8 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+# Vite's committed, secret-free mode file for the web app.
+!/web/.env.development
 
 # Python
 .venv/
