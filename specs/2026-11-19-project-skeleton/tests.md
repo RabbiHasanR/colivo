@@ -61,6 +61,6 @@ Web acceptance: `web/tests/acceptance/start-page-test.ts` › visitor sees the s
 
 ### B12 — Every page sits in the Colivo shell; below 1024px its menu button opens and closes the sidebar
 
-- [x] T12.1 web integration — app shell menu button opens and closes the sidebar (`aria-expanded` and sidebar state toggle)
+- [x] T12.1 web integration — app shell menu button opens and closes the sidebar ✅ (`aria-expanded` and sidebar state toggle)
 - [ ] T12.2 web integration — app shell renders the page content _(skipped: covered by T11.1)_
 - [ ] T12.3 web integration — `ui/button` calls its action _(skipped: exercised by T12.1; disabled state gets its test with the first form in Phase 1)_
