@@ -52,3 +52,15 @@ def get_health(session: Session, redis_client: Redis) -> HealthOut:
         database=check_database(session),
         redis=check_redis(redis_client),
     )
+
+
+def is_healthy(health: HealthOut) -> bool:
+    """Return whether every dependency is ok.
+
+    Args:
+        health: The result of ``get_health``.
+
+    Returns:
+        True when the database and Redis are both ``ok``.
+    """
+    return health.database is ServiceStatus.OK and health.redis is ServiceStatus.OK

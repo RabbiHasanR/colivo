@@ -10,6 +10,8 @@ from app.core.schemas import StandardResponse
 from app.core.utils import get_response_message
 
 JSON_MEDIA_TYPE = "application/json"
+# Status codes from here up are errors (4xx, 5xx).
+HTTP_ERROR_STATUS = 400
 
 
 class StandardizedRoute(APIRoute):
@@ -31,7 +33,8 @@ class StandardizedRoute(APIRoute):
                 return result
 
             envelope = StandardResponse(
-                success=True,
+                # An endpoint may answer an error status with data (health: 503).
+                success=result.status_code < HTTP_ERROR_STATUS,
                 message=get_response_message(request),
                 data=json.loads(bytes(result.body)),
             )

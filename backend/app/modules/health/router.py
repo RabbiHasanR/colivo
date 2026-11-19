@@ -19,6 +19,10 @@ def get_health(
 ) -> HealthOut:
     """Report whether the backend can reach the database and Redis."""
     health = service.get_health(session, redis_client)
-    set_response_message(request, "Healthy")
-    response.status_code = 200
+    if service.is_healthy(health):
+        set_response_message(request, "Healthy")
+        response.status_code = 200
+    else:
+        set_response_message(request, "Service unavailable")
+        response.status_code = 503
     return health

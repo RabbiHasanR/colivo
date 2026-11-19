@@ -12,7 +12,7 @@ Web acceptance: `web/tests/acceptance/start-page-test.ts` › visitor sees the s
 ### B2 — When the database or Redis can't be reached, the health check answers 503, still in the envelope, and says which one is down
 
 - [x] T2.1 unit — `test_health_reports_the_dependency_that_is_down` ✅ (parametrised: database, redis; real engine/client on a closed port)
-- [x] T2.2 integration — `GET /api/v1/health` returns 503 with `success: false` and `data.database == "down"`
+- [x] T2.2 integration — `test_health_answers_503_when_the_database_is_down` ✅ — `GET /api/v1/health` returns 503 with `success: false` and `data.database == "down"`
 
 ### B3 — The health check answers within a few seconds even when a dependency is down
 
