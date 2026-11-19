@@ -33,7 +33,7 @@ Web acceptance: `web/tests/acceptance/start-page-test.ts` › visitor sees the s
 
 ### B7 — The web app's address may call the API from the browser; other addresses get no CORS permission
 
-- [x] T7.1 integration — `test_only_the_web_origin_gets_cors_permission` (parametrised: the configured web origin is allowed, `https://other.example` is not)
+- [x] T7.1 integration — `test_only_the_web_origin_gets_cors_permission` ✅ (parametrised: the configured web origin is allowed, `https://other.example` is not)
 
 ### B8 — The web reads the data out of the envelope; pages never see the envelope
 

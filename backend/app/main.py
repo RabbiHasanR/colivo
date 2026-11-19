@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.api_v1 import api_router
 from app.core.config import settings
@@ -22,6 +23,14 @@ def create_app() -> FastAPI:
         redoc_url=None,
     )
     register_exception_handlers(app)
+    # Only the listed origins (the web app) may call the API from a browser.
+    # No credentials: the web sends its token in the Authorization header.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.backend_cors_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.include_router(api_router, prefix=API_PREFIX)
     return app
 

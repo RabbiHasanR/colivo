@@ -1,7 +1,9 @@
 import json
 
+import pytest
 from fastapi.testclient import TestClient
 
+from app.core.config import settings
 from app.main import create_app
 
 
@@ -68,3 +70,33 @@ def test_openapi_describes_health_inside_the_envelope(client: TestClient) -> Non
         assert "#/components/schemas/HealthOut" in json.dumps(
             schema["properties"]["data"]
         ), status
+
+
+WEB_ORIGIN = "https://web.colivo.example"
+
+
+@pytest.mark.parametrize(
+    ("origin", "allowed"),
+    [
+        pytest.param(WEB_ORIGIN, True, id="web origin"),
+        pytest.param("https://other.example", False, id="other origin"),
+    ],
+)
+def test_only_the_web_origin_gets_cors_permission(
+    origin: str, allowed: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """
+    GIVEN BACKEND_CORS_ORIGINS lists only the web app's origin
+    WHEN  a browser asks (preflight) whether a page on `origin` may call the API
+    THEN  only the web origin is allowed
+    """
+    monkeypatch.setattr(settings, "backend_cors_origins", [WEB_ORIGIN])
+    client = TestClient(create_app())
+
+    response = client.options(
+        "/api/v1/health",
+        headers={"Origin": origin, "Access-Control-Request-Method": "GET"},
+    )
+
+    expected = origin if allowed else None
+    assert response.headers.get("access-control-allow-origin") == expected
