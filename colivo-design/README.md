@@ -7,7 +7,7 @@ Use these files as the visual and behavioural reference when building the app.
 
 - `requirements.md` — project requirements, user stories, functional rules (FR-xx) and business rules (BR-xx). **Source of truth for behaviour.**
 - `mobile/` — 53 phone screens (390 px wide).
-- `web/` — 43 responsive web pages (sidebar + content, collapse to one column on narrow screens).
+- `web/` — 44 responsive web pages (sidebar + content, collapse to one column on narrow screens).
 
 ## How to read the screen files
 
@@ -151,5 +151,6 @@ Confirmation rules, give-money-first flows and deletion rules are in `requiremen
 | 39 · Settings · Custom deals | `WebSetDeals.html` |  |
 | 40 · Settings · Funds and keepers | `WebSetGroceryFund.html` |  |
 | 41 · Settings · Starting balances | `WebSetStart.html` |  |
+| 44 · Settings · Contacts | `WebSetContacts.html` |  |
 | 42 · Return or exchange | `WebReturn.html` | yes |
 | 43 · Hand over cash | `WebHandover.html` | yes |
