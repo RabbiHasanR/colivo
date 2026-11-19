@@ -5,5 +5,110 @@
     "description": "Colivo REST API: meals, groceries, rent and bills for shared homes.",
     "version": "0.1.0"
   },
-  "paths": {}
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Get Health",
+        "description": "Report whether the backend can reach the database and Redis.",
+        "operationId": "get_health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_HealthOut_"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_HealthOut_"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HealthOut": {
+        "properties": {
+          "database": {
+            "$ref": "#/components/schemas/ServiceStatus"
+          },
+          "redis": {
+            "$ref": "#/components/schemas/ServiceStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "database",
+          "redis"
+        ],
+        "title": "HealthOut",
+        "description": "The status of each dependency the backend needs."
+      },
+      "ServiceStatus": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "down"
+        ],
+        "title": "ServiceStatus",
+        "description": "Whether a dependency of the backend answered."
+      },
+      "StandardResponse_HealthOut_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HealthOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StandardResponse[HealthOut]"
+      }
+    }
+  }
 }

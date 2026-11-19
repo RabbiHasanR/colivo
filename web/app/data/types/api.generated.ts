@@ -3,10 +3,56 @@
  * Do not make direct changes to the file.
  */
 
-export type paths = Record<string, never>;
+export interface paths {
+    "/api/v1/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Health
+         * @description Report whether the backend can reach the database and Redis.
+         */
+        get: operations["get_health_api_v1_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+}
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        /**
+         * HealthOut
+         * @description The status of each dependency the backend needs.
+         */
+        HealthOut: {
+            database: components["schemas"]["ServiceStatus"];
+            redis: components["schemas"]["ServiceStatus"];
+        };
+        /**
+         * ServiceStatus
+         * @description Whether a dependency of the backend answered.
+         * @enum {string}
+         */
+        ServiceStatus: "ok" | "down";
+        /** StandardResponse[HealthOut] */
+        StandardResponse_HealthOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["HealthOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -14,4 +60,34 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    get_health_api_v1_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_HealthOut_"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_HealthOut_"];
+                };
+            };
+        };
+    };
+}
