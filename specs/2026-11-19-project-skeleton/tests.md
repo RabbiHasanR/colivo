@@ -42,9 +42,9 @@ Web acceptance: `web/tests/acceptance/start-page-test.ts` › visitor sees the s
 
 ### B9 — API errors reach pages as plain errors: 422 as field errors, 400 as a business-rule error, 409 as a conflict, anything else as a general error
 
-- [x] T9.1 web unit — error handler turns 422 `"<loc>: <msg>"` strings into field errors
-- [x] T9.2 web unit — error handler maps 400, 409 and other statuses to their kinds (loop over cases)
-- [x] T9.3 web unit — error handler maps a failed fetch to a network error
+- [x] T9.1 web unit — error handler turns 422 `"<loc>: <msg>"` strings into field errors ✅
+- [x] T9.2 web unit — error handler maps 400, 409 and other statuses to their kinds ✅ (loop over cases)
+- [x] T9.3 web unit — error handler maps a failed fetch to a network error ✅
 - [ ] T9.4 web unit — error handler keeps the envelope data of a failed response _(skipped: covered through the public service by T11.2)_
 
 ### B10 — A request carries the session's token as a bearer token when there is one, and no token when there isn't
