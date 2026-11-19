@@ -29,11 +29,18 @@ In scope:
 - Anyone logs in with a phone or email and a one-time code.
 - The **owner** sets up **rooms**, **rent**, **home rules** (deposit months,
   notice period, rent-gap policy) and **bills**.
+- The **owner** or a **manager** keeps the home's **contacts**: landlord,
+  cook, internet and other providers, with several phones and emails,
+  documents and their history; each bill can name who it is paid to.
 - The **owner** or a **manager** can set an optional **estimate** for any
   bill (once for every month, or changed for one month); members see their
   share from the 1st, the actual bill replaces it, and any difference after
   close is adjusted next month.
-- **Members** log daily **meals** (lunch, dinner, guests).
+- **Members** log daily **meals** per session (breakfast, lunch, dinner, as
+  the home sets them), with their own **guests** counted separately. The
+  **owner** or a **manager** adds **home guests** and **confirms** each
+  session after it is cooked; only confirmed meals count, and members can't
+  change a session once it is confirmed or the day is over.
 - **Members** add **groceries**; the app shows the live **cost per meal**.
   One entry can be paid partly from a fund and partly from the member's own
   pocket.
@@ -73,7 +80,8 @@ PDF/Excel export and WhatsApp sharing, meal cut-off times and default meal
 patterns, reminders, grocery shopping roster, Bangla and other languages,
 currencies other than ৳ (BDT), split methods other than meal-based groceries
 (flatshare, bills-only, paying guest), payment gateway integration (bKash and
-Nagad are recorded manually), transferring ownership, notification settings.
+Nagad are recorded manually), transferring ownership, notification settings,
+custom funds (repair, festival; shape agreed 19 Nov 2026).
 
 ## Who it's for
 

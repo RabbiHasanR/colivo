@@ -75,11 +75,26 @@ After this phase, the owner can describe the home the app will calculate for.
 - **Home rules**: deposit months, notice period, rent-gap policy.
 - Home and landlord details: address, photos, landlord rent, landlord deposit.
 
+### Home contacts
+
+- Model **contact** (landlord, cook, internet, electricity, gas, caretaker,
+  other) with any number of phones and emails, optional photo, account ID,
+  note and documents
+  ([data-model.md → Contacts and files](data-model.md#contacts-and-files-agreed-19-nov-2026)).
+- Shared **attachment** model for files (contact documents, lease; receipts
+  reuse it later); sensitive files encrypted.
+- The landlord is the landlord contact on Home & landlord; one active
+  landlord at a time.
+- Mark a contact as left (cook or provider changes); past contacts are kept.
+- Members see cook and provider names and phones; landlord details and
+  documents for the owner and managers only.
+
 ### Bills and starting balances
 
 - **Bill** categories: rent, prepaid, postpaid, other; a default
   **Household** category for non-food items (shared like a bill, not by
   meals); custom deals.
+- Optional **Paid to** contact per bill category (one per category).
 - Optional default **estimate** per bill category, used every month.
 - **Starting balances** imported once from the old spreadsheet: member
   balances, home fund and grocery fund cash **per holder**, money with
@@ -93,13 +108,21 @@ After this phase, every member logs meals and sees today's count.
 
 ### Meal grid
 
-- Model **meal entry** (member, date, lunch, dinner, guests).
-- Members change their own meals; owner and manager change anyone's.
-- Today's meals and "cook for" totals on every home page.
+- Model **meal session** per home (breakfast, lunch, dinner; on/off, order,
+  weight) and **meal entry** (member, date, session, own, guests)
+  ([data-model.md → Meals](data-model.md#meals-sessions-guests-and-confirmation-agreed-19-nov-2026)).
+- **Home guests** per date and session (owner and managers).
+- **Confirm** a session after it is cooked, one or several at once.
+- Members change their own meals until the session is confirmed or the day
+  ends; owner and manager change anyone's, logged.
+- Today's meals and **Cook for** totals (members + guests + home guests) on
+  every home page.
 
 ### Cost per meal
 
-- Live **cost per meal** = groceries ÷ meals; 0 when there are no meals.
+- Live **cost per meal** = groceries ÷ billable meals (confirmed sessions,
+  own + guests × session weight; home guests left out); 0 when there are
+  none.
 
 ## Phase 4 — Groceries and the grocery fund ⏳ Not started
 
@@ -183,8 +206,9 @@ After this phase, a month can be closed and balances carry forward.
 - A closed month is never reopened; owner or manager corrects an entry (a
   return on a closed month's entry included) and the difference goes into the
   open month.
-- The checklist also lists returns and corrections waiting for confirmation
-  and refunds waiting for the member.
+- The checklist also lists returns and corrections waiting for confirmation,
+  refunds waiting for the member, and meal sessions not yet confirmed
+  (closing anyway confirms them as logged).
 - Cash count and carry-forward **per holder** for each fund; payments and
   handovers still waiting for their receiver are listed.
 - Previous month balances (view only).
@@ -263,3 +287,9 @@ shopping roster, Bangla and other languages, currencies other than ৳ (BDT),
 split methods other than meal-based groceries (flatshare, bills-only, paying
 guest), payment gateway integration, transferring ownership, notification
 settings.
+
+Next version (after the MVP): **custom funds** (repair, festival). Chosen
+members pay in, either a set amount split equally or open contributions;
+spent like the home fund; kept off the monthly bill; carried over at close.
+The agreed shape is in `colivo-design/requirements.md → Phase 4`; the
+`fund.kind` column is already planned so nothing blocks it.
