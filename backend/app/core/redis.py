@@ -5,7 +5,24 @@ from redis import Redis
 
 from app.core.config import settings
 
-redis_client = Redis.from_url(settings.redis_url)
+
+def create_redis_client(url: str) -> Redis:
+    """Create the Redis client the app uses for ``url``.
+
+    Args:
+        url: A Redis URL.
+
+    Returns:
+        The client.
+    """
+    return Redis.from_url(
+        url,
+        socket_connect_timeout=settings.connect_timeout_seconds,
+        socket_timeout=settings.connect_timeout_seconds,
+    )
+
+
+redis_client = create_redis_client(settings.redis_url)
 
 
 def get_redis() -> Redis:

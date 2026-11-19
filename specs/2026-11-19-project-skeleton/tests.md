@@ -16,7 +16,7 @@ Web acceptance: `web/tests/acceptance/start-page-test.ts` › visitor sees the s
 
 ### B3 — The health check answers within a few seconds even when a dependency is down
 
-- [x] T3.1 unit — `test_health_check_gives_up_after_the_timeout` (parametrised: database, redis; blackholed address, answers `down` in under 5 s)
+- [x] T3.1 unit — `test_health_check_gives_up_after_the_timeout` ✅ (parametrised: database, redis; blackholed address, answers `down` in under 5 s)
 
 ### B4 — An unknown address under /api/v1/ answers 404 in the envelope
 

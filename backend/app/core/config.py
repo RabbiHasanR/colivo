@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # Only the test suite uses it; tests refuse to run without it.
     test_database_url: str | None = None
     redis_url: str
+    # How long any connection to PostgreSQL or Redis may take before it counts
+    # as down. Whole seconds: libpq's connect_timeout takes an integer.
+    connect_timeout_seconds: int = 2
 
     backend_cors_origins: Annotated[
         list[str], NoDecode, BeforeValidator(split_comma_list)
