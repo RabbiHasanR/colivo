@@ -53,6 +53,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      # 200 = healthy; a 503 (a dependency down) or no answer = unhealthy.
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=5)",
+        ]
+      interval: 10s
+      timeout: 6s
+      retries: 3
+      start_period: 15s
 
 volumes:
   postgres-data:
