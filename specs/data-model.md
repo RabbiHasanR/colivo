@@ -8,23 +8,103 @@ links here. Nothing here is decided without the user: `/feature-spec` step 4
 Status marks: _(Phase N, planned)_ when agreed in a spec, _(Phase N, built)_
 once the phase's migrations are merged.
 
-## Domain sketch
-
-_Pending — agree before the Phase 1 spec._
+## Domain sketch _(agreed 19 Nov 2026)_
 
 The main entities and how they relate, for **all** phases, from
 `colivo-design/requirements.md`: no columns yet. The goal is that early
-tables don't block later money flows. Expected entities: user, home,
-membership (role per home), room, room assignment, home rules, bill
-category, meal session, meal entry, meal session day, grocery entry,
-grocery fund, home fund, payment, bill, statement, credit, deposit, inbox
-item, message, contact, contact method, attachment, and the linked entries
-that change money later: return, correction and refund. Funds and their
-holders are decided below ([Funds and holders](#funds-and-holders-agreed-17-nov-2026)),
-and so are meals ([Meals](#meals-sessions-guests-and-confirmation-agreed-19-nov-2026))
-and contacts ([Contacts and files](#contacts-and-files-agreed-19-nov-2026)).
+tables don't block later money flows. Columns are agreed at each phase's
+Gate 0; entity names here are the working names until then, and the ledger's
+detail tables (`entry_grocery`, `entry_bill_payment`, `entry_payment`) are
+placeholders.
 
-Money storage is decided: a ledger (see [Decisions](#decisions)).
+**The spine.** Six tables carry everything else: `person` (a login),
+`home` (the tenant), `membership` (a person living in one home), `month`
+(the billing cycle, open or closed), `fund` (a pot of shared cash) and
+`entry` (one movement of money). Every other table hangs off `home`,
+`membership` or `month`.
+
+| Area                | Entities                                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| People and access   | `person`, `membership`, `fund_keeper`, `id_document`; log-in codes and lockouts in Redis (FR-94) |
+| Home setup          | `room`, `room_assignment`, `home_rules_version`, `contact`, `contact_method`, `bill_category`    |
+| Month               | `month`                                                                                          |
+| Meals               | `meal_session`, `meal_session_day`, `meal_entry`                                                 |
+| Rent and charges    | `room_rent`, `rent_override`, `rent_revision`, `charge_override`, `bill_estimate`, `bill`        |
+| Money ledger        | `fund`, `entry` and its detail tables, `landlord_deposit`                                        |
+| Leaving and deposit | `leave_notice`, `settlement`; deposits are entry kinds, not a table                              |
+| Inbox and messages  | `notification`, `conversation`, `conversation_member`, `message`                                 |
+| Audit and files     | `change_log`, `attachment`                                                                       |
+
+```mermaid
+erDiagram
+  person ||--o{ membership : "joins a home as"
+  home ||--o{ membership : has
+  home ||--o{ month : "runs month by month"
+  home ||--o{ fund : keeps
+  membership ||--o{ fund_keeper : "keeps funds via"
+  fund ||--o{ fund_keeper : "kept by"
+  membership ||--o{ id_document : has
+
+  home ||--o{ room : has
+  room ||--o{ room_assignment : ""
+  membership ||--o{ room_assignment : "lives in"
+  home ||--o{ home_rules_version : "effective-dated"
+  home ||--o{ contact : "deals with"
+  contact ||--o{ contact_method : "phones and emails"
+  home ||--o{ bill_category : defines
+  contact |o--o{ bill_category : "is paid to"
+
+  home ||--o{ meal_session : has
+  meal_session ||--o{ meal_session_day : "one per date"
+  meal_session ||--o{ meal_entry : ""
+  membership ||--o{ meal_entry : "own + guests"
+  month ||--o{ meal_entry : ""
+
+  room ||--o{ room_rent : "effective-dated"
+  membership ||--o{ rent_override : "effective-dated"
+  home ||--o{ rent_revision : ""
+  rent_revision ||--o{ room_rent : writes
+  rent_revision ||--o{ rent_override : writes
+  membership ||--o{ charge_override : "fixed deal"
+  bill_category ||--o{ charge_override : ""
+  bill_category ||--o{ bill_estimate : "one month"
+  bill_category ||--o{ bill : ""
+  month ||--o{ bill : ""
+
+  month ||--o{ entry : contains
+  fund |o--o{ entry : "cash from or to"
+  membership ||--o{ entry : "member, holder"
+  entry |o--o{ entry : "return, correction, cancel"
+  bill |o--o{ entry : "paid by"
+  entry ||--o| entry_grocery : detail
+  entry ||--o| entry_bill_payment : detail
+  entry ||--o| entry_payment : detail
+  home ||--o{ landlord_deposit : ""
+
+  membership ||--o{ leave_notice : gives
+  membership ||--o| settlement : "final settlement"
+  settlement |o--o{ entry : writes
+
+  membership ||--o{ notification : receives
+  home ||--o{ conversation : "group and one-to-one"
+  conversation ||--o{ conversation_member : ""
+  membership ||--o{ conversation_member : ""
+  conversation ||--o{ message : ""
+  membership ||--o{ message : sends
+
+  home ||--o{ change_log : ""
+  person ||--o{ change_log : "made by"
+  home ||--o{ attachment : ""
+  entry |o--o{ attachment : "receipt, proof"
+  contact |o--o{ attachment : documents
+  message |o--o{ attachment : photos
+```
+
+The choices behind the sketch are under [Decisions](#decisions): the
+[ledger shape](#ledger-shape-one-header-table-agreed-19-nov-2026),
+[person and membership](#person-and-membership-agreed-19-nov-2026),
+[roles](#roles-agreed-19-nov-2026) and [the inbox](#inbox-worked-out-from-entries-agreed-19-nov-2026),
+next to the earlier ledger, funds, meals and contacts decisions.
 
 ## Conventions
 
@@ -36,14 +116,23 @@ change is one transaction.
 
 Database-specific rules:
 
-- Names are `snake_case`. Foreign keys are `<table>_id`.
+- Names are `snake_case` and **singular** (`home`, `meal_entry`). Foreign
+  keys are `<table>_id`. The login table is `person`, because `user` is a
+  reserved word in PostgreSQL. SQLModel's default name is the class name
+  lowercased (`MealEntry` → `mealentry`), so a shared base model sets
+  `__tablename__` to the class name in snake_case. See
+  [Table names](#table-names-singular-agreed-19-nov-2026).
+- Every primary key is `id uuid`, a **UUIDv7** made by the backend. See
+  [Primary keys](#primary-keys-uuidv7-agreed-19-nov-2026).
+- Fixed value sets are `text` with a `CHECK`, from one Python `StrEnum`. See
+  [Fixed value sets](#fixed-value-sets-text-and-check-agreed-19-nov-2026).
 - Every home-owned table has `home_id NOT NULL` referencing `home`, and an
   index that starts with `home_id`.
 - Every table has `created_at` and `updated_at` (`timestamptz`, set by the
   database).
 - No hard deletes of user data. Money entries follow the ledger rules in
-  [Decisions](#decisions); other records follow the history rule chosen in
-  [Open questions](#open-questions).
+  [Decisions](#decisions); other records follow
+  [History of non-money records](#history-of-non-money-records-agreed-19-nov-2026).
 - A rule a user could notice (unique, check, foreign key) is enforced in the
   database **and** listed as a behaviour in the phase's `validation.md`.
 - One Alembic migration per `plan.md` group, edited on the phase branch until
@@ -197,19 +286,131 @@ From `colivo-design/requirements.md` FR-109–FR-112.
 ### History of money entries _(agreed 17 Nov 2026)_
 
 Money entries are append-only (above), so their history is the chain of
-linked entries plus the change log (FR-27). History for other records
-(rooms, members, rules) is still open below.
+linked entries plus the change log (FR-27). History for other records is
+[below](#history-of-non-money-records-agreed-19-nov-2026).
+
+### Ledger shape: one header table _(agreed 19 Nov 2026)_
+
+Every entry kind shares one `entry` table: amount, shared part and pocket
+part, fund, holder (and the receiving holder for a handover), member,
+status, month, and the link to the original entry. What only one kind has
+(grocery items, the bill paid and whom it was paid to, payment method) is in
+a small detail table, one row per entry at most.
+
+Why: every balance (credits BR-6, central cash BR-8, cash per holder BR-23)
+is a sum over one table, and returns, corrections and cancels link the same
+way for every kind. Rejected: a table per kind (each balance becomes a
+`UNION` over about eight tables, and the link logic is repeated in each),
+and one wide table (mostly nulls, and per-kind `CHECK` rules get messy).
+
+### Person and membership _(agreed 19 Nov 2026)_
+
+`person` holds only identity: phone, email, name, photo. Everything about
+life in a home is on `membership`: role, join and leave dates, status, and
+the deposit and notice months copied from the home rules on the join date
+(FR-29, BR-11). Entries, meals, ID documents and fund keepers point to
+`membership`, never to `person`.
+
+Why: a person who leaves one home and joins another keeps one login, while
+each home's records stay separate (FR-85, NFR-03). "One active home per
+person" is a partial unique index on `person_id` for active and
+notice-served memberships. Settled at Phase 1 Gate 0: where the name that
+must be unique within a home (FR-04) lives, since `person` is shared across
+homes.
+
+### Roles _(agreed 19 Nov 2026)_
+
+`membership.role` is `owner`, `manager` or `member`. Fund keeper is not a
+role value but a `fund_keeper` link between a membership and a fund, with
+`started_on` and `ended_on`, so one person can keep both funds and a fund can
+have several keepers (FR-65). "Exactly one owner per home" (FR-63) is a
+partial unique index on `home_id` where `role = 'owner'`. No roles table:
+the roles are fixed, and a person is owner or manager, never both.
+
+### Inbox: worked out from entries _(agreed 19 Nov 2026)_
+
+Items waiting for someone (payments, handovers, returns, corrections and
+refunds to confirm) are not stored: they are entries with status `waiting`
+whose confirmer is that person (FR-75, FR-76). Only updates and notices
+(rent changed, notice given, "the owner corrected your entry") are stored,
+in `notification`.
+
+Why: storing waiting items twice lets them disagree, such as a confirmed
+entry still showing as "to confirm".
+
+### History of non-money records _(agreed 19 Nov 2026)_
+
+Two needs, solved separately:
+
+- **Values a calculation needs as of a month** (room rent, member rent
+  override, home rules, room assignment): **effective-dated rows**, modelled
+  as normal tables (`room_rent`, `rent_override`, `home_rules_version`,
+  `room_assignment`). October's statement always uses October's values
+  (FR-51, FR-28).
+- **Proof of who changed what** (FR-27, US-A13): **one `change_log` table**
+  (entity, id, who, when, old and new values as `jsonb`, reason), written by
+  the service in the same transaction as the change.
+- **Removing:** never a delete. Records get `archived_at` (rooms, bill
+  categories), `ended_on` (contacts, fund keepers) or a status (members),
+  per FR-96 and FR-110.
+
+Rejected: an audit table per entity (about twenty near-identical tables)
+and versioned rows on every table (every query needs date filters, even for
+a phone number).
+
+### Primary keys: UUIDv7 _(agreed 19 Nov 2026)_
+
+Every table's key is `id uuid` holding a **UUIDv7**, made in Python with the
+`uuid-utils` package (Python 3.12 has no `uuid7()`, and PostgreSQL 16 has no
+`uuidv7()`). On Python 3.14 or later it can switch to the standard library's
+`uuid.uuid7()` with no data change.
+
+- **Safe in URLs:** ids can't be guessed, and they don't reveal how many
+  homes or entries exist.
+- **Time-ordered:** new rows go at the end of the index, so inserts stay
+  compact, almost like a counter.
+- **Made before the insert:** the client can send the id with a create, so a
+  retried save on slow mobile data reuses it and never counts twice
+  (NFR-08).
+- **Size:** PostgreSQL stores a `uuid` as 16 bytes (the 36-character form is
+  only how it is shown). A 12-character text id would be 13 bytes, and
+  `bigint` 8; the difference is negligible at Colivo's size.
+
+The short Home ID shown in settings (`OF-4827`, FR-88) is a separate unique
+code on `home`, not its key.
+
+### Fixed value sets: text and CHECK _(agreed 19 Nov 2026)_
+
+Roles, entry kinds, statuses, fund kinds, contact kinds and bill classes are
+`text` columns with a `CHECK (col IN (…))`. Each set is one Python `StrEnum`;
+the model and the migration's check are built from it, and a test compares
+the database check with the enum so the two can't drift.
+
+Why: a value is added or removed with a normal migration that drops and
+recreates the check, and the values read plainly in `psql`. Rejected:
+PostgreSQL `enum` types (values can't be removed or renamed easily, and
+Alembic autogenerate handles them badly) and lookup tables (not needed:
+everything users define, such as funds, meal sessions and bill categories,
+is already a real table).
+
+### Table names: singular _(agreed 19 Nov 2026)_
+
+`home`, `membership`, `meal_entry`, matching the names used throughout this
+file. The login table is `person` because `user` is reserved in PostgreSQL
+and would need quoting everywhere.
 
 ## Open questions
 
-To settle in the domain sketch, or in the first phase that needs them:
+None open across the whole schema. Left to the phase that first needs them,
+at its Gate 0:
 
-| Question                                                    | Options                                                                                               |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| History of non-money records                                | Audit table per entity, versioned rows (`valid_from` / `valid_to`), or `deleted_at` plus an event log |
-| Primary keys                                                | UUID (safe to expose, no guessing) or `bigint` identity (smaller, ordered)                            |
-| Fixed value sets (role, bill type, fund kind, contact kind) | PostgreSQL enum, `CHECK` constraint on text, or a lookup table                                        |
-| Table names                                                 | Singular (`home`, SQLModel's default) or plural (`homes`)                                             |
+| Question                                                                | Phase that decides  |
+| ----------------------------------------------------------------------- | ------------------- |
+| Where the name unique within a home lives (`person` or `membership`)    | Accounts and log-in |
+| How an attachment links to what it belongs to                           | Home setup          |
+| How session weights are kept with a month at close                      | Meals               |
+| Carried bills: their own rows, or unpaid `bill` rows from closed months | Month close         |
+| Landlord deposit settlement at move-out                                 | Release Phase 2     |
 
 ## ER diagram
 
@@ -227,9 +428,11 @@ and the query each serves, and its status mark._
 
 ## Change log
 
-| Phase                | Change                                                                                                               |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Design (17 Nov 2026) | Money storage decided as a ledger; returns and corrections are linked entries                                        |
-| Design (17 Nov 2026) | Funds are rows; fund cash is tracked per holder; fund keeper is chosen per fund                                      |
-| Design (19 Nov 2026) | Meal sessions are rows with a weight; own and guest meals stored apart; home guests and confirmation per session day |
-| Design (19 Nov 2026) | One contact table with phones and emails as rows; one attachment table; payee per bill category; fund kind added     |
+| Phase                | Change                                                                                                                |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Design (17 Nov 2026) | Money storage decided as a ledger; returns and corrections are linked entries                                         |
+| Design (17 Nov 2026) | Funds are rows; fund cash is tracked per holder; fund keeper is chosen per fund                                       |
+| Design (19 Nov 2026) | Meal sessions are rows with a weight; own and guest meals stored apart; home guests and confirmation per session day  |
+| Design (19 Nov 2026) | One contact table with phones and emails as rows; one attachment table; payee per bill category; fund kind added      |
+| Design (19 Nov 2026) | Domain sketch agreed for all phases; ledger is one header table with detail tables; person and membership split       |
+| Design (19 Nov 2026) | UUIDv7 keys (`uuid-utils`), text + `CHECK` value sets, singular table names, effective-dated rows plus one change log |
