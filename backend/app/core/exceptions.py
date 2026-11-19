@@ -1,8 +1,15 @@
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.schemas import StandardResponse
+
+logger = logging.getLogger(__name__)
+
+# What a client sees for an unexpected error. The details go to the server log.
+UNEXPECTED_ERROR_MESSAGE = "An unexpected error occurred."
 
 
 def error_response(status_code: int, message: str, errors: list[str]) -> JSONResponse:
@@ -38,6 +45,30 @@ async def http_exception_handler(
     return error_response(exc.status_code, detail, [detail])
 
 
+async def unexpected_exception_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    """Answer any unhandled error with a generic 500, never its details.
+
+    The exception (message, traceback) is logged on the server only: it can
+    hold SQL, addresses or secrets.
+
+    Args:
+        request: The current request.
+        exc: The unhandled exception.
+
+    Returns:
+        The error response.
+    """
+    logger.error(
+        "Unhandled error on %s %s",
+        request.method,
+        request.url.path,
+        exc_info=exc,
+    )
+    return error_response(500, "Internal Server Error", [UNEXPECTED_ERROR_MESSAGE])
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Give every error the ``StandardResponse`` shape.
 
@@ -50,3 +81,4 @@ def register_exception_handlers(app: FastAPI) -> None:
         StarletteHTTPException,
         http_exception_handler,  # pyright: ignore[reportArgumentType]
     )
+    app.add_exception_handler(Exception, unexpected_exception_handler)

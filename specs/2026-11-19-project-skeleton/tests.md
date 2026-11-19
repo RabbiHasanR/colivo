@@ -24,7 +24,7 @@ Web acceptance: `web/tests/acceptance/start-page-test.ts` › visitor sees the s
 
 ### B5 — An unexpected server error answers 500 in the envelope with a generic message and no internal details
 
-- [x] T5.1 integration — `test_unexpected_error_answers_500_without_internals` (own app from `create_app()` with a route that raises)
+- [x] T5.1 integration — `test_unexpected_error_answers_500_without_internals` ✅ (own app from `create_app()` with a route that raises)
 
 ### B6 — The API contract shows every response wrapped in the envelope
 
