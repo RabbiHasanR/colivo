@@ -28,7 +28,7 @@ Web acceptance: `web/tests/acceptance/start-page-test.ts` › visitor sees the s
 
 ### B6 — The API contract shows every response wrapped in the envelope
 
-- [x] T6.1 integration — `test_openapi_describes_health_inside_the_envelope` (200 and 503 schemas are `StandardResponse[HealthOut]`)
+- [x] T6.1 integration — `test_openapi_describes_health_inside_the_envelope` ✅ (200 and 503 schemas are `StandardResponse[HealthOut]`)
 - [ ] T6.2 web — generated types match the contract _(skipped: checked by `make api-types` leaving no diff, an automated check, not a test)_
 
 ### B7 — The web app's address may call the API from the browser; other addresses get no CORS permission

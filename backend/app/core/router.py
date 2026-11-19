@@ -3,6 +3,7 @@ from collections.abc import Callable, Coroutine
 from typing import Any
 
 from fastapi import APIRouter, Request, Response
+from fastapi.dependencies.utils import get_typed_return_annotation
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 
@@ -16,6 +17,18 @@ HTTP_ERROR_STATUS = 400
 
 class StandardizedRoute(APIRoute):
     """A route whose JSON result is wrapped in the ``StandardResponse`` envelope."""
+
+    def __init__(self, path: str, endpoint: Callable[..., Any], **kwargs: Any) -> None:
+        # Declare the wrapped shape in OpenAPI for the success status, so the
+        # generated clients see what is really sent.
+        data_model = get_typed_return_annotation(endpoint)
+        if data_model is not None:
+            success_status = kwargs.get("status_code") or 200
+            kwargs["responses"] = {
+                success_status: {"model": StandardResponse[data_model]},
+                **(kwargs.get("responses") or {}),
+            }
+        super().__init__(path, endpoint, **kwargs)
 
     def get_route_handler(self) -> Callable[[Request], Coroutine[Any, Any, Response]]:
         """Wrap the default handler so JSON bodies come back inside the envelope.
@@ -32,7 +45,7 @@ class StandardizedRoute(APIRoute):
             if result.media_type != JSON_MEDIA_TYPE:
                 return result
 
-            envelope = StandardResponse(
+            envelope = StandardResponse[Any](
                 # An endpoint may answer an error status with data (health: 503).
                 success=result.status_code < HTTP_ERROR_STATUS,
                 message=get_response_message(request),

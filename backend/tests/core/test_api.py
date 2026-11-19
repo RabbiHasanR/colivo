@@ -1,3 +1,5 @@
+import json
+
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -43,3 +45,26 @@ def test_unexpected_error_answers_500_without_internals() -> None:
         "errors": ["An unexpected error occurred."],
     }
     assert "hunter2" not in response.text
+
+
+def test_openapi_describes_health_inside_the_envelope(client: TestClient) -> None:
+    """
+    GIVEN the published API contract (/openapi.json)
+    WHEN  the health check's 200 and 503 responses are read
+    THEN  both are the StandardResponse envelope, with HealthOut as its data
+    """
+    spec = client.get("/openapi.json").json()
+    responses = spec["paths"]["/api/v1/health"]["get"]["responses"]
+
+    for status in ("200", "503"):
+        ref = responses[status]["content"]["application/json"]["schema"]["$ref"]
+        schema = spec["components"]["schemas"][
+            ref.removeprefix("#/components/schemas/")
+        ]
+
+        assert set(schema["properties"]) == {"success", "message", "data", "errors"}, (
+            status
+        )
+        assert "#/components/schemas/HealthOut" in json.dumps(
+            schema["properties"]["data"]
+        ), status

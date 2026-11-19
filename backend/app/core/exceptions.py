@@ -23,7 +23,7 @@ def error_response(status_code: int, message: str, errors: list[str]) -> JSONRes
     Returns:
         The JSON response.
     """
-    body = StandardResponse(success=False, message=message, errors=errors)
+    body = StandardResponse[None](success=False, message=message, errors=errors)
     return JSONResponse(
         status_code=status_code, content=body.model_dump(exclude_none=True)
     )

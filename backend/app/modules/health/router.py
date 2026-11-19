@@ -3,6 +3,7 @@ from fastapi import Request, Response
 from app.core.database import SessionDep
 from app.core.redis import RedisDep
 from app.core.router import CoreRouter
+from app.core.schemas import StandardResponse
 from app.core.utils import set_response_message
 from app.modules.health import service
 from app.modules.health.schemas import HealthOut
@@ -10,7 +11,10 @@ from app.modules.health.schemas import HealthOut
 router = CoreRouter()
 
 
-@router.get("/health")
+@router.get(
+    "/health",
+    responses={503: {"model": StandardResponse[HealthOut]}},
+)
 def get_health(
     request: Request,
     response: Response,
