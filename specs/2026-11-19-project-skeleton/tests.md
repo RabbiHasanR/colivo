@@ -54,7 +54,7 @@ Web acceptance: `web/tests/acceptance/start-page-test.ts` › visitor sees the s
 
 ### B11 — The start page shows "Server connected" when healthy, which part is down when not, and "Can't reach the server" when there is no answer
 
-- [x] T11.1 web acceptance — visitor sees the server is connected (the web acceptance test; also asserts the page sits in the shell)
+- [x] T11.1 web acceptance — visitor sees the server is connected ✅ (the web acceptance test; also asserts the page sits in the shell)
 - [x] T11.2 web unit — server status service reports which part is down on a 503 ✅ (real store, MSW)
 - [x] T11.3 web unit — server status service reports unreachable when there is no answer ✅ (MSW network error)
 - [x] T11.4 web integration — server status shows "the database is down" and "Can't reach the server" ✅ (loop over the two statuses)

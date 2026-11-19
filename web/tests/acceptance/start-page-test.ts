@@ -11,23 +11,20 @@ module('Acceptance | start page', function (hooks) {
   setupApplicationTest(hooks);
   setupMsw(hooks);
 
-  test.todo(
-    'acceptance: visitor sees the server is connected',
-    async function (assert) {
-      // GIVEN the API reports the database and Redis both ok
-      // WHEN  a visitor opens the start page
-      // THEN  it sits in the Colivo shell and says the server is connected
-      const body: HealthBody = {
-        success: true,
-        message: 'Healthy',
-        data: { database: 'ok', redis: 'ok' },
-      };
-      worker.use(http.get('*/api/v1/health', () => HttpResponse.json(body)));
+  test('visitor sees the server is connected', async function (assert) {
+    // GIVEN the API reports the database and Redis both ok
+    // WHEN  a visitor opens the start page
+    // THEN  it sits in the Colivo shell and says the server is connected
+    const body: HealthBody = {
+      success: true,
+      message: 'Healthy',
+      data: { database: 'ok', redis: 'ok' },
+    };
+    worker.use(http.get('*/api/v1/health', () => HttpResponse.json(body)));
 
-      await visit('/');
+    await visit('/');
 
-      assert.dom('[data-test-app-shell]').exists();
-      assert.dom('[data-test-server-status]').hasText('Server connected');
-    },
-  );
+    assert.dom('[data-test-app-shell]').exists();
+    assert.dom('[data-test-server-status]').hasText('Server connected');
+  });
 });
