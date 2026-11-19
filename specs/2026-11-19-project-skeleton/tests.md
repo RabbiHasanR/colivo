@@ -20,7 +20,7 @@ Web acceptance: `web/tests/acceptance/start-page-test.ts` › visitor sees the s
 
 ### B4 — An unknown address under /api/v1/ answers 404 in the envelope
 
-- [x] T4.1 integration — `test_unknown_path_answers_404_in_the_envelope`
+- [x] T4.1 integration — `test_unknown_path_answers_404_in_the_envelope` ✅
 
 ### B5 — An unexpected server error answers 500 in the envelope with a generic message and no internal details
 
