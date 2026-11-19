@@ -132,8 +132,15 @@ a{color:#0E6656}a:hover{color:#0A4E42}
           <span style="font-weight: 500">{{t.name}}</span><span style="text-align: right">{{t.l}}</span><span style="text-align: right">{{t.d}}</span><span style="text-align: right; font-weight: 600">{{t.t}}</span>
         </div>
       </sc-for>
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 54px 54px 54px; gap: 6px; padding: 9px 0; border-top: 1px solid #EFEDE6; font-size: 13px; color: #5B6461">
+        <span>Home guests</span><span style="text-align: right">{{homeL}}</span><span style="text-align: right">{{homeD}}</span><span style="text-align: right">{{homeT}}</span>
+      </div>
       <div style="display: grid; grid-template-columns: minmax(0, 1fr) 54px 54px 54px; gap: 6px; padding: 10px 0; border-top: 1px solid #E3E1D9; font-size: 13px; font-weight: 600">
         <span>Cook for</span><span style="text-align: right">{{todayL}}</span><span style="text-align: right">{{todayD}}</span><span style="text-align: right">{{todayT}}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 0 0 12px; font-size: 12px">
+        <span style="color: #5B6461">{{sessionStatus}}</span>
+        <a href="Meals.html" data-test-confirm-session style="font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap">Confirm dinner ›</a>
       </div>
     </section>
     <section aria-label="Member balances" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 14px; padding: 6px 14px; display: flex; flex-direction: column">
@@ -196,24 +203,37 @@ class Component extends DCLogic {
     super(props);
     this.state = { picker: false, month: 'oct', myL: 1, myD: 1 };
   }
-  todayVals(me) {
+  todayVals(me, manager) {
     const n = (v) => Number.isInteger(v) ? String(v) : v.toFixed(1);
     const s = this.state;
+    // 12 Oct evening: lunch confirmed by Rabbi (locked for members, FR-09), dinner waiting (FR-108)
+    const lunchLocked = !manager;
+    // FR-107: one home guest at dinner (the landlord), counted for cooking only
+    const home = { l: 0, d: 1 };
     const people = [
       { key: 'rabbi', name: 'Rabbi Hasan', l: 1, d: 1 },
       { key: 'hijam', name: 'Hijam Shusil', l: 1, d: 1 },
       { key: 'maruf', name: 'Maruf', l: 0, d: 1 }
     ].map((p) => p.key === me ? Object.assign({}, p, { name: p.name + ' (you)', l: s.myL, d: s.myD }) : p);
-    let L = 0, D = 0;
+    let L = home.l, D = home.d;
     const todayRows = people.map((p) => { L += p.l; D += p.d; return { name: p.name, l: n(p.l), d: n(p.d), t: n(p.l + p.d) }; });
-    const step = (k, dlt) => () => this.setState({ [k]: Math.max(0, Math.min(6, this.state[k] + dlt)) });
+    // Own meals go up to 1 in 0.5 steps; guests are added in the meal grid (FR-08)
+    const step = (k, dlt) => () => {
+      if (k === 'myL' && lunchLocked) return;
+      this.setState({ [k]: Math.max(0, Math.min(1, this.state[k] + dlt)) });
+    };
     return {
       todayRows, todayL: n(L), todayD: n(D), todayT: n(L + D),
+      homeL: n(home.l), homeD: n(home.d), homeT: n(home.l + home.d),
+      sessionStatus: 'Lunch confirmed by Rabbi · Dinner waiting',
+      lunchLabel: lunchLocked ? 'Lunch · confirmed, locked' : 'Lunch',
+      myNote: lunchLocked ? 'Lunch was confirmed by Rabbi, so only the owner or a manager can change it now. You can change dinner until it is confirmed or the day ends.' : '',
       myL: n(s.myL), myD: n(s.myD),
       myLUp: step('myL', 0.5), myLDown: step('myL', -0.5),
       myDUp: step('myD', 0.5), myDDown: step('myD', -0.5)
     };
   }
+
   renderVals() {
     const list = [
       { key: 'oct', label: 'October 2026', sub: 'This month · still open', tag: 'Open', tagBg: '#E3F0EC', tagFg: '#0A4E42' },
@@ -238,7 +258,7 @@ class Component extends DCLogic {
       closePicker: () => this.setState({ picker: false }),
       backToNow: () => this.setState({ month: 'oct' }),
       months,
-      ...this.todayVals('rabbi')
+      ...this.todayVals('rabbi', true)
     };
   }
 }

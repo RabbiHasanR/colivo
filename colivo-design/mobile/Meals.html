@@ -24,6 +24,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
       <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px">
         <span style="font-size: 12px; color: #5B6461">Live cost per meal</span>
         <span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 600; color: #0E6656">৳{{rate}}</span>
+        <span style="font-size: 11px; color: #5B6461">{{rateNote}}</span>
       </div>
     </div>
     <div role="tablist" aria-label="View" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); background: #ECEAE2; border-radius: 12px; padding: 4px; gap: 4px">
@@ -33,7 +34,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
   </header>
 
   <sc-if value="{{dayOn}}" hint-placeholder-val="{{ true }}">
-    <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px">
+    <main style="flex: 1; overflow-y: auto; padding: 0 20px 16px; display: flex; flex-direction: column; gap: 12px">
       <div style="display: flex; gap: 8px">
         <sc-for list="{{days}}" as="d" hint-placeholder-count="6">
           <button aria-label="{{d.aria}}" style="{{d.style}}">
@@ -43,38 +44,64 @@ a{color:#0E6656}a:hover{color:#0A4E42}
         </sc-for>
       </div>
 
-      <section aria-label="Meals on 12 October" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
-        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 112px 112px; gap: 8px; padding: 10px 0 6px; font-size: 12px; color: #5B6461">
-          <span>Member</span><span style="text-align: center">Lunch</span><span style="text-align: center">Dinner</span>
-        </div>
-        <sc-for list="{{members}}" as="m" hint-placeholder-count="3">
-          <div style="display: grid; grid-template-columns: minmax(0, 1fr) 112px 112px; gap: 8px; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6">
+      <sc-for list="{{sessions}}" as="s" hint-placeholder-count="2">
+        <section aria-label="{{s.aria}}" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0 4px">
             <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
-              <span style="font-size: 14px; font-weight: 500">{{m.name}}</span>
-              <span style="font-size: 12px; color: #5B6461">{{m.note}}</span>
+              <h2 style="margin: 0; font-size: 15px; font-weight: 600">{{s.name}}</h2>
+              <span style="{{s.statusStyle}}">{{s.status}}</span>
+            </div>
+            <sc-if value="{{s.waiting}}" hint-placeholder-val="{{ true }}">
+              <button data-test-confirm-session onClick="{{s.confirm}}" style="min-height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid #0E6656; background: #FFFFFF; color: #0E6656; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer">Confirm</button>
+            </sc-if>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) 100px 100px; gap: 8px; padding: 6px 0; font-size: 12px; color: #5B6461">
+            <span>Member</span><span style="text-align: center">Own</span><span style="text-align: center">Guests</span>
+          </div>
+          <sc-for list="{{s.rows}}" as="m" hint-placeholder-count="3">
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) 100px 100px; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid #EFEDE6">
+              <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+                <span style="font-size: 14px; font-weight: 500">{{m.name}}</span>
+                <span style="font-size: 12px; color: #5B6461">{{m.note}}</span>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; background: #F6F5F0; border-radius: 10px">
+                <button aria-label="{{m.ownDownLabel}}" onClick="{{m.ownDown}}" style="width: 34px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #17201D; cursor: pointer">−</button>
+                <span style="font-size: 15px; font-weight: 600">{{m.own}}</span>
+                <button aria-label="{{m.ownUpLabel}}" onClick="{{m.ownUp}}" style="width: 34px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #0E6656; cursor: pointer">+</button>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; background: #F6F5F0; border-radius: 10px">
+                <button aria-label="{{m.guestDownLabel}}" onClick="{{m.guestDown}}" style="width: 34px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #17201D; cursor: pointer">−</button>
+                <span style="font-size: 15px; font-weight: 600">{{m.guests}}</span>
+                <button aria-label="{{m.guestUpLabel}}" onClick="{{m.guestUp}}" style="width: 34px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #0E6656; cursor: pointer">+</button>
+              </div>
+            </div>
+          </sc-for>
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) 100px; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid #EFEDE6">
+            <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+              <span style="font-size: 14px; font-weight: 500">Home guests</span>
+              <span style="font-size: 12px; color: #5B6461">Guests of the whole home · not charged to anyone</span>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between; background: #F6F5F0; border-radius: 10px">
-              <button aria-label="{{m.lunchDownLabel}}" onClick="{{m.lunchDown}}" style="width: 36px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #17201D; cursor: pointer">−</button>
-              <span style="font-size: 15px; font-weight: 600">{{m.l}}</span>
-              <button aria-label="{{m.lunchUpLabel}}" onClick="{{m.lunchUp}}" style="width: 36px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #0E6656; cursor: pointer">+</button>
-            </div>
-            <div style="display: flex; align-items: center; justify-content: space-between; background: #F6F5F0; border-radius: 10px">
-              <button aria-label="{{m.dinnerDownLabel}}" onClick="{{m.dinnerDown}}" style="width: 36px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #17201D; cursor: pointer">−</button>
-              <span style="font-size: 15px; font-weight: 600">{{m.d}}</span>
-              <button aria-label="{{m.dinnerUpLabel}}" onClick="{{m.dinnerUp}}" style="width: 36px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #0E6656; cursor: pointer">+</button>
+              <button aria-label="{{s.homeDownLabel}}" onClick="{{s.homeDown}}" style="width: 34px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #17201D; cursor: pointer">−</button>
+              <span style="font-size: 15px; font-weight: 600">{{s.home}}</span>
+              <button aria-label="{{s.homeUpLabel}}" onClick="{{s.homeUp}}" style="width: 34px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #0E6656; cursor: pointer">+</button>
             </div>
           </div>
-        </sc-for>
-        <div style="display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid #E3E1D9; font-size: 13px">
-          <span style="color: #5B6461">Total on 12 Oct</span>
-          <span style="font-weight: 600">{{dayTotal}} meals</span>
-        </div>
-      </section>
+          <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid #E3E1D9; font-size: 13px">
+            <span style="color: #5B6461">Cook for</span>
+            <span style="font-weight: 600">{{s.cookFor}} plates</span>
+          </div>
+        </section>
+      </sc-for>
 
-      <p style="margin: 0; font-size: 12px; color: #5B6461; line-height: 1.5">Steps of 0.5. Guest meals go above 1 in a slot (2.0+). Members can edit only their own row; the manager can edit everyone.</p>
+      <sc-if value="{{showConfirmAll}}" hint-placeholder-val="{{ true }}">
+        <button data-test-confirm-all onClick="{{confirmAll}}" style="min-height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer">{{confirmAllLabel}}</button>
+      </sc-if>
+
+      <p style="margin: 0; font-size: 12px; color: #5B6461; line-height: 1.5">Own meals in steps of 0.5 (up to 1); guests are counted separately and charged to the member. Only confirmed sessions count in the cost per meal. Members can change their own row until the session is confirmed or the day ends; the owner and managers can change it later, and the change is kept in history. Sessions: Lunch, Dinner · change in Home rules.</p>
 
       <section aria-label="Month so far" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
-        <h2 style="margin: 0; font-size: 14px; font-weight: 600">Month so far</h2>
+        <h2 style="margin: 0; font-size: 14px; font-weight: 600">Month so far · confirmed</h2>
         <sc-for list="{{members}}" as="m" hint-placeholder-count="3">
           <div style="display: flex; justify-content: space-between; font-size: 13px">
             <span>{{m.name}}</span><span style="font-weight: 600">{{m.month}} meals · ৳{{m.cost}}</span>
@@ -91,7 +118,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
     <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 10px">
       <div style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; overflow-x: auto">
         <table style="width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums">
-          <caption style="text-align: left; padding: 12px 14px 4px; font-size: 12px; color: #5B6461">Lunch + dinner per day. Tap a day to edit.</caption>
+          <caption style="text-align: left; padding: 12px 14px 4px; font-size: 12px; color: #5B6461">Meals per day (own + guests, confirmed sessions). Tap a day to edit.</caption>
           <thead>
             <tr style="color: #5B6461; font-size: 12px">
               <th scope="col" style="text-align: left; padding: 8px 14px; font-weight: 500">Date</th>
@@ -144,7 +171,16 @@ class Component extends DCLogic {
     super(props);
     this.state = {
       view: 'day',
-      today: { rabbi: { l: 1, d: 1 }, hijam: { l: 1, d: 1 }, maruf: { l: 0, d: 1 } }
+      // FR-106: this home has Lunch and Dinner on, Breakfast off
+      confirmed: { lunch: null, dinner: null },
+      // FR-08: own (0, 0.5, 1) and guests (0+) per member per session
+      today: {
+        rabbi: { lunch: { o: 1, g: 0 }, dinner: { o: 1, g: 0 } },
+        hijam: { lunch: { o: 1, g: 0 }, dinner: { o: 1, g: 0 } },
+        maruf: { lunch: { o: 0, g: 0 }, dinner: { o: 1, g: 0 } }
+      },
+      // FR-107: home guests per session, not billable
+      home: { lunch: 0, dinner: 0 }
     };
   }
   fmt(n) {
@@ -153,11 +189,21 @@ class Component extends DCLogic {
   num(n) {
     return Number.isInteger(n) ? String(n) : n.toFixed(1);
   }
-  bump(key, slot, delta) {
+  step(v, delta, max) {
+    return Math.min(max, Math.max(0, Math.round((v + delta) * 2) / 2));
+  }
+  bump(key, session, field, delta) {
     const t = JSON.parse(JSON.stringify(this.state.today));
-    const next = Math.max(0, Math.round((t[key][slot] + delta) * 2) / 2);
-    t[key][slot] = Math.min(next, 6);
+    t[key][session][field] = this.step(t[key][session][field], delta, field === 'o' ? 1 : 6);
     this.setState({ today: t });
+  }
+  bumpHome(session, delta) {
+    this.setState({ home: Object.assign({}, this.state.home, { [session]: this.step(this.state.home[session], delta, 20) }) });
+  }
+  confirm(list) {
+    const c = Object.assign({}, this.state.confirmed);
+    list.forEach((s) => { c[s] = { by: 'Rabbi', at: '9:40 pm' }; });
+    this.setState({ confirmed: c });
   }
   renderVals() {
     const base = { rabbi: 26, hijam: 31, maruf: 45 };
@@ -166,31 +212,51 @@ class Component extends DCLogic {
       { key: 'hijam', name: 'Hijam Shusil', note: 'Room B' },
       { key: 'maruf', name: 'Maruf', note: 'Room B' }
     ];
+    const sessionList = [{ key: 'lunch', name: 'Lunch' }, { key: 'dinner', name: 'Dinner' }];
     const t = this.state.today;
+    const conf = this.state.confirmed;
+    const meals = (key, s) => t[key][s].o + t[key][s].g;
+    // BR-2: only confirmed sessions are billable; home guests never are (weight 1 for both sessions here)
+    const billableToday = (key) => sessionList.reduce((sum, s) => sum + (conf[s.key] ? meals(key, s.key) : 0), 0);
     let monthTotal = 0;
-    let dayTotal = 0;
-    info.forEach((m) => {
-      dayTotal += t[m.key].l + t[m.key].d;
-      monthTotal += base[m.key] + t[m.key].l + t[m.key].d;
-    });
+    info.forEach((m) => { monthTotal += base[m.key] + billableToday(m.key); });
     const rate = monthTotal > 0 ? 10430 / monthTotal : 0;
     const members = info.map((m) => {
-      const month = base[m.key] + t[m.key].l + t[m.key].d;
+      const month = base[m.key] + billableToday(m.key);
+      return { name: m.name, month: this.num(month), cost: this.fmt(month * rate) };
+    });
+    const waiting = sessionList.filter((s) => !conf[s.key]);
+    const sessions = sessionList.map((s) => {
+      const c = conf[s.key];
+      // BR-24: cook for = own + guests + home guests, no weights
+      const cookFor = info.reduce((sum, m) => sum + meals(m.key, s.key), 0) + this.state.home[s.key];
       return {
-        name: m.name,
-        note: m.note,
-        l: this.num(t[m.key].l),
-        d: this.num(t[m.key].d),
-        month: this.num(month),
-        cost: this.fmt(month * rate),
-        lunchUp: () => this.bump(m.key, 'l', 0.5),
-        lunchDown: () => this.bump(m.key, 'l', -0.5),
-        dinnerUp: () => this.bump(m.key, 'd', 0.5),
-        dinnerDown: () => this.bump(m.key, 'd', -0.5),
-        lunchUpLabel: 'Add half lunch for ' + m.name,
-        lunchDownLabel: 'Remove half lunch for ' + m.name,
-        dinnerUpLabel: 'Add half dinner for ' + m.name,
-        dinnerDownLabel: 'Remove half dinner for ' + m.name
+        name: s.name,
+        aria: s.name + ' on 12 October',
+        waiting: !c,
+        status: c ? 'Confirmed by ' + c.by + ' · ' + c.at + ' · locked for members' : 'Waiting · not counted yet',
+        statusStyle: 'font-size: 12px; font-weight: 600; color: ' + (c ? '#0E6656' : '#9A4A10'),
+        confirm: () => this.confirm([s.key]),
+        home: this.num(this.state.home[s.key]),
+        homeUp: () => this.bumpHome(s.key, 1),
+        homeDown: () => this.bumpHome(s.key, -1),
+        homeUpLabel: 'Add a home guest for ' + s.name.toLowerCase(),
+        homeDownLabel: 'Remove a home guest for ' + s.name.toLowerCase(),
+        cookFor: this.num(cookFor),
+        rows: info.map((m) => ({
+          name: m.name,
+          note: m.note,
+          own: this.num(t[m.key][s.key].o),
+          guests: this.num(t[m.key][s.key].g),
+          ownUp: () => this.bump(m.key, s.key, 'o', 0.5),
+          ownDown: () => this.bump(m.key, s.key, 'o', -0.5),
+          guestUp: () => this.bump(m.key, s.key, 'g', 1),
+          guestDown: () => this.bump(m.key, s.key, 'g', -1),
+          ownUpLabel: 'Add half ' + s.name.toLowerCase() + ' for ' + m.name,
+          ownDownLabel: 'Remove half ' + s.name.toLowerCase() + ' for ' + m.name,
+          guestUpLabel: 'Add a guest at ' + s.name.toLowerCase() + ' for ' + m.name,
+          guestDownLabel: 'Remove a guest at ' + s.name.toLowerCase() + ' for ' + m.name
+        }))
       };
     });
     const wds = ['Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'];
@@ -204,7 +270,7 @@ class Component extends DCLogic {
         style: 'flex: 1; height: 56px; border-radius: 12px; border: 1px solid ' + (on ? '#0E6656' : '#E3E1D9') + '; background: ' + (on ? '#0E6656' : '#FFFFFF') + '; color: ' + (on ? '#FFFFFF' : '#17201D') + '; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; font-family: inherit'
       };
     });
-    const pattern = [[2, 2, 2], [2, 1.5, 2], [1, 2, 2], [2, 2, 1.5], [1.5, 2, 2], [2, 2, 2], [0, 2, 1], [2, 2, 2], [2, 1, 2], [2, 2, 2], [2, 2, 2], [t.rabbi.l + t.rabbi.d, t.hijam.l + t.hijam.d, t.maruf.l + t.maruf.d]];
+    const pattern = [[2, 2, 2], [2, 1.5, 2], [1, 2, 2], [2, 2, 1.5], [1.5, 2, 2], [2, 2, 2], [0, 2, 1], [2, 2, 2], [2, 1, 2], [2, 2, 2], [2, 2, 2], [billableToday('rabbi'), billableToday('hijam'), billableToday('maruf')]];
     const grid = pattern.map((p, i) => ({ date: (i + 1) + ' Oct', r: this.num(p[0]), h: this.num(p[1]), m: this.num(p[2]) }));
     const tabOn = 'height: 40px; border: 0; border-radius: 9px; background: #FFFFFF; color: #17201D; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit';
     const tabOff = 'height: 40px; border: 0; border-radius: 9px; background: transparent; color: #5B6461; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit';
@@ -217,10 +283,14 @@ class Component extends DCLogic {
       showDay: () => this.setState({ view: 'day' }),
       showMonth: () => this.setState({ view: 'month' }),
       rate: this.fmt(rate),
+      rateNote: waiting.length ? waiting.map((s) => s.name).join(' & ') + ' waiting' : 'All confirmed',
+      sessions,
+      showConfirmAll: waiting.length > 1,
+      confirmAllLabel: 'Confirm ' + waiting.map((s) => s.name.toLowerCase()).join(' & '),
+      confirmAll: () => this.confirm(waiting.map((s) => s.key)),
       members,
       days,
       grid,
-      dayTotal: this.num(dayTotal),
       monthTotal: this.num(monthTotal),
       rabbiMonth: members[0].month,
       hijamMonth: members[1].month,
