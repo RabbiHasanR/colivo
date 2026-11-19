@@ -1,6 +1,5 @@
 # Local development stack. Copy .env.example to .env first.
-# The backend service joins in Phase 0 group 2; the web dev server runs on
-# the host with `pnpm start`.
+# The web dev server runs on the host with `pnpm start`.
 name: colivo
 
 services:
@@ -33,6 +32,27 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../infra/backend.Dockerfile
+    environment:
+      ENVIRONMENT: development
+      # Inside the Compose network the hosts are the service names.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:4200}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      # Live reload: the dev server watches the mounted source.
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres-data:
