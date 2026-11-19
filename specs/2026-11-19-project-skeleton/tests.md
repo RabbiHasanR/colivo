@@ -37,7 +37,7 @@ Web acceptance: `web/tests/acceptance/start-page-test.ts` › visitor sees the s
 
 ### B8 — The web reads the data out of the envelope; pages never see the envelope
 
-- [x] T8.1 web unit — envelope handler returns the inner data
+- [x] T8.1 web unit — envelope handler returns the inner data ✅
 - [ ] T8.2 web unit — envelope handler normalises a list to JSON:API resources _(skipped: no stored resource until Phase 1; built test-first with the first one)_
 
 ### B9 — API errors reach pages as plain errors: 422 as field errors, 400 as a business-rule error, 409 as a conflict, anything else as a general error
