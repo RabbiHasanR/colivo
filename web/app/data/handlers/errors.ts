@@ -72,6 +72,15 @@ export function fieldErrorsFrom(
   return result;
 }
 
+/**
+ * The HTTP status of a failed request, or null when there was no response.
+ * WarpDrive's fetch handler reports a network failure as status 0 and an
+ * aborted request as 20: neither is an HTTP status.
+ */
+function httpStatusFrom(status: unknown): number | null {
+  return typeof status === 'number' && status >= 100 ? status : null;
+}
+
 function isErrorBody(content: unknown): content is ErrorBody {
   return content !== null && typeof content === 'object';
 }
@@ -89,8 +98,7 @@ export const ErrorHandler: Handler = {
       if (error instanceof ApiError) throw error;
 
       const failure = error as { status?: unknown; content?: unknown } | null;
-      const status =
-        typeof failure?.status === 'number' ? failure.status : null;
+      const status = httpStatusFrom(failure?.status);
       const body = isErrorBody(failure?.content) ? failure.content : null;
       const kind = kindForStatus(status);
 
@@ -99,6 +107,7 @@ export const ErrorHandler: Handler = {
         status,
         kind,
         kind === 'validation' ? fieldErrorsFrom(body) : {},
+        body?.data,
       );
     }
   },

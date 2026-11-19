@@ -1,3 +1,5 @@
+import type { HTTPMethod } from '@warp-drive/core/types/request';
+
 /**
  * Minimal structural types for request handlers.
  *
@@ -7,7 +9,7 @@
  */
 export interface AppRequest {
   url?: string;
-  method?: string;
+  method?: HTTPMethod;
   headers?: Headers;
   body?: BodyInit | null;
   /** WarpDrive operation name: query, findRecord, createRecord, … */
@@ -22,7 +24,8 @@ export interface RequestContext {
 
 export interface StructuredDocument<T> {
   request?: AppRequest;
-  response?: Response | null;
+  /** A fetch Response or WarpDrive's ResponseInfo; handlers here don't read it. */
+  response?: unknown;
   content: T;
 }
 
