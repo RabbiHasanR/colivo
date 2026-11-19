@@ -16,10 +16,13 @@ The main entities and how they relate, for **all** phases, from
 `colivo-design/requirements.md`: no columns yet. The goal is that early
 tables don't block later money flows. Expected entities: user, home,
 membership (role per home), room, room assignment, home rules, bill
-category, meal, grocery entry, grocery fund, home fund, payment, bill,
-statement, credit, deposit, inbox item, message, and the linked entries
+category, meal session, meal entry, meal session day, grocery entry,
+grocery fund, home fund, payment, bill, statement, credit, deposit, inbox
+item, message, contact, contact method, attachment, and the linked entries
 that change money later: return, correction and refund. Funds and their
-holders are decided below ([Funds and holders](#funds-and-holders-agreed-17-nov-2026)).
+holders are decided below ([Funds and holders](#funds-and-holders-agreed-17-nov-2026)),
+and so are meals ([Meals](#meals-sessions-guests-and-confirmation-agreed-19-nov-2026))
+and contacts ([Contacts and files](#contacts-and-files-agreed-19-nov-2026)).
 
 Money storage is decided: a ledger (see [Decisions](#decisions)).
 
@@ -102,6 +105,14 @@ From `colivo-design/requirements.md` FR-62–FR-67, FR-104, FR-105, BR-23.
   starts with two rows, grocery fund and home fund. Custom funds (Release
   plan) then need no schema change, which keeps early tables from blocking
   later money flows.
+- **A fund has a kind** _(added 19 Nov 2026)_: `grocery`, `home` or
+  `custom`. Rules hang on the kind, not the name: grocery-fund spending feeds
+  the cost per meal (BR-2), the home fund has reserved deposit cash (FR-32),
+  and a custom fund has neither. `custom` is reserved; custom-fund screens
+  come after the MVP. Their agreed shape (chosen members, a set amount split
+  equally or open contributions, kept off the monthly bill) is in
+  `colivo-design/requirements.md → Phase 4` and will need a fund-member link
+  and a collection record then.
 - **Every money entry that moves fund cash names its fund and its holder**
   (the person who received or paid the cash). A handover names two holders.
   Cash per holder (BR-23) and each fund's balance are sums over these
@@ -126,6 +137,63 @@ Why per holder instead of one total per fund: with two people holding the
 same fund, one total lets a holder give out cash someone else has, and the
 month-close cash count has no single person to check it against (G4).
 
+### Meals: sessions, guests and confirmation _(agreed 19 Nov 2026)_
+
+From `colivo-design/requirements.md` FR-08–FR-11, FR-106–FR-108, BR-2,
+BR-24.
+
+- **A meal session is a row, not a column.** Each home has its own
+  sessions (breakfast, lunch, dinner) with an on/off flag, an order and a
+  `weight` (`numeric`, default 1; breakfast can be 0.5). A home that adds
+  or drops breakfast changes rows, not the schema, the same reasoning as
+  funds.
+- **A meal entry is one row per member, date and session** with two
+  counts: `own` (0, 0.5 or 1) and `guests` (0 or more, steps of 0.5). Kept
+  separate so a guest meal is visible later instead of hidden inside "2.0".
+  Unique on (member, date, session).
+- **A meal session day is one row per home, date and session.** It holds
+  the home-guest count and the confirmation (`confirmed_by`,
+  `confirmed_at`, empty until confirmed). One table for both, because both
+  belong to the session of a day, not to a member.
+- **Only confirmed sessions count.** Billable meals = Σ over confirmed
+  sessions of (own + guests) × weight; home guests are never billable, so
+  the books still balance (BR-1). Cook for = own + guests + home guests,
+  without weights. Both are computed, not stored.
+- **The lock is a rule, not a column.** A member can write a meal entry
+  only while its session day is unconfirmed and its date is today or later
+  (home time zone); the service checks it. Owner and manager edits after
+  that go to the change log (FR-27).
+- **Weights in closed months don't change:** a weight change applies to
+  the open month, so a closed month's statement keeps the weights it was
+  closed with (the weight used is recorded with the month at close, decided
+  at the meals phase's Gate 0).
+
+### Contacts and files _(agreed 19 Nov 2026)_
+
+From `colivo-design/requirements.md` FR-109–FR-112.
+
+- **One contact table for everyone the home deals with**, with a `kind`
+  (landlord, cook, internet, electricity, gas, caretaker, other): name,
+  optional photo, optional account / customer ID, note, `started_on` and
+  `ended_on`. One table instead of landlord, cook and provider tables, so
+  phones, emails and documents are handled once.
+- **Phones and emails are rows in a contact method table** (`type` phone
+  or email, `value`, `label`, `is_primary`), not JSON lists, so each value
+  is validated and searchable, and a contact can have any number.
+- **Never deleted:** a contact who leaves gets `ended_on` and shows in
+  Past contacts. At most one active landlord per home.
+- **Paid to:** a bill category has an optional payee contact (at most
+  one). Each bill payment stores the contact it was paid to, so changing
+  the cook never rewrites old payments.
+- **One attachment table for every file** (contact documents, the lease,
+  and later receipts and proof under FR-74), linked to what it belongs to.
+  How the link is modelled (one link table per owner type, or an owner
+  type + id pair) is settled at the Phase 2 Gate 0. Sensitive files are
+  encrypted, as ID documents are (FR-61).
+- **Visibility is a service rule:** members get cook and provider names
+  and phones only; landlord details, account IDs, notes and documents are
+  for the owner and managers (FR-112).
+
 ### History of money entries _(agreed 17 Nov 2026)_
 
 Money entries are append-only (above), so their history is the chain of
@@ -136,12 +204,12 @@ linked entries plus the change log (FR-27). History for other records
 
 To settle in the domain sketch, or in the first phase that needs them:
 
-| Question                           | Options                                                                                               |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| History of non-money records       | Audit table per entity, versioned rows (`valid_from` / `valid_to`), or `deleted_at` plus an event log |
-| Primary keys                       | UUID (safe to expose, no guessing) or `bigint` identity (smaller, ordered)                            |
-| Fixed value sets (role, bill type) | PostgreSQL enum, `CHECK` constraint on text, or a lookup table                                        |
-| Table names                        | Singular (`home`, SQLModel's default) or plural (`homes`)                                             |
+| Question                                                    | Options                                                                                               |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| History of non-money records                                | Audit table per entity, versioned rows (`valid_from` / `valid_to`), or `deleted_at` plus an event log |
+| Primary keys                                                | UUID (safe to expose, no guessing) or `bigint` identity (smaller, ordered)                            |
+| Fixed value sets (role, bill type, fund kind, contact kind) | PostgreSQL enum, `CHECK` constraint on text, or a lookup table                                        |
+| Table names                                                 | Singular (`home`, SQLModel's default) or plural (`homes`)                                             |
 
 ## ER diagram
 
@@ -159,7 +227,9 @@ and the query each serves, and its status mark._
 
 ## Change log
 
-| Phase                | Change                                                                          |
-| -------------------- | ------------------------------------------------------------------------------- |
-| Design (17 Nov 2026) | Money storage decided as a ledger; returns and corrections are linked entries   |
-| Design (17 Nov 2026) | Funds are rows; fund cash is tracked per holder; fund keeper is chosen per fund |
+| Phase                | Change                                                                                                               |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Design (17 Nov 2026) | Money storage decided as a ledger; returns and corrections are linked entries                                        |
+| Design (17 Nov 2026) | Funds are rows; fund cash is tracked per holder; fund keeper is chosen per fund                                      |
+| Design (19 Nov 2026) | Meal sessions are rows with a weight; own and guest meals stored apart; home guests and confirmation per session day |
+| Design (19 Nov 2026) | One contact table with phones and emails as rows; one attachment table; payee per bill category; fund kind added     |
