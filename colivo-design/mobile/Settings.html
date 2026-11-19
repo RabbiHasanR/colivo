@@ -24,7 +24,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
 
   <main style="flex: 1; overflow: hidden; padding: 0 20px; display: flex; flex-direction: column; gap: 12px">
     <nav aria-label="Home setup" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 0 14px; display: flex; flex-direction: column">
-      <sc-for list="{{setup}}" as="s" hint-placeholder-count="4">
+      <sc-for list="{{setup}}" as="s" hint-placeholder-count="5">
         <a href="{{s.href}}" style="{{s.style}}">
           <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
             <span style="font-size: 15px; font-weight: 600; color: #17201D">{{s.title}}</span>
@@ -62,10 +62,11 @@ class Component extends DCLogic {
         row('SetFlat.html', 'Home & landlord', 'Our Flat · ৳15,645 a month · landlord holds ৳26,390', true),
         row('SetRooms.html', 'Rooms', '2 rooms · Room A ৳6,670 · Room B ৳7,775'),
         row('SetMembers.html', 'Members', '3 active · 1 has given notice'),
+        row('SetContacts.html', 'Contacts', 'Cook Rahima · Internet SpeedNet · 1 past contact'),
         row('SetStart.html', 'Starting balances', 'Entered for September 2026')
       ],
       money: [
-        row('SetRules.html', 'Home rules', '2-month deposit · 2-month notice · home fund covers rent gaps', true),
+        row('SetRules.html', 'Home rules', 'Lunch, dinner · 2-month deposit · 2-month notice · home fund covers rent gaps', true),
         row('SetBills.html', 'Bills & categories', '7 bills in Rent, Prepaid, Postpaid, Other'),
         row('SetDeals.html', 'Custom deals', 'None this month'),
         row('SetBazarBox.html', 'Grocery fund', 'On · kept by Hijam Shusil')

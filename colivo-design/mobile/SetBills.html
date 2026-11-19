@@ -33,7 +33,7 @@ input::placeholder{color:#6E7673}
         </div>
         <div style="display: flex; flex-wrap: wrap; gap: 6px">
           <sc-for list="{{g.items}}" as="i" hint-placeholder-count="3">
-            <button type="button" aria-label="{{i.name}}, {{i.est}}" style="min-height: 44px; border: 0; font-family: inherit; color: #17201D; text-align: left; padding: 6px 12px; border-radius: 10px; background: #F6F5F0; display: flex; flex-direction: column; gap: 1px"><span style="font-size: 14px">{{i.name}}</span><span style="font-size: 11px; color: {{i.estColor}}">{{i.est}}</span></button>
+            <button type="button" aria-label="{{i.name}}, {{i.est}}, {{i.payTo}}" style="min-height: 44px; border: 0; font-family: inherit; color: #17201D; text-align: left; padding: 6px 12px; border-radius: 10px; background: #F6F5F0; display: flex; flex-direction: column; gap: 1px"><span style="font-size: 14px">{{i.name}}</span><span style="font-size: 11px; color: {{i.estColor}}">{{i.est}}</span><span style="font-size: 11px; color: #5B6461">{{i.payTo}}</span></button>
           </sc-for>
         </div>
       </section>
@@ -52,6 +52,10 @@ input::placeholder{color:#6E7673}
       <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Estimate every month (optional)
         <input type="text" inputmode="decimal" placeholder="৳ leave empty for actual bill only" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
       </label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Paid to (optional)
+        <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>No contact</option><option>Rahima Begum (cook)</option><option>SpeedNet (internet)</option><option>City Gas (gas)</option><option>Jamal (caretaker)</option><option>+ Add a contact</option></select>
+      </label>
+      <span style="font-size: 12px; color: #5B6461; line-height: 1.45">One contact per bill. Two cooks? Add a second Cook bill with its own contact. Manage people in <a href="SetContacts.html">Contacts</a>.</span>
       <button type="submit" style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit">Add bill</button>
     </form>
   </main>
@@ -61,16 +65,18 @@ input::placeholder{color:#6E7673}
 class Component extends DCLogic {
   renderVals() {
     // est: optional default estimate used every month (FR-100); null = charged only when the actual bill is entered
-    const bill = (name, est) => ({
+    // payTo: optional contact the bill is paid to (FR-111), at most one per bill
+    const bill = (name, est, payTo) => ({
       name,
+      payTo: payTo ? 'Paid to ' + payTo : 'No contact set',
       est: est ? 'Est. ৳' + est + ' / month' : 'Actual bill only',
       estColor: est ? '#0E6656' : '#5B6461'
     });
     return {
       groups: [
-        { name: 'Rent', help: 'Paid to the landlord', bg: '#ECEAE2', fg: '#3E4744', items: [bill('Landlord rent', null)] },
-        { name: 'Prepaid', help: 'Paid before you use it', bg: '#E7F1FB', fg: '#1D4F86', items: [bill('Electricity', null), bill('Gas', null), bill('Internet', '1,050')] },
-        { name: 'Postpaid', help: 'Paid after the month', bg: '#EFEDFF', fg: '#4B3FA3', items: [bill('Cook (cook)', '2,500'), bill('Service charge', null)] },
+        { name: 'Rent', help: 'Paid to the landlord', bg: '#ECEAE2', fg: '#3E4744', items: [bill('Landlord rent', null, 'Nurul Hossain (landlord)')] },
+        { name: 'Prepaid', help: 'Paid before you use it', bg: '#E7F1FB', fg: '#1D4F86', items: [bill('Electricity', null, 'Prepaid meter'), bill('Gas', null, 'City Gas'), bill('Internet', '1,050', 'SpeedNet')] },
+        { name: 'Postpaid', help: 'Paid after the month', bg: '#EFEDFF', fg: '#4B3FA3', items: [bill('Cook (cook)', '2,500', 'Rahima Begum (cook)'), bill('Service charge', null, 'Jamal (caretaker)')] },
         { name: 'Other', help: 'One-off costs', bg: '#F1F0EA', fg: '#3E4744', items: [bill('Household', null), bill('Ad-hoc', null)] }
       ]
     };

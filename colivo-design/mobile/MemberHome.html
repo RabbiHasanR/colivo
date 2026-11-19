@@ -14,7 +14,7 @@ body{margin:0}
 a{color:#0E6656}a:hover{color:#0A4E42}
 </style>
 </helmet>
-<div style="width: 390px; height: 1160px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+<div style="width: 390px; height: 1340px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
   <header style="padding: 20px 20px 12px; display: flex; justify-content: space-between; align-items: center">
     <div style="display: flex; flex-direction: column; gap: 2px">
       <span style="font-size: 13px; color: #5B6461">Our Flat · Member</span>
@@ -97,6 +97,21 @@ a{color:#0E6656}a:hover{color:#0A4E42}
         <span style="color: #5B6461">{{sessionStatus}}</span>
       </div>
     </section>
+
+    <section aria-label="Home contacts" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 4px 14px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0 6px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Home contacts</h2>
+        <a href="SetContacts.html" style="font-size: 13px; font-weight: 600; text-decoration: none">All ›</a>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px">
+        <span><span style="font-weight: 500">Rahima Begum</span> <span style="color: #5B6461">· Cook</span></span>
+        <a href="tel:01911-223344" style="font-weight: 600; text-decoration: none; min-height: 32px; display: flex; align-items: center">01911-223344</a>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #EFEDE6; font-size: 13px">
+        <span><span style="font-weight: 500">SpeedNet</span> <span style="color: #5B6461">· Internet</span></span>
+        <a href="tel:09612-000111" style="font-weight: 600; text-decoration: none; min-height: 32px; display: flex; align-items: center">09612-000111</a>
+      </div>
+    </section>
     <section aria-label="Leaving" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9A4A10" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
       <div style="display: flex; flex-direction: column; gap: 2px; font-size: 13px">
@@ -132,7 +147,7 @@ a{color:#0E6656}a:hover{color:#0A4E42}
   </nav>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1160}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1340}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);

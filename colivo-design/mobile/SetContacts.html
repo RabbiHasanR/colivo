@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Contacts</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#0E6656}a:hover{color:#0A4E42}
+input::placeholder{color:#6E7673}
+</style>
+</helmet>
+<div style="width: 390px; height: 1700px; box-sizing: border-box; background: #F6F5F0; font-family: Inter, system-ui, sans-serif; color: #17201D; display: flex; flex-direction: column">
+  <header style="padding: 12px 20px 10px; display: flex; flex-direction: column; gap: 10px">
+    <a href="{{backHref}}" style="min-height: 44px; display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg>{{backLabel}}</a>
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600">Contacts</h1>
+      <span style="font-size: 13px; color: #5B6461">{{subtitle}}</span>
+    </div>
+    <div role="group" aria-label="Viewing as" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5B6461">
+      <span>Viewing as</span>
+      <button type="button" aria-pressed="{{ownerOn}}" onClick="{{asOwner}}" style="{{ownerStyle}}">Owner</button>
+      <button type="button" aria-pressed="{{memberOn}}" onClick="{{asMember}}" style="{{memberStyle}}">Member</button>
+    </div>
+    <div role="tablist" aria-label="Contacts" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); background: #ECEAE2; border-radius: 12px; padding: 4px; gap: 4px">
+      <button role="tab" aria-selected="{{currentOn}}" onClick="{{showCurrent}}" style="{{currentTabStyle}}">Current · {{currentCount}}</button>
+      <button role="tab" aria-selected="{{pastOn}}" onClick="{{showPast}}" style="{{pastTabStyle}}">Past · {{pastCount}}</button>
+    </div>
+  </header>
+
+  <main style="flex: 1; padding: 0 20px 20px; display: flex; flex-direction: column; gap: 12px">
+    <sc-for list="{{cards}}" as="c" hint-placeholder-count="4">
+      <section aria-label="{{c.name}}" data-test-contact style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; gap: 12px; align-items: flex-start">
+          <div aria-hidden="true" style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 999px; background: {{c.avatarBg}}; color: {{c.avatarFg}}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600">{{c.initials}}</div>
+          <div style="display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0">
+            <span style="font-size: 15px; font-weight: 600">{{c.name}}</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center">
+              <span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #ECEAE2; color: #3E4744">{{c.kind}}</span>
+              <span style="font-size: 12px; color: #5B6461">{{c.since}}</span>
+            </div>
+          </div>
+        </div>
+        <sc-for list="{{c.phones}}" as="ph" hint-placeholder-count="1">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; min-height: 32px">
+            <span style="color: #5B6461">{{ph.label}}</span>
+            <a href="{{ph.href}}" style="font-weight: 600; text-decoration: none">{{ph.value}}</a>
+          </div>
+        </sc-for>
+        <sc-if value="{{c.showPrivate}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #5B6461; border-top: 1px solid #EFEDE6; padding-top: 8px; line-height: 1.45">
+            <span>{{c.privateLine}}</span>
+            <span>{{c.docs}}</span>
+          </div>
+        </sc-if>
+        <span style="font-size: 12px; color: #5B6461">{{c.paidFor}}</span>
+        <sc-if value="{{c.canManage}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; gap: 8px">
+            <a href="{{c.editHref}}" style="flex: 1; min-height: 40px; border-radius: 10px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 14px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center">{{c.editLabel}}</a>
+            <sc-if value="{{c.canEnd}}" hint-placeholder-val="{{ true }}">
+              <button type="button" data-test-mark-left onClick="{{c.markLeft}}" style="flex: 1; min-height: 40px; border-radius: 10px; border: 1px solid #9A4A10; background: #FFFFFF; color: #9A4A10; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer">Mark as left</button>
+            </sc-if>
+          </div>
+        </sc-if>
+      </section>
+    </sc-for>
+
+    <sc-if value="{{pastOn}}" hint-placeholder-val="{{ false }}">
+      <p style="margin: 0; font-size: 12px; color: #5B6461; line-height: 1.45">Past contacts are never deleted. Their details and the bills paid to them stay on record.</p>
+    </sc-if>
+
+    <sc-if value="{{showForm}}" hint-placeholder-val="{{ true }}">
+      <form aria-label="Add a contact" style="background: #FFFFFF; border: 1px solid #E3E1D9; border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Add a contact</h2>
+        <div style="display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: end">
+          <button type="button" aria-label="Add photo (optional)" style="width: 64px; height: 64px; border-radius: 999px; border: 1px dashed #0E6656; background: #FFFFFF; color: #0E6656; font-size: 11px; font-weight: 600; font-family: inherit; cursor: pointer">+ Photo</button>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Name
+            <input type="text" placeholder="e.g. Rahima Begum" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+          </label>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Kind
+            <select style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 8px; font-size: 14px; color: #17201D; background: #FFFFFF; font-family: inherit"><option>Cook</option><option>Internet</option><option>Electricity</option><option>Gas</option><option>Caretaker</option><option>Other</option></select>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Started
+            <input type="text" placeholder="Day, month, year" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+          </label>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; color: #5B6461">Phones</span>
+          <div style="display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px">
+            <input type="text" aria-label="Phone label" placeholder="Mobile" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 13px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+            <input type="tel" aria-label="Phone" placeholder="01XXXXXXXXX" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+          </div>
+          <button type="button" style="align-self: flex-start; min-height: 36px; padding: 0 12px; border-radius: 10px; border: 1px dashed #0E6656; background: #FFFFFF; color: #0E6656; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer">+ Add phone</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; color: #5B6461">Emails (optional)</span>
+          <button type="button" style="align-self: flex-start; min-height: 36px; padding: 0 12px; border-radius: 10px; border: 1px dashed #0E6656; background: #FFFFFF; color: #0E6656; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer">+ Add email</button>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Account or customer ID (optional)
+          <input type="text" placeholder="e.g. internet customer ID, meter number" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+        </label>
+        <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5B6461">Note (optional)
+          <input type="text" placeholder="e.g. comes 10 am to 8 pm, off on Friday" style="height: 44px; border: 1px solid #D6D3C9; border-radius: 10px; padding: 0 12px; font-size: 15px; color: #17201D; font-family: inherit; box-sizing: border-box; min-width: 0">
+        </label>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <span style="font-size: 12px; color: #5B6461">Documents (optional)</span>
+          <button type="button" style="align-self: flex-start; min-height: 36px; padding: 0 12px; border-radius: 10px; border: 1px dashed #0E6656; background: #FFFFFF; color: #0E6656; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer">+ Add document</button>
+        </div>
+        <span style="font-size: 12px; color: #5B6461; line-height: 1.45">Every member sees the name and phones. Account ID, note and documents are for the owner and managers only; documents are stored encrypted. To have bills paid to this contact, pick them on <a href="SetBills.html">Bills &amp; categories</a>.</span>
+        <button type="submit" style="height: 48px; border: 0; border-radius: 12px; background: #0E6656; color: #FFFFFF; font-size: 15px; font-weight: 600; font-family: inherit">Add contact</button>
+      </form>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1700}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    // FR-109–FR-112: one contact list; past contacts are kept, never deleted
+    this.state = {
+      tab: 'current',
+      as: 'owner',
+      contacts: [
+        { key: 'landlord', name: 'Nurul Hossain', initials: 'NH', kind: 'Landlord', since: 'Since Jan 2025', phones: [['Mobile', '01711-234567'], ['bKash', '01811-765432']], account: 'Lease no. 14/B', docs: 'Lease agreement.pdf · NID (2 photos)', paidFor: 'Paid to for: Landlord rent', left: null },
+        { key: 'cook', name: 'Rahima Begum', initials: 'RB', kind: 'Cook', since: 'Since 1 Oct 2026', phones: [['Mobile', '01911-223344']], account: 'Note: comes 11 am and 7 pm, off on Friday', docs: 'NID (2 photos)', paidFor: 'Paid to for: Cook bill', left: null },
+        { key: 'internet', name: 'SpeedNet', initials: 'SN', kind: 'Internet', since: 'Since Jan 2025', phones: [['Support', '09612-000111'], ['Line man', '01511-445566']], account: 'Customer ID SN-20417 · 40 Mbps package', docs: 'No documents', paidFor: 'Paid to for: Internet bill', left: null },
+        { key: 'caretaker', name: 'Jamal', initials: 'JA', kind: 'Caretaker', since: 'Since Jan 2025', phones: [['Mobile', '01611-998877']], account: 'Building caretaker, collects service charge', docs: 'No documents', paidFor: 'Paid to for: Service charge', left: null },
+        { key: 'oldcook', name: 'Salma Khatun', initials: 'SK', kind: 'Cook', since: '1 Mar – 30 Sep 2026', phones: [['Mobile', '01311-556677']], account: 'Note: left for her village', docs: 'NID (2 photos)', paidFor: 'Was paid for: Cook bill (Mar–Sep)', left: '30 Sep 2026' }
+      ]
+    };
+  }
+  markLeft(key) {
+    const contacts = this.state.contacts.map((c) => c.key === key ? Object.assign({}, c, { left: '19 Nov 2026', since: c.since.replace('Since ', '') + ' – 19 Nov 2026', paidFor: c.paidFor.replace('Paid to for', 'Was paid for') }) : c);
+    this.setState({ contacts });
+  }
+  renderVals() {
+    const s = this.state;
+    const owner = s.as === 'owner';
+    const tabOn = 'height: 40px; border: 0; border-radius: 9px; background: #FFFFFF; color: #17201D; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit';
+    const tabOff = 'height: 40px; border: 0; border-radius: 9px; background: transparent; color: #5B6461; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit';
+    const chipOn = 'min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1.5px solid #0E6656; background: #E3F0EC; color: #0E6656; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit';
+    const chipOff = 'min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid #D6D3C9; background: #FFFFFF; color: #17201D; font-size: 12px; font-weight: 500; cursor: pointer; font-family: inherit';
+    // FR-112: members don't see the landlord, account IDs, notes or documents
+    const visible = s.contacts.filter((c) => owner || c.kind !== 'Landlord');
+    const current = visible.filter((c) => !c.left);
+    const past = visible.filter((c) => c.left);
+    const list = s.tab === 'current' ? current : past;
+    const cards = list.map((c) => ({
+      name: c.name,
+      initials: c.initials,
+      kind: c.kind,
+      since: c.since,
+      avatarBg: c.left ? '#F1F0EA' : '#E3F0EC',
+      avatarFg: c.left ? '#5B6461' : '#0A4E42',
+      phones: c.phones.map(([label, value]) => ({ label, value, href: 'tel:' + value })),
+      showPrivate: owner,
+      privateLine: c.account,
+      docs: 'Documents: ' + c.docs,
+      paidFor: c.paidFor,
+      canManage: owner && !c.left,
+      canEnd: c.kind !== 'Landlord',
+      editHref: c.kind === 'Landlord' ? 'SetFlat.html' : '#',
+      editLabel: c.kind === 'Landlord' ? 'Edit on Home & landlord' : 'Edit',
+      markLeft: () => this.markLeft(c.key)
+    }));
+    return {
+      backHref: owner ? 'Settings.html' : 'MemberHome.html',
+      backLabel: owner ? 'Home settings' : 'Home',
+      subtitle: owner ? 'People and companies the home deals with' : 'Call the cook or a provider',
+      ownerOn: owner ? 'true' : 'false',
+      memberOn: owner ? 'false' : 'true',
+      ownerStyle: owner ? chipOn : chipOff,
+      memberStyle: owner ? chipOff : chipOn,
+      asOwner: () => this.setState({ as: 'owner' }),
+      asMember: () => this.setState({ as: 'member' }),
+      currentOn: s.tab === 'current' ? 'true' : 'false',
+      pastOn: s.tab === 'past',
+      currentTabStyle: s.tab === 'current' ? tabOn : tabOff,
+      pastTabStyle: s.tab === 'past' ? tabOn : tabOff,
+      showCurrent: () => this.setState({ tab: 'current' }),
+      showPast: () => this.setState({ tab: 'past' }),
+      currentCount: String(current.length),
+      pastCount: String(past.length),
+      cards,
+      showForm: owner && s.tab === 'current'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@ Colivo design reference: the design source for the Colivo MVP (shared-home meal,
 Use these files as the visual and behavioural reference when building the app.
 
 - `requirements.md` — project requirements, user stories, functional rules (FR-xx) and business rules (BR-xx). **Source of truth for behaviour.**
-- `mobile/` — 52 phone screens (390 px wide).
+- `mobile/` — 53 phone screens (390 px wide).
 - `web/` — 43 responsive web pages (sidebar + content, collapse to one column on narrow screens).
 
 ## How to read the screen files
@@ -76,6 +76,7 @@ Confirmation rules, give-money-first flows and deletion rules are in `requiremen
 | 21 · Custom deals | `SetDeals.html` |  |
 | 22 · Funds and keepers (settings) | `SetBazarBox.html` | yes |
 | 23 · Starting balances | `SetStart.html` |  |
+| 64 · Contacts (landlord, cook, providers) | `SetContacts.html` | yes |
 | 25 · Home (member) | `MemberHome.html` | yes |
 | 26 · Add groceries (member / keeper) | `MemberBazar.html` | yes |
 | 27 · Home (fund keeper) | `KeeperHome.html` | yes |
