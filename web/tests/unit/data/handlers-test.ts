@@ -1,11 +1,12 @@
 import { module, test } from 'qunit';
 import { createEnvelopeHandler } from 'colivo-web/data/handlers/api-envelope';
+import { createAuthHandler } from 'colivo-web/data/handlers/auth';
 import {
   ApiError,
   ErrorHandler,
   type ApiErrorKind,
 } from 'colivo-web/data/handlers/errors';
-import type { NextFn } from 'colivo-web/data/handlers/types';
+import type { AppRequest, NextFn } from 'colivo-web/data/handlers/types';
 
 /** A `next` that answers with `content`, as WarpDrive's fetch handler would. */
 function respondWith<T>(content: T): NextFn<T> {
@@ -106,5 +107,31 @@ module('Unit | Data | handlers', function () {
 
     assert.strictEqual(error.kind, 'network');
     assert.strictEqual(error.status, null);
+  });
+
+  test('auth handler sends the token only when the session has one', async function (assert) {
+    // GIVEN a session with a token, and one without
+    // WHEN  a request passes through the auth handler
+    // THEN  it carries "Bearer <token>" only when there is a token
+    const cases: Array<[string | null, string | null]> = [
+      ['abc', 'Bearer abc'],
+      [null, null],
+    ];
+
+    for (const [token, expected] of cases) {
+      let sent: AppRequest | undefined;
+      const handler = createAuthHandler(() => token);
+
+      await handler.request(
+        { request: { url: '/api/v1/health' } },
+        (request) => {
+          sent = request;
+          return Promise.resolve({ content: null });
+        },
+      );
+
+      const authorization = sent?.headers?.get('Authorization') ?? null;
+      assert.strictEqual(authorization, expected, `token ${String(token)}`);
+    }
   });
 });

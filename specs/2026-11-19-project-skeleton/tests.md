@@ -49,7 +49,7 @@ Web acceptance: `web/tests/acceptance/start-page-test.ts` › visitor sees the s
 
 ### B10 — A request carries the session's token as a bearer token when there is one, and no token when there isn't
 
-- [x] T10.1 web unit — auth handler sends the token only when the session has one (two cases)
+- [x] T10.1 web unit — auth handler sends the token only when the session has one ✅ (two cases)
 - [ ] T10.2 web unit — auth handler reports a 401 _(skipped: log-in and what a 401 does are Phase 1)_
 
 ### B11 — The start page shows "Server connected" when healthy, which part is down when not, and "Can't reach the server" when there is no answer
