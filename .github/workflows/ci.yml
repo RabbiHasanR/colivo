@@ -117,7 +117,8 @@ jobs:
           version: "0.13.9"
           working-directory: backend
           enable-cache: true
-          cache-dependency-glob: backend/uv.lock
+          # Relative to working-directory (backend/).
+          cache-dependency-glob: uv.lock
 
       # Service containers can't mount the repo's init script
       # (infra/postgres/init/), so the test database is created here.
