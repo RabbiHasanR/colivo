@@ -4,11 +4,10 @@ import setupDeprecationWorkflow from 'ember-cli-deprecation-workflow';
  * Docs: https://github.com/ember-cli/ember-cli-deprecation-workflow
  */
 setupDeprecationWorkflow({
-  /**
-    false by default, but if a developer / team wants to be more aggressive about being proactive with
-    handling their deprecations, this should be set to "true"
-  */
-  throwOnUnhandled: false,
+  // A deprecation throws (in tests and in the dev build), so an outdated
+  // Ember or WarpDrive pattern shows up the day a dependency is upgraded.
+  // Silence one on purpose by adding a handler below, with a reason.
+  throwOnUnhandled: true,
   workflow: [
     /* ... handlers ... */
     /* to generate this list, run your app for a while (or run the test suite),

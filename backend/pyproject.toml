@@ -63,6 +63,12 @@ venv = ".venv"
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
 xfail_strict = true
+# A deprecation fails the run, so an outdated pattern (ours or a library's
+# API we call) shows up the day a dependency is upgraded.
+filterwarnings = [
+    "error::DeprecationWarning",
+    "error::PendingDeprecationWarning",
+]
 markers = [
     "slow: end-to-end tests over real HTTP against docker compose (not in test-fast)",
 ]
