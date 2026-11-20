@@ -42,7 +42,7 @@ Scaffolding. Commit: `chore(backend): scaffold FastAPI app`.
   handlers, CORS), pydantic-settings, SQLModel and SQLAlchemy 2.0 (engine,
   session, joining a test session to an outer transaction), Alembic
   (`env.py` with settings), pytest.
-- `backend/pyproject.toml` and `backend/uv.lock`, Python 3.12. Dependencies:
+- `backend/pyproject.toml` and `backend/uv.lock`, Python 3.14. Dependencies:
   `fastapi`, `uvicorn[standard]`, `sqlmodel`, `alembic`, `psycopg[binary]`,
   `pydantic-settings`, `redis`. Dev: `pytest`, `pytest-cov`,
   `pytest-watcher`, `httpx`, `ruff`, `pyright`. Ruff, pyright and pytest

@@ -6,7 +6,7 @@
 #
 # Both start from the same builder, so dependencies are installed one way.
 
-ARG PYTHON_VERSION=3.12
+ARG PYTHON_VERSION=3.14
 
 # ── builder: installs the runtime dependencies into /opt/venv ──────────────
 FROM python:${PYTHON_VERSION}-slim AS builder
