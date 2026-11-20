@@ -92,9 +92,10 @@ Groups 1, 2, 3 and 5 are scaffolding and have no tests.
 5. **Polish and Lighthouse.** Run Lighthouse on the start page (mobile):
    no accessibility or best-practice failures, no console errors, fonts load
    from the app itself (no third-party requests).
-6. **CI path filters.** On the pull request: a change only in `web/` runs
-   only the web workflow; a change only in `backend/` runs only the backend
-   workflow; a change in `api/` runs both.
+6. **CI path filters and gate.** On the pull request: a change only in
+   `web/` runs only the Web job; only in `backend/` only the Backend job; in
+   `api/` or the `Makefile` both; a docs-only change neither, and `CI OK` is
+   green in every case. On `main` both jobs always run.
 
 ## Done means
 

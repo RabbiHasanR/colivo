@@ -1,0 +1,212 @@
+# One CI workflow for the monorepo (specs/tech-stack.md → Validation).
+#
+#   changes ─┬─ backend ─┬─ ci-ok   ← the ONE required check in branch protection
+#            └─ web ─────┘
+#
+# - `changes` decides which parts a branch touched. Each part's job runs only
+#   when needed, so a docs-only change doesn't run the test suites.
+# - On `main` every job runs regardless, so a wrong filter can't hide a break.
+# - `ci-ok` always runs and passes only if every job that ran passed. Branch
+#   protection requires `ci-ok` alone: a skipped part never blocks a merge
+#   (a skipped *required* check would wait forever).
+# - The same `make` targets as a local run. End-to-end tests need the whole
+#   stack and run locally (`make test`).
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # A newer push replaces an older run, except on main, where every commit
+  # gets its full run.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  ON_MAIN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read # the filter lists a PR's files through the API
+    outputs:
+      backend: ${{ env.ON_MAIN == 'true' || steps.filter.outputs.backend == 'true' }}
+      web: ${{ env.ON_MAIN == 'true' || steps.filter.outputs.web == 'true' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Skipped on main: everything runs there, and a branch can't be
+      # compared with itself. On a branch push, the whole branch is compared
+      # with its merge-base on main; on a PR, with the PR's base.
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        if: env.ON_MAIN != 'true'
+        with:
+          # A file counts if it matches an include and no `!` exclude.
+          predicate-quantifier: some-with-excludes
+          # Broad on purpose: everything a part's checks read, inside or
+          # outside its folder. Only provably non-code files are excluded.
+          filters: |
+            backend:
+              - "backend/**"
+              - "api/**"
+              - "infra/backend.Dockerfile"
+              - "Makefile"
+              - ".github/workflows/ci.yml"
+              - "!**/*.md"
+            web:
+              - "web/**"
+              - "api/**"
+              - "Makefile"
+              - ".github/workflows/ci.yml"
+              - "!**/*.md"
+
+  backend:
+    name: Backend
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: colivo
+          # Throwaway password for a container that only lives for this job.
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: colivo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U colivo -d colivo"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      ENVIRONMENT: test
+      DATABASE_URL: postgresql+psycopg://colivo:ci-only@localhost:5432/colivo
+      TEST_DATABASE_URL: postgresql+psycopg://colivo:ci-only@localhost:5432/colivo_test
+      REDIS_URL: redis://localhost:6379/0
+      BACKEND_CORS_ORIGINS: http://localhost:4200
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Python comes from backend/.python-version (3.14).
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.9"
+          working-directory: backend
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      # Service containers can't mount the repo's init script
+      # (infra/postgres/init/), so the test database is created here.
+      - name: Create the test database
+        run: psql "postgresql://colivo:ci-only@localhost:5432/colivo" -c "CREATE DATABASE colivo_test"
+
+      - name: Install (lockfile must be current)
+        working-directory: backend
+        run: uv sync --locked
+
+      - name: Fast tests
+        run: make backend-test-fast
+
+      - name: Lint (Ruff, pyright)
+        run: make backend-lint
+
+      - name: Format (Ruff)
+        run: make backend-format-check
+
+      - name: No missing migration (alembic check)
+        run: make backend-migrations-check
+
+      - name: API contract is up to date
+        run: |
+          make api-export
+          git diff --exit-code api/
+
+      # Catches a broken Dockerfile before deploy time. Built, never pushed.
+      - name: Production image builds
+        run: docker build --target prod --file infra/backend.Dockerfile backend
+
+  web:
+    name: Web
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # pnpm version from web/package.json → packageManager.
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          package_json_file: web/package.json
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Generated API types match the contract
+        run: |
+          make api-types
+          git diff --exit-code web/app/data/types/
+
+      - name: Fast tests (headless Chrome)
+        run: make web-test-fast
+
+      - name: Lint (ESLint, template lint, Stylelint, Glint)
+        run: make web-lint
+
+      - name: Format (Prettier)
+        run: make web-format-check
+
+      - name: Build
+        working-directory: web
+        run: pnpm build
+
+  # The single required status check. Always runs; fails if any job failed or
+  # was cancelled. A part skipped because it didn't change is a pass.
+  ci-ok:
+    name: CI OK
+    needs: [changes, backend, web]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every job that ran passed
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: |
+          echo "Job results: $RESULTS"
+          if echo "$RESULTS" | grep -qE '"(failure|cancelled)"'; then
+            echo "A required job failed or was cancelled."
+            exit 1
+          fi

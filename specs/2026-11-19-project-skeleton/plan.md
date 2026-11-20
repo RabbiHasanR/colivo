@@ -155,23 +155,32 @@ files that have tests: they are built test-first in group 4.
 
 ## 5. CI
 
-Scaffolding. Commit: `ci: add backend and web workflows`.
+Scaffolding. Commit: `ci: add backend and web workflows`, then reworked to
+one workflow (`ci: run backend and web checks from one gated workflow`).
 
-- Fetch current docs with `ctx7`: GitHub Actions (`paths` filters, service
-  containers, `concurrency`), `astral-sh/setup-uv`, `pnpm/action-setup`.
-- `.github/workflows/backend.yml`: on push and pull request when
-  `backend/**`, `api/**` or the workflow changes. Services `postgres:16`
-  (with `colivo_test`) and `redis:7`. Runs `make backend-test-fast`,
-  backend lint and format check, `uv run alembic check`, and
-  `make api-export` with `git diff --exit-code api/`.
-- `.github/workflows/web.yml`: on push and pull request when `web/**`,
-  `api/**` or the workflow changes. `pnpm install --frozen-lockfile`, then
-  `make web-test-fast` (headless Chrome), web lint and format check,
-  `pnpm build`, and `make api-types` with
-  `git diff --exit-code web/app/data/types/`.
-- Both: action versions pinned, `concurrency` cancels superseded runs,
-  dependency caches for uv and pnpm.
-- Check: push the branch (asked first) and see both workflows green; see
+- Fetch current docs with `ctx7` or each action's own `action.yml` at the
+  pinned commit: GitHub Actions (service containers, `concurrency`),
+  `astral-sh/setup-uv`, `pnpm/action-setup`, `dorny/paths-filter`.
+- `.github/workflows/ci.yml`, one workflow on every push and pull request:
+  - `changes` (`dorny/paths-filter`, `some-with-excludes`) decides which parts
+    changed. Backend: `backend/**`, `api/**`, `infra/backend.Dockerfile`,
+    `Makefile`, the workflow. Web: `web/**`, `api/**`, `Makefile`, the
+    workflow. Both exclude `**/*.md`. A branch push is compared with its
+    merge-base on `main`; a PR with its base.
+  - `backend` (if changed): services `postgres:16` (with `colivo_test`) and
+    `redis:7`; `uv sync --locked`, `make backend-test-fast`, backend lint and
+    format check, `make backend-migrations-check`, `make api-export` with
+    `git diff --exit-code api/`, and `docker build --target prod`.
+  - `web` (if changed): `pnpm install --frozen-lockfile`, `make api-types`
+    with `git diff --exit-code web/app/data/types/`, `make web-test-fast`
+    (headless Chrome), web lint and format check, `pnpm build`.
+  - `ci-ok`: always runs; fails if any job failed or was cancelled. **The one
+    required check** for branch protection, so a skipped part never blocks a
+    merge.
+  - On a push to `main` every job runs, whatever changed.
+- Actions pinned to commit SHAs; `concurrency` cancels superseded runs except
+  on `main`; dependency caches for uv and pnpm.
+- Check: push the branch (asked first) and see `CI OK` green; see
   [validation.md → Manual checks](validation.md#manual-checks).
 
 ## 6. Verify and document
