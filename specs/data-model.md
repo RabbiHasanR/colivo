@@ -436,5 +436,5 @@ and the query each serves, and its status mark._
 | Design (19 Nov 2026) | One contact table with phones and emails as rows; one attachment table; payee per bill category; fund kind added         |
 | Design (19 Nov 2026) | Domain sketch agreed for all phases; ledger is one header table with detail tables; person and membership split          |
 | Design (19 Nov 2026) | UUIDv7 keys (`uuid-utils`), text + `CHECK` value sets, singular table names, effective-dated rows plus one change log    |
-| Phase 0 (planned)    | UUIDv7 keys from the standard library's `uuid.uuid7()` (Python 3.14), replacing the planned `uuid-utils` package         |
-| Phase 0 (planned)    | No tables; Alembic set up with no revisions, the test database built with `alembic upgrade head`; first table in Phase 1 |
+| Phase 0              | UUIDv7 keys from the standard library's `uuid.uuid7()` (Python 3.14), replacing the planned `uuid-utils` package         |
+| Phase 0              | No tables; Alembic set up with no revisions, the test database built with `alembic upgrade head`; first table in Phase 1 |

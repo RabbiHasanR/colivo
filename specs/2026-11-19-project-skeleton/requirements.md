@@ -135,8 +135,8 @@ Who: anyone opening the web app (no log-in yet).
 - `docker compose up` starts PostgreSQL 16, Redis 7 and the backend; the web
   dev server runs on the host with `pnpm start`.
 - The test database is created by an init script in `infra/postgres/`.
-- CI runs on every push and pull request, per part, using the same `make`
-  targets as local runs.
+- CI runs on every pull request and every push to `main`, per part, using
+  the same `make` targets as local runs.
 
 ## API
 
