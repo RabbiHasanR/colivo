@@ -14,7 +14,7 @@ tagged with the parts it touches: `[backend]`, `[web]`, `[mobile]`.
 Screen designs: `colivo-design/web/` and `colivo-design/mobile/` (index in
 `colivo-design/README.md`). Behaviour rules: `colivo-design/requirements.md`.
 
-## Phase 0 — Project skeleton ⏳ Not started
+## Phase 0 — Project skeleton ✅ Complete
 
 `[backend] [web] [infra]`
 

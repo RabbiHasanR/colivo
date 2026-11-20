@@ -67,7 +67,7 @@ Why Flutter for mobile:
 | Web tooling       | pnpm, Vite; ESLint (+ `eslint-plugin-boundaries`), ember-template-lint, Prettier (+ Tailwind plugin), Glint (types)  |
 | Mobile lint       | `flutter analyze`, `dart format`                                                                                     |
 | Tests             | pytest + `TestClient` (backend); QUnit + MSW (web); Playwright (end-to-end); `flutter test`                          |
-| CI                | GitHub Actions with path filters _(to confirm)_                                                                      |
+| CI                | GitHub Actions: one `ci.yml`, change detection, a `CI OK` gate                                                       |
 | Local run         | Docker Compose                                                                                                       |
 
 ## Decided in Phase 0
@@ -132,11 +132,51 @@ _Filled in as Phase 0 is planned and built. Record each decision as:_
 - **Migrations:** one Alembic migration per `plan.md` group, edited on the
   phase branch until the group is done — a clean history of one migration
   per slice instead of one per behaviour.
+- **CI:** GitHub Actions, one `.github/workflows/ci.yml`. A `changes` job
+  (`dorny/paths-filter`) runs the Backend and Web jobs only when their
+  inputs change (their folder, `api/`, the `Makefile`, the workflow; never
+  `*.md`); `main` runs everything. An always-running **`CI OK`** job is the
+  one required check, so a skipped part never blocks a merge. Branches are
+  checked through their pull request, `main` on push. Actions are pinned to
+  commit SHAs — a moved tag can't change what runs.
+- **Branches:** one `phase-<N>-<slug>` branch per phase, pushed early with a
+  draft pull request; merged with a merge commit (keeps the per-behaviour
+  test-first history). `main` is protected by the `protect-main` ruleset;
+  `.github/CODEOWNERS` makes the owner's review required.
+- **Health check:** `GET /api/v1/health` reports `database` and `redis` as
+  `ok`/`down`: 200 when both are ok, 503 (same data) when either is down.
+  Every PostgreSQL and Redis connection gives up after
+  `CONNECT_TIMEOUT_SECONDS` (2 s), so health answers fast when one is down.
+- **Envelope in OpenAPI:** `StandardResponse[T]` is generic and `CoreRouter`
+  declares it for each route's success status; `success` follows the status
+  code (`< 400`). Errors use the same envelope; a 500 never carries internals.
+- **Database driver:** psycopg 3 (`psycopg[binary]`).
+- **Local stack:** `compose.yaml` at the repo root (PostgreSQL 16, Redis 7,
+  the backend); the web dev server runs on the host. Tests use a separate
+  `colivo_test` database (`infra/postgres/init/01-create-test-db.sql`
+  locally, a `psql` step in CI), rebuilt with `alembic upgrade head` on every
+  run.
+- **Backend images:** one multi-stage `infra/backend.Dockerfile` with a `dev`
+  target (Compose, auto-reload) and a `prod` target (runtime dependencies
+  only, non-root, precompiled). 439 MB → 213 MB, no loss of speed.
+- **Contract:** `make api-export` writes `api/openapi.json`; `make api-types`
+  regenerates the web types from it. CI fails if either is out of date.
+- **Deprecations fail the tests:** pytest turns `DeprecationWarning` into an
+  error, and Ember's deprecation workflow throws (`throwOnUnhandled`), so an
+  outdated pattern shows up the day a dependency is upgraded.
+- **Web data layer details:** MSW v3 (`onUnhandledFrame`); the handlers use
+  small local types and join WarpDrive's once in `services/store.ts`;
+  `errors.ts` treats WarpDrive's non-HTTP statuses (0 network, 20 aborted)
+  as "no response". The Phase 0 session has no token (`readToken()` → null).
+- **Fonts:** Inter and Space Grotesk self-hosted (`@fontsource`), no
+  third-party requests.
+- **Docs per group:** each `/tdd` group looks up current docs (`find-docs` /
+  `ctx7`) for every library and language version it uses for the first time,
+  at the installed version; the installed package wins when they disagree.
 
 ## Project conventions
 
 Every phase follows this layout. Update this section when a convention changes.
-_This table is a proposal to approve._
 
 | Directory                                   | Holds                                                                                                                                                                                    |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -163,7 +203,7 @@ _This table is a proposal to approve._
 | `mobile/lib/core/`                          | API client, auth, theme                                                                                                                                                                  |
 | `mobile/test/`                              | Flutter tests                                                                                                                                                                            |
 | `api/openapi.json`                          | Exported API contract — never edited by hand                                                                                                                                             |
-| `infra/`                                    | Docker Compose, Dockerfiles, deploy scripts                                                                                                                                              |
+| `infra/`                                    | Dockerfiles (`backend.Dockerfile`: `dev` and `prod` targets), the Postgres init script, deploy scripts; `compose.yaml` is at the repo root                                               |
 | `colivo-design/`                            | Screen designs and `requirements.md`                                                                                                                                                     |
 | `specs/`                                    | Mission, roadmap, tech stack, testing, data model (`data-model.md`, the living schema) and one folder per phase                                                                          |
 
@@ -253,11 +293,14 @@ isn't done until they pass.
 - Fast loop: `make test-fast` (unit + integration, no `slow` tests).
 - Each phase's behaviours are listed in its `validation.md` and written as
   tests in the relevant `tests/` folders.
-- Run `make lint` and `make format-check` alongside the tests: `uv run ruff
-check`, `uv run ruff format --check` and `uv run alembic check` (backend); `pnpm lint` (ESLint, ember-template-lint, Glint) and Prettier
-  (web); `flutter analyze` and `dart format --set-exit-if-changed` (mobile).
-- CI (`.github/workflows/`) runs the same checks on every push and pull
-  request, only for the parts that changed; a PR merges only when CI is green.
+- Run `make lint` and `make format-check` alongside the tests: Ruff and
+  pyright (backend); ESLint, ember-template-lint, Stylelint, Glint and the
+  Playwright files' type check (web); Ruff format and Prettier;
+  `make backend-migrations-check` runs `alembic check`. Mobile adds
+  `flutter analyze` and `dart format --set-exit-if-changed`.
+- CI (`.github/workflows/ci.yml`) runs the same `make` targets, only for the
+  parts that changed (everything on `main`); a pull request merges only when
+  the `CI OK` check is green.
 
 ## Responsive design
 
@@ -278,7 +321,23 @@ all feature specs reference.
 
 ## Known limitations
 
-_None yet. Add each one as it's discovered: **<Area>:** <limitation>._
+Add each one as it's discovered: **<Area>:** <limitation>.
+
+- **End-to-end tests in CI:** not run there; they need the whole stack.
+  `make test` runs them locally. Add to CI with the deploy work (Phase 9).
+- **Base image:** `python:3.14-slim` carries Debian packages with known
+  vulnerabilities. Rebuild on the latest base and scan images in CI
+  (Phase 9).
+- **Dev container:** has no test tools (`--no-dev`); run tests on the host
+  (`make test-fast`), not with `docker compose exec backend pytest`.
+- **Redis timeout:** the 2 s `socket_timeout` applies to every command; a
+  future blocking command (e.g. a job queue) needs its own client.
+- **OpenAPI wrapping:** `CoreRouter` relies on FastAPI merging a route's
+  `responses` with its return model's schema; test T6.1 pins it.
+- **Playwright on Fedora:** uses Playwright's fallback Ubuntu build of
+  Chromium (Fedora isn't officially supported); fine for local runs.
+- **Shell styling:** the app shell's Tailwind classes live in
+  `components/layout/`, not only `components/ui/`.
 
 ## Deferred decisions
 
@@ -287,14 +346,14 @@ _None yet. Add each one as it's discovered: **<Area>:** <limitation>._
 - **Background jobs:** Celery + Redis recommended; FastAPI background tasks or
   ARQ are lighter alternatives.
 - **Auth tokens:** JWT access + refresh for both clients, or httpOnly session
-  cookies for web plus tokens for mobile — decide in Phase 1. The scaffold
-  keeps a bearer token in `localStorage`, which an XSS bug can steal; only
+  cookies for web plus tokens for mobile — decide in Phase 1. A bearer token
+  in `localStorage` (the scaffold's default) can be stolen by an XSS bug;
+  Phase 0's session holds no token at all. Only
   `web/app/data/handlers/auth.ts` and `web/app/services/session.ts` change.
 - **Flutter state management** (Riverpod, Bloc, or other) — decide before
   Phase 10.
 - **SMS provider** for one-time codes in Bangladesh, and the email provider.
 - **File storage:** AWS S3 or another S3-compatible store.
-- **CI platform:** GitHub Actions or Jenkins.
 - **Deployment target:** AWS (EC2 + RDS + S3) or another host — decide by
   Phase 9.
 - **Error tracking and monitoring** — decide by Phase 9.

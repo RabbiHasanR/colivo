@@ -14,7 +14,11 @@
 name: CI
 
 on:
+  # Branches are checked once, through their pull request (open one early as
+  # a draft); main gets its own full run after every merge. Without this, a
+  # branch with an open PR runs every check twice (push + pull_request).
   push:
+    branches: [main]
   pull_request:
 
 permissions:

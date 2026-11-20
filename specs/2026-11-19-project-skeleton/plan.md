@@ -161,7 +161,8 @@ one workflow (`ci: run backend and web checks from one gated workflow`).
 - Fetch current docs with `ctx7` or each action's own `action.yml` at the
   pinned commit: GitHub Actions (service containers, `concurrency`),
   `astral-sh/setup-uv`, `pnpm/action-setup`, `dorny/paths-filter`.
-- `.github/workflows/ci.yml`, one workflow on every push and pull request:
+- `.github/workflows/ci.yml`, one workflow on every pull request and every
+  push to `main` (a branch is checked through its pull request):
   - `changes` (`dorny/paths-filter`, `some-with-excludes`) decides which parts
     changed. Backend: `backend/**`, `api/**`, `infra/backend.Dockerfile`,
     `Makefile`, the workflow. Web: `web/**`, `api/**`, `Makefile`, the

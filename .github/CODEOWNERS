@@ -1,0 +1,4 @@
+# Every change needs the owner's review: with the `protect-main` ruleset's
+# "Require review from Code Owners", a contributor's pull request can't merge
+# without @RabbiHasanR's approval.
+* @RabbiHasanR
