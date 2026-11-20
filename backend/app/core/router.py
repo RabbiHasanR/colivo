@@ -20,7 +20,10 @@ class StandardizedRoute(APIRoute):
 
     def __init__(self, path: str, endpoint: Callable[..., Any], **kwargs: Any) -> None:
         # Declare the wrapped shape in OpenAPI for the success status, so the
-        # generated clients see what is really sent.
+        # generated clients see what is really sent. FastAPI documents
+        # `responses` as *merged* with the return model's schema; replacing the
+        # schema this way relies on that merge, so test T6.1
+        # (tests/core/test_api.py) pins it and fails if an upgrade changes it.
         data_model = get_typed_return_annotation(endpoint)
         if data_model is not None:
             success_status = kwargs.get("status_code") or 200

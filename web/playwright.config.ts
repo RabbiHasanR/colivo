@@ -19,7 +19,9 @@ export default defineConfig({
   webServer: {
     command: 'pnpm start',
     url: 'http://localhost:4200',
-    reuseExistingServer: true,
+    // Locally reuse a running `pnpm start`; in CI always start a fresh one
+    // (Playwright's documented default).
+    reuseExistingServer: !process.env['CI'],
     timeout: 120_000,
   },
 });
