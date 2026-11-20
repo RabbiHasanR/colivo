@@ -198,6 +198,8 @@ Rules:
 - Web dependencies point one way: routes → components → services → data →
   utils, enforced by `eslint-plugin-boundaries`. `components/ui/` never
   imports a feature folder. The full rules are in the `ember-scaffold` skill.
+- Web: event handlers on classes are `@action` methods (from `@ember/object`),
+  as in the Ember guides; not arrow-function fields.
 - Web: no hex colours or one-off sizes in components (tokens only); tests
   select elements by `data-test-*`, never by CSS class.
 - Names: Python `snake_case`; Ember files `kebab-case`, classes

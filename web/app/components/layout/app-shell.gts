@@ -1,5 +1,6 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
+import { action } from '@ember/object';
 import { on } from '@ember/modifier';
 import { guidFor } from '@ember/object/internals';
 import Button from '../ui/button';
@@ -18,9 +19,10 @@ export default class AppShell extends Component<AppShellSignature> {
 
   readonly sidebarId = `${guidFor(this)}-sidebar`;
 
-  toggleMenu = (): void => {
+  @action
+  toggleMenu(): void {
     this.isMenuOpen = !this.isMenuOpen;
-  };
+  }
 
   <template>
     <div data-test-app-shell class="min-h-screen lg:flex">
