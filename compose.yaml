@@ -37,6 +37,8 @@ services:
     build:
       context: ./backend
       dockerfile: ../infra/backend.Dockerfile
+      # The dev target: auto-reload. `prod` is for deploys (Phase 9).
+      target: dev
     environment:
       ENVIRONMENT: development
       # Inside the Compose network the hosts are the service names.

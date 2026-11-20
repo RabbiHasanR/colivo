@@ -6,3 +6,6 @@ __pycache__/
 .coverage
 htmlcov/
 .env
+
+# Not needed in an image: tests run on the host and in CI.
+tests/
