@@ -666,7 +666,7 @@ Each home is small (roughly 5–15 members) but the platform holds many homes an
 | NFR-08 | Reliability | Idempotent writes so a retried save on slow mobile data never double-counts |
 | NFR-09 | Data safety | Daily database backup; export of any month to Excel |
 | NFR-10 | Localisation | BDT (৳) with Bangladeshi digit grouping; dates in Asia/Dhaka time |
-| NFR-11 | Architecture | REST API under /api/v1; backend FastAPI + PostgreSQL + Redis; web front end React / Next.js; Flutter mobile app later on the same API |
+| NFR-11 | Architecture | REST API under /api/v1; backend FastAPI + PostgreSQL + Redis; web front end Ember.js (TypeScript); Flutter mobile app later on the same API |
 
 ## 8. Edge cases, assumptions and release plan
 
