@@ -361,9 +361,9 @@ a phone number).
 ### Primary keys: UUIDv7 _(agreed 19 Nov 2026)_
 
 Every table's key is `id uuid` holding a **UUIDv7**, made in Python with the
-`uuid-utils` package (Python 3.12 has no `uuid7()`, and PostgreSQL 16 has no
-`uuidv7()`). On Python 3.14 or later it can switch to the standard library's
-`uuid.uuid7()` with no data change.
+standard library's `uuid.uuid7()` (Python 3.14; PostgreSQL 16 has no
+`uuidv7()`). No extra package: the `uuid-utils` package planned for Python
+3.12 is not needed since the backend moved to 3.14 in Phase 0.
 
 - **Safe in URLs:** ids can't be guessed, and they don't reveal how many
   homes or entries exist.
@@ -428,11 +428,13 @@ and the query each serves, and its status mark._
 
 ## Change log
 
-| Phase                | Change                                                                                                                |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Design (17 Nov 2026) | Money storage decided as a ledger; returns and corrections are linked entries                                         |
-| Design (17 Nov 2026) | Funds are rows; fund cash is tracked per holder; fund keeper is chosen per fund                                       |
-| Design (19 Nov 2026) | Meal sessions are rows with a weight; own and guest meals stored apart; home guests and confirmation per session day  |
-| Design (19 Nov 2026) | One contact table with phones and emails as rows; one attachment table; payee per bill category; fund kind added      |
-| Design (19 Nov 2026) | Domain sketch agreed for all phases; ledger is one header table with detail tables; person and membership split       |
-| Design (19 Nov 2026) | UUIDv7 keys (`uuid-utils`), text + `CHECK` value sets, singular table names, effective-dated rows plus one change log |
+| Phase                | Change                                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Design (17 Nov 2026) | Money storage decided as a ledger; returns and corrections are linked entries                                            |
+| Design (17 Nov 2026) | Funds are rows; fund cash is tracked per holder; fund keeper is chosen per fund                                          |
+| Design (19 Nov 2026) | Meal sessions are rows with a weight; own and guest meals stored apart; home guests and confirmation per session day     |
+| Design (19 Nov 2026) | One contact table with phones and emails as rows; one attachment table; payee per bill category; fund kind added         |
+| Design (19 Nov 2026) | Domain sketch agreed for all phases; ledger is one header table with detail tables; person and membership split          |
+| Design (19 Nov 2026) | UUIDv7 keys (`uuid-utils`), text + `CHECK` value sets, singular table names, effective-dated rows plus one change log    |
+| Phase 0 (planned)    | UUIDv7 keys from the standard library's `uuid.uuid7()` (Python 3.14), replacing the planned `uuid-utils` package         |
+| Phase 0 (planned)    | No tables; Alembic set up with no revisions, the test database built with `alembic upgrade head`; first table in Phase 1 |

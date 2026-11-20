@@ -21,7 +21,7 @@
 ## Recommended framework: FastAPI
 
 We commit to **FastAPI** for a REST API under `/api/v1/`, running on
-**Python 3.12** with **PostgreSQL 16**. The web app is **Ember.js**; the
+**Python 3.14** with **PostgreSQL 16**. The web app is **Ember.js**; the
 mobile app is **Flutter**.
 
 Why FastAPI:
@@ -50,7 +50,7 @@ Why Flutter for mobile:
 
 | Layer             | Choice                                                                                                               |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Language          | Python 3.12 (backend), TypeScript (web), Dart (mobile)                                                               |
+| Language          | Python 3.14 (backend), TypeScript (web), Dart (mobile)                                                               |
 | Framework         | FastAPI (backend), Ember.js Octane (web), Flutter (mobile)                                                           |
 | UI (web)          | Ember `.gts` components + Tailwind CSS v4; `ember-scaffold` layout                                                   |
 | UI (mobile)       | Flutter Material 3 widgets                                                                                           |
@@ -122,6 +122,13 @@ _Filled in as Phase 0 is planned and built. Record each decision as:_
   [data-model.md](data-model.md); a one-time domain sketch for all phases is
   agreed before Phase 1 — data is far costlier to change than code, and
   Colivo's money lives in the database.
+- **Python 3.14** instead of 3.12 — 3.12 only gets security fixes now; 3.14
+  is mature (3.14.10), fully supported, faster, and every backend dependency
+  installs from a ready-made wheel. It also has `uuid.uuid7()` in the standard
+  library, so UUIDv7 keys need no extra package. 3.15 was checked and rejected
+  for now: `pyyaml` (through `uvicorn[standard]`) had no 3.15 wheel yet;
+  revisit in Phase 9. Set in `backend/.python-version`, `pyproject.toml`
+  (`requires-python`, Ruff, pyright) and `infra/backend.Dockerfile`.
 - **Migrations:** one Alembic migration per `plan.md` group, edited on the
   phase branch until the group is done — a clean history of one migration
   per slice instead of one per behaviour.
@@ -191,6 +198,8 @@ Rules:
 - Web dependencies point one way: routes → components → services → data →
   utils, enforced by `eslint-plugin-boundaries`. `components/ui/` never
   imports a feature folder. The full rules are in the `ember-scaffold` skill.
+- Web: event handlers on classes are `@action` methods (from `@ember/object`),
+  as in the Ember guides; not arrow-function fields.
 - Web: no hex colours or one-off sizes in components (tokens only); tests
   select elements by `data-test-*`, never by CSS class.
 - Names: Python `snake_case`; Ember files `kebab-case`, classes

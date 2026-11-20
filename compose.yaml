@@ -1,0 +1,74 @@
+# Local development stack. Copy .env.example to .env first.
+# The web dev server runs on the host with `pnpm start`.
+name: colivo
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?set POSTGRES_DB in .env}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Runs once, on the first start with an empty volume: creates colivo_test.
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../infra/backend.Dockerfile
+      # The dev target: auto-reload. `prod` is for deploys (Phase 9).
+      target: dev
+    environment:
+      ENVIRONMENT: development
+      # Inside the Compose network the hosts are the service names.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:4200}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      # Live reload: the dev server watches the mounted source.
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      # 200 = healthy; a 503 (a dependency down) or no answer = unhealthy.
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=5)",
+        ]
+      interval: 10s
+      timeout: 6s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  postgres-data:
+  redis-data:
