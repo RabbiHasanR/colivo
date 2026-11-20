@@ -1,55 +1,15 @@
 # colivo-web
 
-This README outlines the details of collaborating on this Ember application.
-A short introduction of this app could easily go here.
+The Colivo web app: Ember 7 (TypeScript, `.gts` components, Glint),
+WarpDrive and Tailwind CSS v4.
 
-## Prerequisites
+Setup, commands and how work is done: see the [root README](../README.md).
+Layout and rules: [specs/tech-stack.md → Project conventions](../specs/tech-stack.md#project-conventions).
+Testing (QUnit, MSW, Playwright): [specs/testing.md → Web](../specs/testing.md#web).
 
-You will need the following things properly installed on your computer.
-
-- [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/)
-- [pnpm](https://pnpm.io/)
-- [Google Chrome](https://google.com/chrome/)
-
-## Installation
-
-- `git clone <repository-url>` this repository
-- `cd colivo-web`
-- `pnpm install`
-
-## Running / Development
-
-- `pnpm start`
-- Visit your app at [http://localhost:4200](http://localhost:4200).
-- Visit your tests at [http://localhost:4200/tests](http://localhost:4200/tests).
-
-### Code Generators
-
-Make use of the many generators for code, try `pnpm ember help generate` for more details
-
-### Running Tests
-
-- `pnpm test`
-
-### Linting
-
-- `pnpm lint`
-- `pnpm lint:fix`
-
-### Building
-
-- `pnpm vite build --mode development` (development)
-- `pnpm build` (production)
-
-### Deploying
-
-Specify what it takes to deploy your app.
-
-## Further Reading / Useful Links
-
-- [ember.js](https://emberjs.com/)
-- [Vite](https://vite.dev)
-- Development Browser Extensions
-  - [ember inspector for chrome](https://chrome.google.com/webstore/detail/ember-inspector/bmdblncegkenkacieihfhpjfppoconhi)
-  - [ember inspector for firefox](https://addons.mozilla.org/en-US/firefox/addon/ember-inspector/)
+```bash
+pnpm start   # dev server on http://localhost:4200 (backend: docker compose up)
+pnpm test    # unit, integration and acceptance tests
+pnpm lint    # ESLint, template lint, Stylelint, Glint
+pnpm build   # production build into dist/
+```
