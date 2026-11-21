@@ -272,7 +272,7 @@ End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who
 - [x] T35.3 unit — `test_active_member_cannot_be_reactivated` ✅: 409
 - [x] T35.4 unit (database rule) — `test_member_has_one_open_stay` ✅
 - [x] T35.5 integration — `test_reactivate_answers_422_without_a_date` ✅
-- [x] T35.6 web integration — reactivate dialog: Confirm sends the date charges start again and tells the page
+- [x] T35.6 web integration — `sends the date charges start again, then tells the page` ✅: reactivate dialog: Confirm sends the date charges start again and tells the page
 
 ### B36 — Reactivating is refused while active elsewhere or the name is taken
 

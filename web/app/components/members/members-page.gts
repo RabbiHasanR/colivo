@@ -8,6 +8,7 @@ import AddMemberForm from './add-member-form';
 import DeactivateDialog from './deactivate-dialog';
 import EditMemberForm from './edit-member-form';
 import MemberTabs from './member-tabs';
+import ReactivateDialog from './reactivate-dialog';
 
 interface MembersPageSignature {
   Args: { members: Member[] };
@@ -23,6 +24,8 @@ export default class MembersPage extends Component<MembersPageSignature> {
   @tracked editing: Member | null = null;
   /** The member being deactivated (the dialog is open), if any. */
   @tracked deactivating: Member | null = null;
+  /** The member being reactivated (the dialog is open), if any. */
+  @tracked reactivating: Member | null = null;
 
   get shown(): Member[] {
     return this.reloaded ?? this.args.members;
@@ -32,6 +35,7 @@ export default class MembersPage extends Component<MembersPageSignature> {
   async reload(): Promise<void> {
     this.editing = null;
     this.deactivating = null;
+    this.reactivating = null;
     this.reloaded = await this.members.list();
   }
 
@@ -41,8 +45,14 @@ export default class MembersPage extends Component<MembersPageSignature> {
   }
 
   @action
+  askToReactivate(member: Member): void {
+    this.reactivating = member;
+  }
+
+  @action
   closeDialogs(): void {
     this.deactivating = null;
+    this.reactivating = null;
   }
 
   @action
@@ -56,10 +66,18 @@ export default class MembersPage extends Component<MembersPageSignature> {
       @members={{this.shown}}
       @onEdit={{this.edit}}
       @onDeactivate={{this.askToDeactivate}}
+      @onReactivate={{this.askToReactivate}}
     />
     {{#if this.deactivating}}
       <DeactivateDialog
         @member={{this.deactivating}}
+        @onDone={{this.reload}}
+        @onCancel={{this.closeDialogs}}
+      />
+    {{/if}}
+    {{#if this.reactivating}}
+      <ReactivateDialog
+        @member={{this.reactivating}}
         @onDone={{this.reload}}
         @onCancel={{this.closeDialogs}}
       />
