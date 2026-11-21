@@ -52,5 +52,41 @@ export function membersApi(members: Member[] = [owner]) {
         { status: 201 },
       );
     }),
+    changeIn(list, 'put', 'role', (found, body) => {
+      found.role = (body as { role: Member['role'] }).role;
+    }),
+    changeIn(list, 'post', 'deactivate', (found) => {
+      found.status = 'inactive';
+    }),
+    changeIn(list, 'post', 'reactivate', (found) => {
+      found.status = 'active';
+    }),
   ];
+}
+
+/** A change to one member of the in-memory list, answered with the member. */
+function changeIn(
+  list: Member[],
+  method: 'put' | 'post',
+  action: string,
+  apply: (member: Member, body: unknown) => void,
+) {
+  return http[method](
+    `*/api/v1/members/:id/${action}`,
+    async ({ params, request }) => {
+      const found = list.find((each) => each.id === params['id']);
+      if (!found) {
+        return HttpResponse.json(
+          { success: false, message: 'Member not found.' },
+          { status: 404 },
+        );
+      }
+      apply(found, await request.json());
+      return HttpResponse.json({
+        success: true,
+        message: 'Changed',
+        data: found,
+      });
+    },
+  );
 }
