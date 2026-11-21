@@ -44,5 +44,12 @@ class Settings(BaseSettings):
         list[str], NoDecode, BeforeValidator(split_comma_list)
     ] = []
 
+    # Send the session cookie over HTTPS only. Safe by default; .env turns it
+    # off for http://localhost in development.
+    session_cookie_secure: bool = True
+    # How SMS and email reach people. Only "log" exists until a provider is
+    # chosen (specs/tech-stack.md → Deferred decisions).
+    notifier: Literal["log"] = "log"
+
 
 settings = Settings()  # pyright: ignore[reportCallIssue]  (values come from the environment)
