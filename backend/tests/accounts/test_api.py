@@ -253,10 +253,6 @@ def test_session_cookie_is_httponly_lax_and_secure_when_set(
     assert ("secure" in attributes) == secure
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="acceptance: an owner logs back in with a one-time code",
-)
 def test_owner_logs_back_in_with_one_time_code(
     client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
 ) -> None:
@@ -280,3 +276,19 @@ def test_owner_logs_back_in_with_one_time_code(
 
     assert logged_in.status_code == 200
     assert (me["membership"]["role"], me["home"]["name"]) == ("owner", "Our Flat")
+
+
+def test_log_in_answers_422_for_something_that_is_not_a_phone_or_email(
+    client: TestClient,
+) -> None:
+    """
+    GIVEN the text "hello"
+    WHEN  POST /api/v1/auth/log-in is called with it and a code
+    THEN  it answers 422, naming the contact field
+    """
+    response = client.post(
+        "/api/v1/auth/log-in", json={"contact": "hello", "code": "123456"}
+    )
+
+    assert response.status_code == 422
+    assert response.json()["errors"][0].startswith("body.contact: ")

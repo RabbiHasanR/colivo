@@ -17,6 +17,7 @@ from app.modules.accounts.models import (
 )
 from app.modules.accounts.schemas import (
     CodeSentOut,
+    LogInIn,
     MeHomeOut,
     MeMembershipOut,
     MeOut,
@@ -187,3 +188,24 @@ def log_out(redis_client: Redis, token: str) -> None:
         token: The session cookie's token.
     """
     sessions.end_session(redis_client, token)
+
+
+def log_in(
+    session: Session, redis_client: Redis, data: LogInIn, now: datetime
+) -> Membership:
+    """Log in with a one-time code (FR-84): into the person's one active home.
+
+    Args:
+        session: The database session.
+        redis_client: Where one-time codes are kept.
+        data: The phone or email, and the code sent to it.
+        now: The current time.
+
+    Returns:
+        The person's active membership.
+    """
+    codes.use_code(redis_client, data.contact, data.code, now)
+    person = find_person(session, data.contact)
+    membership = person and active_membership(session, person)
+    assert membership is not None
+    return membership

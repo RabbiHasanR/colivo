@@ -1,5 +1,5 @@
 from contextlib import AbstractContextManager, nullcontext
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from redis import Redis
@@ -16,7 +16,7 @@ from app.modules.accounts.models import (
     Person,
     Role,
 )
-from app.modules.accounts.schemas import SignUpIn
+from app.modules.accounts.schemas import LogInIn, SignUpIn
 from app.modules.homes import service as homes_service
 from app.modules.homes.models import Home
 from tests.conftest import FakeNotifier, MovableClock
@@ -263,3 +263,23 @@ def test_sign_up_refused_with_a_wrong_code(
 
     assert error.value.status_code == 400
     assert session.exec(select(func.count()).select_from(Home)).one() == 0
+
+
+def test_log_in_returns_the_active_membership(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN 01712 345678 owns "Our Flat"
+    WHEN  they log in with a new code
+    THEN  their owner membership of Our Flat is the one logged in
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    clock.advance(timedelta(minutes=2))
+    contact = Contact(channel=Channel.SMS, value=PHONE_E164)
+    code = codes.issue_code(redis_client, contact, clock())
+
+    membership = service.log_in(
+        session, redis_client, LogInIn(contact=contact, code=code), clock()
+    )
+
+    assert membership.id == owner.id

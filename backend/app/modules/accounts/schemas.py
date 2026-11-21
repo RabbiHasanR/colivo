@@ -22,6 +22,13 @@ class CodeSentOut(BaseModel):
     expires_in_seconds: int
 
 
+class LogInIn(BaseModel):
+    """Log in with a phone or email and the code sent to it."""
+
+    contact: ContactIn
+    code: str
+
+
 class SignUpIn(BaseModel):
     """The owner's sign-up: who they are, their code and their new home."""
 
