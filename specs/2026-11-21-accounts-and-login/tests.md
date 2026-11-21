@@ -228,7 +228,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 
 Backend acceptance: `backend/tests/accounts/test_api.py::test_owner_deactivates_member_who_can_no_longer_log_in`
 Web acceptance: `web/tests/acceptance/member-status-test.ts` › manager deactivates and reactivates a member
-End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who logs in, then deactivates them (replaces `smoke.spec.ts`)
+End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who logs in, then deactivates them (replaces `smoke.spec.ts`) ✅
 
 ### B28 — The new endpoints never reach another home's member
 
