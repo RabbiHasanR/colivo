@@ -119,11 +119,11 @@ Web acceptance: `web/tests/acceptance/log-in-test.ts` › owner logs back in wit
 
 ### B10 — Wrong codes: tries left, then a 15-minute lock
 
-- [x] T10.1 unit — `test_wrong_code_says_how_many_tries_are_left`: the first wrong code → 400 `wrong`, 4 tries left
-- [x] T10.2 unit — `test_fifth_wrong_code_locks_the_contact_for_15_minutes`: → 429 `locked`, 900 s to wait; even the right code is refused then
-- [x] T10.3 unit — `test_lock_ends_after_15_minutes`: 15 minutes later a new code is sent and works
-- [x] T10.4 unit — `test_locked_contact_cannot_get_a_new_code`: `issue_code` → 429 `locked`
-- [x] T10.5 integration — `test_log_in_with_a_wrong_code_answers_400_with_tries_left`: the envelope carries `data: {reason: "wrong", tries_left: 4}`
+- [x] T10.1 unit — `test_wrong_code_says_how_many_tries_are_left` ✅: the first wrong code → 400 `wrong`, 4 tries left
+- [x] T10.2 unit — `test_fifth_wrong_code_locks_the_contact_for_15_minutes` ✅: → 429 `locked`, 900 s to wait; even the right code is refused then
+- [x] T10.3 unit — `test_lock_ends_after_15_minutes` ✅: 15 minutes later a new code is sent and works _(passes once the lock is clock-based; seen failing against a lock that only checks the key exists)_
+- [x] T10.4 unit — `test_locked_contact_cannot_get_a_new_code` ✅: `issue_code` → 429 `locked`
+- [x] T10.5 integration — `test_log_in_with_a_wrong_code_answers_400_with_tries_left` ✅: the envelope carries `data: {reason: "wrong", tries_left: 4}` _(built by T10.1 and T9.3; seen failing with the tries left removed)_
 - [x] T10.6 web unit — `formatCountdown` gives `14:52`, `0:45`, `0:00`
 - [x] T10.7 web integration — log-in form: a wrong code shows "That code isn't right. 3 tries left."
 - [x] T10.8 web integration — log-in form: locked shows "Too many wrong codes", "try again in 14:52" and "Use a different phone or email", which goes back to the phone-or-email step

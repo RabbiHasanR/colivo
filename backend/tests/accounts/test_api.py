@@ -316,3 +316,22 @@ def test_log_in_with_an_expired_code_answers_400_with_the_reason(
         "errors": ["This code expired. Codes work for 5 minutes."],
         "data": {"reason": "expired"},
     }
+
+
+def test_log_in_with_a_wrong_code_answers_400_with_tries_left(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN a code sent to 01712 345678
+    WHEN  POST /api/v1/auth/log-in is sent with a different code
+    THEN  it answers 400, and the envelope's data says how many tries are left
+    """
+    code = code_for_phone(redis_client, clock)
+    wrong = f"{(int(code) + 1) % 1_000_000:06d}"
+
+    response = client.post(
+        "/api/v1/auth/log-in", json={"contact": PHONE_E164, "code": wrong}
+    )
+
+    assert response.status_code == 400
+    assert response.json()["data"] == {"reason": "wrong", "tries_left": 4}
