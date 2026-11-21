@@ -1,6 +1,6 @@
 import re
 import uuid
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Any
 
 import pytest
@@ -14,6 +14,7 @@ from app.modules.accounts import codes, sessions
 from app.modules.accounts.constants import SESSION_COOKIE
 from app.modules.accounts.contact import Contact
 from app.modules.accounts.models import Membership, Person, Role
+from app.modules.homes import service as homes_service
 from tests.conftest import FakeNotifier, MovableClock
 
 PHONE = "01712 345678"
@@ -569,3 +570,61 @@ def test_change_me_answers_422_for_a_blank_name(
     response = client.patch("/api/v1/me", json={"name": "  "})
 
     assert response.status_code == 422
+
+
+def member_of_old_fort(session: Session) -> Membership:
+    """Karim, a member of another home, "Old Fort"."""
+    home = homes_service.create_home(
+        session, name="Old Fort", area="Dhanmondi", first_month=date(2026, 1, 1)
+    )
+    person = Person(phone="+8801612345678")
+    session.add(person)
+    session.flush()
+    karim = Membership(home_id=home.id, person_id=person.id, name="Karim")
+    session.add(karim)
+    session.flush()
+    return karim
+
+
+@pytest.mark.parametrize("whose", ["another home's", "nobody's"])
+def test_changing_another_homes_member_answers_404(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    clock: MovableClock,
+    whose: str,
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" is logged in, and Karim is in "Old Fort"
+    WHEN  they try to rename Karim, or a member id that doesn't exist
+    THEN  it answers 404, and nothing about Old Fort is in the answer
+    """
+    sign_up_owner(client, redis_client, clock)
+    karim = member_of_old_fort(session)
+    member_id = karim.id if whose == "another home's" else uuid.uuid7()
+
+    response = client.patch(f"/api/v1/members/{member_id}", json={"name": "Rahim"})
+
+    assert response.status_code == 404
+    assert "Karim" not in response.text and "Old Fort" not in response.text
+    session.refresh(karim)
+    assert karim.name == "Karim"
+
+
+def test_members_list_shows_only_this_homes_members(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN "Our Flat" has its owner and Maruf, and Karim is in "Old Fort"
+    WHEN  the owner of Our Flat asks for the members list
+    THEN  it lists Maruf and the owner, and nothing of Old Fort
+    """
+    sign_up_owner(client, redis_client, clock)
+    client.post("/api/v1/members", json=maruf_body())
+    member_of_old_fort(session)
+
+    response = client.get("/api/v1/members")
+
+    names = [member["name"] for member in response.json()["data"]]
+    assert names == ["Maruf", "Rabbi Hasan"]
+    assert "Old Fort" not in response.text

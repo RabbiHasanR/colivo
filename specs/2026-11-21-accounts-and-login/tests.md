@@ -211,8 +211,8 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 
 ### B28 — Another home's member, or an unknown id, gives 404
 
-- [x] T28.1 integration — `test_changing_another_homes_member_answers_404` (parametrised): another home's member, an id that doesn't exist; nothing of the other home in the body
-- [x] T28.2 integration — `test_members_list_shows_only_this_homes_members`
+- [x] T28.1 integration — `test_changing_another_homes_member_answers_404` ✅ (parametrised): another home's member, an id that doesn't exist; nothing of the other home in the body
+- [x] T28.2 integration — `test_members_list_shows_only_this_homes_members` ✅ _(passes once the list filters by home; seen failing without the filter)_
 
 ### B29 — Invalid names and contacts are refused with a clear message
 

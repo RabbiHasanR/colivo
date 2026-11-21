@@ -38,6 +38,7 @@ PAST_MEMBER = "This person was a member of this home. Reactivate them instead."
 NAME_TAKEN = "Someone in this home already has that name."
 NO_STAY = "Only someone who lives in the home has a join date."
 JOINED_AFTER_LEAVING = "The join date can't be after the end of their first stay."
+MEMBER_NOT_FOUND = "Member not found."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -438,10 +439,10 @@ def update_member(
         The changed membership.
 
     Raises:
-        HTTPException: 400 for a join date they can't have; 409 for a name
-            an active member already has.
+        HTTPException: 404 for a member of another home; 400 for a join date
+            they can't have; 409 for a name an active member already has.
     """
-    member = session.get_one(Membership, member_id)
+    member = get_member(session, editor.home_id, member_id)
     if data.name is not None:
         check_name_free(session, member.home_id, data.name, except_id=member.id)
         member.name = data.name
@@ -449,6 +450,29 @@ def update_member(
         move_join_date(session, member, data.joined_on)
     session.commit()
     session.refresh(member)
+    return member
+
+
+def get_member(
+    session: Session, home_id: uuid.UUID, member_id: uuid.UUID
+) -> Membership:
+    """A member of ``home_id``; another home's members are never found.
+
+    Args:
+        session: The database session.
+        home_id: The home the request is for.
+        member_id: The member asked for.
+
+    Returns:
+        The membership.
+
+    Raises:
+        HTTPException: 404 for another home's member or an unknown id, so
+            nobody learns another home's members exist (NFR-03).
+    """
+    member = session.get(Membership, member_id)
+    if member is None or member.home_id != home_id:
+        raise HTTPException(404, MEMBER_NOT_FOUND)
     return member
 
 
