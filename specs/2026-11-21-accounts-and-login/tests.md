@@ -93,7 +93,7 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 - [x] T17.1 unit — `test_new_home_checklist_has_only_home_created_done` ✅
 - [ ] T17.2 unit — "Add members" is done once another member is active _(group 4: needs members)_
 - [ ] T17.3 integration — `GET /api/v1/home/setup` answers 200 for the owner _(skipped: the backend acceptance test calls it)_
-- [x] T17.4 web integration — the checklist shows each step done or not, and "1 of 5 done"
+- [x] T17.4 web integration — `shows each step done or not, and how many are done` ✅: the checklist shows each step done or not, and "1 of 5 done"
 
 ### B18 — Members don't get the checklist
 
