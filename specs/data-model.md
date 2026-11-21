@@ -322,7 +322,7 @@ keepers point to `membership`, never to `person`.
 Why: a person who leaves one home and joins another keeps one login, while
 each home's records stay separate (FR-85, NFR-03). "One active home per
 person" is a partial unique index on `person_id` for active (later also
-notice-served) memberships.
+notice-served) memberships. _Phase 1b replaces this rule: a person may be active in several homes (decided 21 Nov 2026)._
 
 **The name is on `membership`** _(settled at Phase 1 Gate 0, 21 Nov 2026)_:
 each home names its own member when adding them, and "unique among a home's
@@ -497,11 +497,12 @@ and would need quoting everywhere.
 None open across the whole schema. Left to the phase that first needs them,
 at its Gate 0:
 
-| Question                                                                | Phase that decides |
-| ----------------------------------------------------------------------- | ------------------ |
-| How session weights are kept with a month at close                      | Meals              |
-| Carried bills: their own rows, or unpaid `bill` rows from closed months | Month close        |
-| Landlord deposit settlement at move-out                                 | Release Phase 2    |
+| Question                                                                                               | Phase that decides |
+| ------------------------------------------------------------------------------------------------------ | ------------------ |
+| How session weights are kept with a month at close                                                     | Meals              |
+| Carried bills: their own rows, or unpaid `bill` rows from closed months                                | Month close        |
+| Landlord deposit settlement at move-out                                                                | Release Phase 2    |
+| A person in several homes: drop "one active home per person", and how a session keeps its current home | Phase 1b           |
 
 ## ER diagram
 
@@ -567,7 +568,7 @@ table, its indexes and the query each serves, and its status mark. Every
 table also has `created_at` and `updated_at` (`timestamptz`, default
 `now()`) unless noted; they are left out of the column tables.
 
-### person _(Phase 1, planned)_
+### person _(Phase 1, built)_
 
 A log-in identity, shared across homes. Nothing about life in a home.
 
@@ -584,7 +585,7 @@ CHECK `phone IS NOT NULL OR email IS NOT NULL`.
 | `person(phone)` UNIQUE | Finding the person on log-in and sign-up |
 | `person(email)` UNIQUE | The same, by email                       |
 
-### home _(Phase 1, planned)_
+### home _(Phase 1, built)_
 
 The tenant. Every home-owned table points here.
 
@@ -601,7 +602,7 @@ The tenant. Every home-owned table points here.
 | ------------------- | ------------------- |
 | `home(code)` UNIQUE | Home ID for support |
 
-### membership _(Phase 1, planned)_
+### membership _(Phase 1, built)_
 
 A person in one home. Everything in a home points here, never to `person`.
 
@@ -619,14 +620,14 @@ A person in one home. Everything in a home points here, never to `person`.
 CHECK `role <> 'owner' OR status = 'active'`: the owner can't be
 deactivated.
 
-| Index                                                             | Serves                                                                                              |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `membership(home_id, person_id)` UNIQUE                           | The members list per home; one membership per person per home, so a returning member is reactivated |
-| `membership(person_id) WHERE status = 'active'` UNIQUE            | One active home per person (FR-85); the session's lookup on every request                           |
-| `membership(home_id) WHERE role = 'owner'` UNIQUE                 | Exactly one owner per home (FR-63)                                                                  |
-| `membership(home_id, lower(name)) WHERE status = 'active'` UNIQUE | Names unique among active members, ignoring case (FR-04)                                            |
+| Index                                                             | Serves                                                                                                                     |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `membership(home_id, person_id)` UNIQUE                           | The members list per home; one membership per person per home, so a returning member is reactivated                        |
+| `membership(person_id) WHERE status = 'active'` UNIQUE            | One active home per person (FR-85); the session's lookup on every request. _Phase 1b drops it (a person in several homes)_ |
+| `membership(home_id) WHERE role = 'owner'` UNIQUE                 | Exactly one owner per home (FR-63)                                                                                         |
+| `membership(home_id, lower(name)) WHERE status = 'active'` UNIQUE | Names unique among active members, ignoring case (FR-04)                                                                   |
 
-### membership_period _(Phase 1, planned)_
+### membership_period _(Phase 1, built)_
 
 The stays: when a member lives here and is charged
 ([Stays](#stays-membership-periods-agreed-21-nov-2026)).
@@ -639,12 +640,12 @@ The stays: when a member lives here and is charged
 | starts_on     | date | no   | —       | —                            | The join date, or the date charges start again (FR-92) |
 | ends_on       | date | yes  | —       | CHECK `ends_on >= starts_on` | The deactivation date; null while the stay is open     |
 
-| Index                                                           | Serves                                                  |
-| --------------------------------------------------------------- | ------------------------------------------------------- |
-| `membership_period(membership_id) WHERE ends_on IS NULL` UNIQUE | At most one open stay per member                        |
-| `membership_period(home_id, membership_id, starts_on)`          | A member's stays; "who lived here in October" (Phase 6) |
+| Index                                                           | Serves                                                                                                            |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `membership_period(membership_id) WHERE ends_on IS NULL` UNIQUE | At most one open stay per member                                                                                  |
+| `membership_period(home_id, membership_id, starts_on)`          | A member's stays; "who lived here in October" (Phase 6). _Not built yet: added with the first query that uses it_ |
 
-### change_log _(Phase 1, planned)_
+### change_log _(Phase 1, built)_
 
 Proof of who changed what (FR-27,
 [History of non-money records](#history-of-non-money-records-agreed-19-nov-2026)).
@@ -673,15 +674,17 @@ limits and sessions; see
 
 ## Change log
 
-| Phase                 | Change                                                                                                                                                      |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Design (17 Nov 2026)  | Money storage decided as a ledger; returns and corrections are linked entries                                                                               |
-| Design (17 Nov 2026)  | Funds are rows; fund cash is tracked per holder; fund keeper is chosen per fund                                                                             |
-| Design (19 Nov 2026)  | Meal sessions are rows with a weight; own and guest meals stored apart; home guests and confirmation per session day                                        |
-| Design (19 Nov 2026)  | One contact table with phones and emails as rows; one attachment table; payee per bill category; fund kind added                                            |
-| Design (19 Nov 2026)  | Domain sketch agreed for all phases; ledger is one header table with detail tables; person and membership split                                             |
-| Design (19 Nov 2026)  | UUIDv7 keys (`uuid-utils`), text + `CHECK` value sets, singular table names, effective-dated rows plus one change log                                       |
-| Phase 0               | UUIDv7 keys from the standard library's `uuid.uuid7()` (Python 3.14), replacing the planned `uuid-utils` package                                            |
-| Phase 0               | No tables; Alembic set up with no revisions, the test database built with `alembic upgrade head`; first table in Phase 1                                    |
-| Phase 1 (21 Nov 2026) | Planned `person`, `home`, `membership`, `membership_period`, `change_log`; name on `membership`; stays as periods; sessions in Redis                        |
-| Phase 1 (21 Nov 2026) | Actor columns `created_by` / `changed_by` (no `_id`), no `updated_by`; files in private S3 via presigned POST and GET, linked by FK columns and link tables |
+| Phase                 | Change                                                                                                                                                                                                                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Design (17 Nov 2026)  | Money storage decided as a ledger; returns and corrections are linked entries                                                                                                                                                                                 |
+| Design (17 Nov 2026)  | Funds are rows; fund cash is tracked per holder; fund keeper is chosen per fund                                                                                                                                                                               |
+| Design (19 Nov 2026)  | Meal sessions are rows with a weight; own and guest meals stored apart; home guests and confirmation per session day                                                                                                                                          |
+| Design (19 Nov 2026)  | One contact table with phones and emails as rows; one attachment table; payee per bill category; fund kind added                                                                                                                                              |
+| Design (19 Nov 2026)  | Domain sketch agreed for all phases; ledger is one header table with detail tables; person and membership split                                                                                                                                               |
+| Design (19 Nov 2026)  | UUIDv7 keys (`uuid-utils`), text + `CHECK` value sets, singular table names, effective-dated rows plus one change log                                                                                                                                         |
+| Phase 0               | UUIDv7 keys from the standard library's `uuid.uuid7()` (Python 3.14), replacing the planned `uuid-utils` package                                                                                                                                              |
+| Phase 0               | No tables; Alembic set up with no revisions, the test database built with `alembic upgrade head`; first table in Phase 1                                                                                                                                      |
+| Phase 1 (21 Nov 2026) | Planned `person`, `home`, `membership`, `membership_period`, `change_log`; name on `membership`; stays as periods; sessions in Redis                                                                                                                          |
+| Phase 1 (21 Nov 2026) | Actor columns `created_by` / `changed_by` (no `_id`), no `updated_by`; files in private S3 via presigned POST and GET, linked by FK columns and link tables                                                                                                   |
+| Phase 1 (built)       | Built in `e56c6933166b_sign_up`, `d0fcb4a7b7ad_add_members` and `2b0784c0023a_member_status`; constraint names follow the naming convention (`uq_`, `ck_`, `ix_`); the `membership_period(home_id, membership_id, starts_on)` index waits for its first query |
+| Phase 1 (21 Nov 2026) | Phase 1b planned: a person in several homes replaces "one active home per person" (FR-85), after the security review                                                                                                                                          |

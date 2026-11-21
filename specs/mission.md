@@ -26,7 +26,8 @@ In scope:
 
 - An **owner** signs up, which creates their **home**, and adds **members**
   by phone or email.
-- Anyone logs in with a phone or email and a one-time code.
+- Anyone logs in with a phone or email and a one-time code. One person can
+  be a member of several homes and chooses which home after logging in.
 - The **owner** sets up **rooms**, **rent**, **home rules** (deposit months,
   notice period, rent-gap policy) and **bills**.
 - The **owner** or a **manager** keeps the home's **contacts**: landlord,
@@ -74,8 +75,7 @@ In scope:
 - Edits and deletes need a reason and are kept in **history** (soft delete).
 - Responsive **web** first, then a **mobile** app on the same API.
 
-Out of scope for v1 (revisit later): a person in more than one home, short-
-notice waiver voting, whole-home move-out with landlord deposit settlement,
+Out of scope for v1 (revisit later): short-notice waiver voting, whole-home move-out with landlord deposit settlement,
 PDF/Excel export and WhatsApp sharing, meal cut-off times and default meal
 patterns, reminders, grocery shopping roster, Bangla and other languages,
 currencies other than ৳ (BDT), split methods other than meal-based groceries

@@ -49,8 +49,27 @@ Check it works:
 
 - API: <http://localhost:8000/api/v1/health> answers with the database and
   Redis both `ok`. Interactive docs: <http://localhost:8000/docs>.
-- Web: `cd web && pnpm start`, then open <http://localhost:4200>. The start
-  page says **Server connected**.
+- Web: `cd web && pnpm start`, then open <http://localhost:4200>. You land on
+  **Log in** / **Create your home**.
+
+## Log in locally
+
+No SMS or email is sent while developing: the backend's development notifier
+(`NOTIFIER=log`) writes every message, one-time codes included, to its log
+and to the Redis list `dev:outbox`. To sign up or log in:
+
+1. Enter a phone (e.g. `01712 345678`) or an email and press **Send code**.
+2. Read the code from either place:
+
+   ```bash
+   docker compose logs backend | grep "Colivo code"          # the log line
+   docker compose exec redis redis-cli LRANGE dev:outbox 0 4  # newest first
+   ```
+
+3. Type the 6 digits. A new code can be asked for once a minute.
+
+Put `SESSION_COOKIE_SECURE=false` in `.env` so the browser keeps the session
+cookie on `http://localhost`. Production refuses to start with `NOTIFIER=log`.
 
 ## Everyday commands
 
