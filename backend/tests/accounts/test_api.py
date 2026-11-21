@@ -352,3 +352,51 @@ def test_codes_say_when_the_next_one_can_be_sent(client: TestClient) -> None:
     assert first.json()["data"]["resend_in_seconds"] == 60
     assert again.status_code == 429
     assert again.json()["data"] == {"reason": "too_soon", "retry_in_seconds": 60}
+
+
+MARUF_PHONE = "01812 345678"
+MARUF_E164 = "+8801812345678"
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="acceptance: the owner adds a member, who can then log in",
+)
+def test_owner_adds_member_who_then_logs_in(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat"
+    WHEN  he adds Maruf by phone, and Maruf logs in with a one-time code
+    THEN  Maruf got a notice, and is logged in as a member of Our Flat added
+          by Rabbi Hasan
+    """
+    client.post(
+        "/api/v1/auth/sign-up", json=sign_up_body(code_for_phone(redis_client, clock))
+    )
+
+    added = client.post(
+        "/api/v1/members",
+        json={
+            "name": "Maruf",
+            "contact": MARUF_PHONE,
+            "joined_on": "2026-11-21",
+            "role": "member",
+        },
+    )
+    client.post("/api/v1/auth/log-out")
+    client.post("/api/v1/auth/codes", json={"contact": MARUF_PHONE})
+    client.post(
+        "/api/v1/auth/log-in",
+        json={"contact": MARUF_PHONE, "code": notifier.last_code_to(MARUF_E164)},
+    )
+    me = client.get("/api/v1/me").json()["data"]
+
+    assert added.status_code == 201
+    assert any(
+        message.to == MARUF_E164 and "Our Flat" in message.text
+        for message in notifier.sent
+    ), "Maruf was told he was added"
+    assert (me["membership"]["name"], me["membership"]["role"]) == ("Maruf", "member")
+    assert me["home"]["name"] == "Our Flat"
+    assert me["membership"]["added_by_name"] == "Rabbi Hasan"
