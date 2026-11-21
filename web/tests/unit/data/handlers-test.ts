@@ -130,6 +130,9 @@ module('Unit | Data | handlers', function () {
     );
 
     assert.strictEqual(sent?.credentials, 'include');
-    assert.strictEqual(sent?.headers?.get('Authorization') ?? null, null);
+    assert.false(
+      sent?.headers?.has('Authorization'),
+      'no Authorization header',
+    );
   });
 });

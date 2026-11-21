@@ -24,11 +24,9 @@ function asWarpDriveHandler(handler: Handler): WarpDriveHandler {
 const Store = useLegacyStore({
   linksMode: false,
   cache: JSONAPICache,
-  handlers: [
-    ErrorHandler,
-    createAuthHandler(),
-    createEnvelopeHandler(),
-  ].map(asWarpDriveHandler),
+  handlers: [ErrorHandler, createAuthHandler(), createEnvelopeHandler()].map(
+    asWarpDriveHandler,
+  ),
   schemas: [],
 });
 
