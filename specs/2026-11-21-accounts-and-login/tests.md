@@ -223,3 +223,64 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 
 - [x] T30.1 unit — `test_record_change_keeps_who_when_and_old_and_new_values` ✅ (`backend/tests/history/test_service.py`)
 - [x] T30.2 unit — `test_adding_and_changing_members_is_recorded` ✅ (parametrised): added (create, new values); name or join date changed (update, old and new values); own name fixed (update, by the member)
+
+## Group 5 — Roles, deactivate and reactivate
+
+Backend acceptance: `backend/tests/accounts/test_api.py::test_owner_deactivates_member_who_can_no_longer_log_in`
+Web acceptance: `web/tests/acceptance/member-status-test.ts` › manager deactivates and reactivates a member
+End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who logs in, then deactivates them (replaces `smoke.spec.ts`)
+
+### B28 — The new endpoints never reach another home's member
+
+- [x] T28.3 integration — `test_status_and_role_changes_answer_404_for_another_homes_member` (parametrised over role, deactivate, reactivate)
+
+### B31 — The owner gives and takes away the Manager role
+
+- [x] T31.1 unit — `test_owner_makes_a_member_a_manager_and_back` (parametrised): member → manager, manager → member; recorded in the history
+- [x] T31.2 integration — `test_only_the_owner_changes_roles` (parametrised): a manager, a member → 403
+- [x] T31.3 integration — `test_change_role_answers_422_for_a_role_that_cannot_be_given` (`owner`, an unknown role)
+- [x] T31.4 web integration — role editor: the owner sees "Make manager" for a member and "Remove manager" for a manager, and it sends the new role; a manager sees neither
+
+### B32 — The owner's role can't change; a home has one owner
+
+- [x] T32.1 unit — `test_owners_own_role_cannot_change`: 400
+- [x] T32.2 unit (database rule) — `test_home_has_at_most_one_owner`
+- [x] T32.3 web integration — member list: the owner's row has no role button
+
+### B33 — Deactivating, from a date, logs the member out at once
+
+- [x] T33.1 unit — `test_deactivating_closes_the_stay_on_the_chosen_date`: inactive; the open stay ends that day; recorded in the history
+- [x] T33.2 unit — `test_deactivation_date_must_be_today_or_earlier_and_in_the_stay` (parametrised): tomorrow, before the stay began → 400
+- [x] T33.3 unit — `test_inactive_member_cannot_be_deactivated_again`: 409
+- [x] T33.4 integration — `test_deactivated_member_is_logged_out_at_once`: the member's session answers 401 on its next request
+- [x] T33.5 unit (database rule) — `test_stay_cannot_end_before_it_starts`
+- [x] T33.6 integration — `test_deactivate_answers_422_without_a_date`
+- [x] T33.7 web integration — deactivate dialog: starts at today; Confirm sends the date and tells the page; Cancel sends nothing
+- [x] T33.8 web acceptance — a page that gets a 401 (the session ended) goes to log-in (`member-status-test.ts`)
+
+### B34 — The owner can't be deactivated; a manager can't deactivate a manager
+
+- [x] T34.1 unit — `test_owner_cannot_be_deactivated`: 400
+- [x] T34.2 unit — `test_manager_cannot_deactivate_another_manager`: 403
+- [x] T34.3 unit (database rule) — `test_owner_is_always_active`
+- [x] T34.4 web integration — member list: no Deactivate on the owner's row; a manager sees none on a manager's row
+
+### B35 — Reactivating, from the date charges start again
+
+- [x] T35.1 unit — `test_reactivating_opens_a_new_stay_from_the_chosen_date`: active; the old stay kept and a new one opened; recorded in the history
+- [x] T35.2 unit — `test_reactivation_date_must_be_after_the_deactivation`: the same day → 400
+- [x] T35.3 unit — `test_active_member_cannot_be_reactivated`: 409
+- [x] T35.4 unit (database rule) — `test_member_has_one_open_stay`
+- [x] T35.5 integration — `test_reactivate_answers_422_without_a_date`
+- [x] T35.6 web integration — reactivate dialog: Confirm sends the date charges start again and tells the page
+
+### B36 — Reactivating is refused while active elsewhere or the name is taken
+
+- [x] T36.1 unit — `test_reactivating_someone_active_in_another_home_is_refused`: 409
+- [x] T36.2 unit — `test_reactivating_into_a_taken_name_is_refused`: 409
+- [x] T36.3 web integration — reactivate dialog shows the API's 409 message
+
+### B37 — Current and past members on separate tabs
+
+- [x] T37.1 integration — `test_members_list_includes_deactivated_members_with_their_status`
+- [x] T37.2 web integration — member tabs: Current lists the active members with Deactivate; Past lists the deactivated ones with Reactivate

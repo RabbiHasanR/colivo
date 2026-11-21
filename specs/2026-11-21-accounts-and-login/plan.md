@@ -228,7 +228,11 @@ Configuration and docs only. Commit: `chore: add phase 1 groundwork`.
   - Web: `web/tests/acceptance/member-status-test.ts` › manager deactivates
     and reactivates a member.
 - **Tables:** none new; uses `membership.role`, `membership.status`,
-  `membership_period` and `change_log`. No migration.
+  `membership_period` and `change_log`. Migration
+  `backend/alembic/versions/<rev>_member_status.py` adds the four agreed
+  rules whose behaviours are in this group: one owner per home, the owner
+  always active, a stay never ends before it starts, one open stay
+  (changed in group 5's design sketch).
 
 ### Backend
 
@@ -260,9 +264,12 @@ Configuration and docs only. Commit: `chore: add phase 1 groundwork`.
 - `web/e2e/accounts.spec.ts`, replacing `web/e2e/smoke.spec.ts` (asked at
   Gate 2): against `docker compose up` with no mocks, an owner signs up
   (the code read from `dev:outbox` with
-  `docker compose exec -T redis redis-cli`), adds a member, logs out; the
-  member logs in and passes the first log-in check; the owner logs in and
-  deactivates the member; the member's next log-in gets "Not added yet".
+  `docker compose exec -T redis redis-cli`) and adds a member; in a second
+  browser context the member logs in and passes the first log-in check; the
+  owner deactivates the member; the member's open page goes to log-in on
+  its next request. Two contexts, not log-out and log-in: a second code for
+  one phone within a minute is refused (B11), and "Not added yet" for a
+  deactivated person is tested in B13 (changed in group 5's design sketch).
 
 ## 6. Verify and document
 
