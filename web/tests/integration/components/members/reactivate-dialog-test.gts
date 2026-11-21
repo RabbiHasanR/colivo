@@ -53,4 +53,37 @@ module('Integration | Component | members/reactivate-dialog', function (hooks) {
     assert.deepEqual(sent, [[KARIM.id, { on: '2026-12-01' }]]);
     assert.strictEqual((done as Member | null)?.status, 'active');
   });
+
+  test("shows the API's 409 message", async function (assert) {
+    // GIVEN Karim joined another home after he was deactivated here
+    // WHEN  the owner tries to reactivate him
+    // THEN  the dialog shows why, and the page isn't told he's back
+    const refusal = 'This phone or email is already in a home.';
+    worker.use(
+      http.post('*/api/v1/members/:id/reactivate', () =>
+        HttpResponse.json(
+          { success: false, message: refusal, errors: [refusal] },
+          { status: 409 },
+        ),
+      ),
+    );
+    let done = false;
+    const onDone = () => (done = true);
+    const onCancel = () => {};
+    await render(
+      <template>
+        <ReactivateDialog
+          @member={{KARIM}}
+          @onDone={{onDone}}
+          @onCancel={{onCancel}}
+        />
+      </template>,
+    );
+
+    await fillIn('[data-test-reactivate-on]', '2026-12-01');
+    await click('[data-test-reactivate-confirm]');
+
+    assert.dom('[data-test-reactivate-error]').hasText(refusal);
+    assert.false(done);
+  });
 });

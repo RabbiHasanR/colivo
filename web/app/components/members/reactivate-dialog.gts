@@ -5,10 +5,12 @@ import { on } from '@ember/modifier';
 import { service } from '@ember/service';
 import type MembersService from '../../services/members';
 import type { Member } from '../../services/members';
+import { refusalFrom, type Refusal } from '../../utils/refusal';
 import Button from '../ui/button';
 import DateInput from '../ui/date-input';
 import Dialog from '../ui/dialog';
 import Field from '../ui/field';
+import FormError from '../ui/form-error';
 import Stack from '../ui/stack';
 
 interface ReactivateDialogSignature {
@@ -24,6 +26,7 @@ export default class ReactivateDialog extends Component<ReactivateDialogSignatur
   @service declare members: MembersService;
 
   @tracked on = '';
+  @tracked refusal: Refusal | null = null;
 
   @action setOn(value: string): void {
     this.on = value;
@@ -32,7 +35,15 @@ export default class ReactivateDialog extends Component<ReactivateDialogSignatur
   @action
   async confirm(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    const back = await this.members.reactivate(this.args.member.id, this.on);
+    this.refusal = null;
+    let back: Member;
+    try {
+      back = await this.members.reactivate(this.args.member.id, this.on);
+    } catch (error) {
+      this.refusal = refusalFrom(error);
+      if (!this.refusal) throw error;
+      return;
+    }
     this.args.onDone(back);
   }
 
@@ -54,6 +65,11 @@ export default class ReactivateDialog extends Component<ReactivateDialogSignatur
               data-test-reactivate-on
             />
           </Field>
+          {{#if this.refusal.message}}
+            <FormError data-test-reactivate-error>
+              {{this.refusal.message}}
+            </FormError>
+          {{/if}}
           <Button type="submit" data-test-reactivate-confirm>Reactivate</Button>
           <Button
             @variant="secondary"

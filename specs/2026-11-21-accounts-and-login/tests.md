@@ -278,7 +278,7 @@ End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who
 
 - [x] T36.1 unit — `test_reactivating_someone_active_in_another_home_is_refused` ✅: 409
 - [x] T36.2 unit — `test_reactivating_into_a_taken_name_is_refused` ✅: 409
-- [x] T36.3 web integration — reactivate dialog shows the API's 409 message
+- [x] T36.3 web integration — `shows the API's 409 message` ✅: reactivate dialog shows the API's 409 message
 
 ### B37 — Current and past members on separate tabs
 
