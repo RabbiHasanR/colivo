@@ -98,7 +98,7 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 ### B18 — Members don't get the checklist
 
 - [x] T18.1 integration — `test_setup_answers_403_for_a_member` ✅: `GET /api/v1/home/setup` answers 403 for a member
-- [x] T18.2 web acceptance — a member's home page has no checklist and never asks for it (`access-test.ts`)
+- [x] T18.2 web acceptance — `a member's home page has no checklist and never asks for it` ✅: a member's home page has no checklist and never asks for it (`access-test.ts`) _(the route's guard was written with B16, before this test; seen failing by removing the guard)_
 
 ### B19 — Empty lists explain themselves
 
