@@ -1,6 +1,7 @@
 import Service, { service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import {
+  logIn,
   logOut,
   requestCode,
   signUp,
@@ -56,6 +57,13 @@ export default class SessionService extends Service {
 
   async signUp(fields: SignUpFields): Promise<Me> {
     const { content } = await this.store.request<Me>(signUp(fields));
+    this.me = content;
+    return content;
+  }
+
+  /** Log in with a one-time code; the API sets the session cookie. */
+  async logIn(contact: string, code: string): Promise<Me> {
+    const { content } = await this.store.request<Me>(logIn(contact, code));
     this.me = content;
     return content;
   }

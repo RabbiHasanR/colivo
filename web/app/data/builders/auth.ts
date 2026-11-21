@@ -27,6 +27,11 @@ export function signUp(fields: SignUpFields) {
   return postJson('auth/sign-up', fields);
 }
 
+/** Log in with a phone or email and its one-time code. */
+export function logIn(contact: string, code: string) {
+  return postJson('auth/log-in', { contact, code });
+}
+
 /** End the session; the API clears its cookie. */
 export function logOut() {
   return postJson('auth/log-out', {});

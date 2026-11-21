@@ -142,7 +142,7 @@ Web acceptance: `web/tests/acceptance/log-in-test.ts` › owner logs back in wit
 - [x] T12.1 unit — `test_log_in_returns_the_active_membership` ✅
 - [ ] T12.2 integration — `POST /api/v1/auth/log-in` answers 200 with `MeOut` and sets the cookie _(skipped: the backend acceptance test logs in, then calls `GET /me` with that cookie)_
 - [x] T12.3 integration — `test_log_in_answers_422_for_something_that_is_not_a_phone_or_email` ✅
-- [x] T12.4 web integration — log-in form: Send code shows "Sent to …"; Log in sends the contact and code and tells the page the person is logged in
+- [x] T12.4 web integration — `sends a code, then logs in with it` ✅: log-in form: Send code shows "Sent to …"; Log in sends the contact and code and tells the page the person is logged in
 
 ### B13 — No active membership → "Not added yet"
 
