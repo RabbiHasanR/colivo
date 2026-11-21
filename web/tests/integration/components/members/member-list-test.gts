@@ -133,4 +133,34 @@ module('Integration | Component | members/member-list', function (hooks) {
     assert.dom('[data-test-role-change="Maruf"]').exists();
     assert.dom('[data-test-role-change="Rabbi Hasan"]').doesNotExist();
   });
+
+  test("a manager can't bring back a past manager", async function (assert) {
+    // GIVEN two past members of "Our Flat": Karim, a manager, and Rahim
+    // WHEN  a manager looks at them
+    // THEN  only Rahim has Reactivate: bringing a manager back is the owner's call
+    this.owner.lookup('service:session').me = me('manager');
+    const members = [
+      member({
+        id: '01a1fd00-0000-7000-8000-000000000013',
+        name: 'Karim',
+        role: 'manager',
+        status: 'inactive',
+      }),
+      member({
+        id: '01a1fd00-0000-7000-8000-000000000014',
+        name: 'Rahim',
+        status: 'inactive',
+      }),
+    ];
+    const onReactivate = () => {};
+
+    await render(
+      <template>
+        <MemberList @members={{members}} @onReactivate={{onReactivate}} />
+      </template>,
+    );
+
+    assert.dom('[data-test-reactivate="Rahim"]').exists();
+    assert.dom('[data-test-reactivate="Karim"]').doesNotExist();
+  });
 });

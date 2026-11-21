@@ -291,8 +291,8 @@ From the `/security-review` of the branch (21 Nov 2026), agreed with the user.
 
 ### B38 — A manager can't reactivate a manager
 
-- [x] T38.1 unit — `test_manager_cannot_reactivate_a_manager`: 403; the manager stays deactivated
-- [x] T38.2 web integration — member list: a manager sees no Reactivate on a past manager's row
+- [x] T38.1 unit — `test_manager_cannot_reactivate_a_manager` ✅: 403; the manager stays deactivated
+- [x] T38.2 web integration — `a manager can't bring back a past manager` ✅: member list: a manager sees no Reactivate on a past manager's row
 
 ### B39 — A manager can't change the owner's name or join date
 

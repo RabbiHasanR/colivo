@@ -51,6 +51,7 @@ DEACTIVATE_LATER = "Deactivation starts today or earlier."
 ALREADY_INACTIVE = "This member is already deactivated."
 OWNER_STAYS = "The owner can't be deactivated."
 MANAGER_FOR_OWNER = "Only the owner can deactivate a manager."
+REACTIVATE_MANAGER_FOR_OWNER = "Only the owner can reactivate a manager."
 REACTIVATE_TOO_EARLY = "Charges can start again only after their last stay ended."
 ALREADY_ACTIVE = "This member is already active."
 DEACTIVATE_BEFORE_STAY = "Deactivation can't start before their stay began."
@@ -778,11 +779,15 @@ def reactivate(
         The reactivated membership.
 
     Raises:
-        HTTPException: 404 for another home's member; 409 when already
-            active, active in another home, or an active member has their
+        HTTPException: 404 for another home's member; 403 for a manager
+            reactivating a manager; 409 when already active, active in another
+            home, or an active member has their
             name; 400 for a date not after their last stay ended.
     """
     member = get_member(session, editor.home_id, member_id, lock=True)
+    if member.role == Role.MANAGER and editor.role != Role.OWNER:
+        # Bringing a manager back is the owner's call, as removing one is.
+        raise HTTPException(403, REACTIVATE_MANAGER_FOR_OWNER)
     if member.status == MembershipStatus.ACTIVE:
         raise HTTPException(409, ALREADY_ACTIVE)
     last_end = last_stay_end(session, member)

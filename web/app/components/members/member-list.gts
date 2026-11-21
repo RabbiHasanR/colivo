@@ -6,7 +6,7 @@ import type { Member } from '../../services/members';
 import type SessionService from '../../services/session';
 import type { Me } from '../../services/session';
 import { formatDate } from '../../utils/dates';
-import { canDeactivate } from '../../utils/members';
+import { canChangeStatus } from '../../utils/members';
 import { eq } from '../../utils/template';
 import { roleLabel } from '../../utils/roles';
 import Button from '../ui/button';
@@ -75,7 +75,7 @@ export default class MemberList extends Component<MemberListSignature> {
                 {{/if}}
                 {{#if (eq member.status "active")}}
                   {{#if @onDeactivate}}
-                    {{#if (canDeactivate this.viewer member)}}
+                    {{#if (canChangeStatus this.viewer member)}}
                       <Button
                         @variant="secondary"
                         aria-label="Deactivate {{member.name}}"
@@ -85,12 +85,14 @@ export default class MemberList extends Component<MemberListSignature> {
                     {{/if}}
                   {{/if}}
                 {{else if @onReactivate}}
-                  <Button
-                    @variant="secondary"
-                    aria-label="Reactivate {{member.name}}"
-                    data-test-reactivate={{member.name}}
-                    {{on "click" (fn @onReactivate member)}}
-                  >Reactivate</Button>
+                  {{#if (canChangeStatus this.viewer member)}}
+                    <Button
+                      @variant="secondary"
+                      aria-label="Reactivate {{member.name}}"
+                      data-test-reactivate={{member.name}}
+                      {{on "click" (fn @onReactivate member)}}
+                    >Reactivate</Button>
+                  {{/if}}
                 {{/if}}
               </td>
             </tr>

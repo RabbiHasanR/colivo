@@ -1012,3 +1012,52 @@ def test_reactivating_into_a_taken_name_is_refused(
         )
 
     assert error.value.status_code == 409
+
+
+def hijam_the_manager(
+    session: Session, notifier: FakeNotifier, owner: Membership, clock: MovableClock
+) -> Membership:
+    """Hijam, a manager of "Our Flat"."""
+    return service.add_member(
+        session,
+        notifier,
+        owner,
+        maruf(
+            name="Hijam",
+            contact=Contact(channel=Channel.SMS, value=OTHER_PHONE),
+            role="manager",
+        ),
+        clock(),
+    )
+
+
+def test_manager_cannot_reactivate_a_manager(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN the owner deactivated Maruf, a manager of "Our Flat"
+    WHEN  Hijam, another manager, reactivates him
+    THEN  it is refused with 403, and Maruf stays deactivated: bringing a
+          manager back is the owner's call
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    hijam = hijam_the_manager(session, notifier, owner, clock)
+    manager = service.add_member(
+        session,
+        notifier,
+        owner,
+        maruf(role="manager", joined_on=date(2026, 11, 1)),
+        clock(),
+    )
+    service.deactivate(
+        session, owner, manager.id, DeactivateIn(on=date(2026, 11, 20)), clock()
+    )
+
+    with pytest.raises(HTTPException) as error:
+        service.reactivate(
+            session, hijam, manager.id, ReactivateIn(on=date(2026, 12, 1)), clock()
+        )
+
+    assert error.value.status_code == 403
+    session.refresh(manager)
+    assert manager.status == MembershipStatus.INACTIVE
