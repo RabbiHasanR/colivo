@@ -28,6 +28,10 @@ from app.modules.homes import service as homes_service
 from app.modules.homes.constants import DEFAULT_TIME_ZONE
 from app.modules.homes.models import Home
 
+NOT_ADDED = (
+    "Not added yet. Ask your home's owner or manager to add you, or create a new home."
+)
+
 
 def find_person(session: Session, contact: Contact) -> Person | None:
     """Return the person who logs in with ``contact``, if anyone does.
@@ -203,9 +207,15 @@ def log_in(
 
     Returns:
         The person's active membership.
+
+    Raises:
+        HTTPException: 404 "Not added yet" when the person is active in no
+            home: never added, or deactivated (FR-87).
     """
     codes.use_code(redis_client, data.contact, data.code, now)
     person = find_person(session, data.contact)
     membership = person and active_membership(session, person)
-    assert membership is not None
+    if not membership:
+        # Only after the right code, so nobody learns who has an account.
+        raise HTTPException(404, NOT_ADDED)
     return membership

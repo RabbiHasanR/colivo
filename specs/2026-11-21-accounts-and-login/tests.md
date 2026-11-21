@@ -146,5 +146,5 @@ Web acceptance: `web/tests/acceptance/log-in-test.ts` › owner logs back in wit
 
 ### B13 — No active membership → "Not added yet"
 
-- [x] T13.1 unit — `test_log_in_with_no_active_membership_is_not_added_yet` (parametrised): never added; deactivated → 404, after the right code
+- [x] T13.1 unit — `test_log_in_with_no_active_membership_is_not_added_yet` ✅ (parametrised): never added; deactivated → 404, after the right code
 - [x] T13.2 web integration — log-in page: a 404 shows "No home uses 01712 345678 yet", "ask its owner or manager", "Create my own home" (fills the sign-up form's phone or email) and "Try another phone or email" (back to the first step)

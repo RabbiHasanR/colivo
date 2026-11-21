@@ -283,3 +283,47 @@ def test_log_in_returns_the_active_membership(
     )
 
     assert membership.id == owner.id
+
+
+def add_inactive_member(session: Session, phone: str) -> None:
+    """Make ``phone`` a deactivated member of "Old Flat"."""
+    person = Person(phone=phone)
+    old_flat = homes_service.create_home(
+        session, name="Old Flat", area=None, first_month=date(2026, 1, 1)
+    )
+    session.add(person)
+    session.flush()
+    session.add(
+        Membership(
+            home_id=old_flat.id,
+            person_id=person.id,
+            name="Maruf",
+            status=MembershipStatus.INACTIVE,
+        )
+    )
+    session.flush()
+
+
+@pytest.mark.parametrize(
+    "deactivated", [False, True], ids=["never added", "deactivated"]
+)
+def test_log_in_with_no_active_membership_is_not_added_yet(
+    session: Session, redis_client: Redis, clock: MovableClock, deactivated: bool
+) -> None:
+    """
+    GIVEN 01812 345678 was never added to a home, or was deactivated
+    WHEN  they log in with the right code
+    THEN  it answers 404 "Not added yet"
+    """
+    phone = "+8801812345678"
+    if deactivated:
+        add_inactive_member(session, phone)
+    contact = Contact(channel=Channel.SMS, value=phone)
+    code = codes.issue_code(redis_client, contact, clock())
+
+    with pytest.raises(HTTPException) as error:
+        service.log_in(
+            session, redis_client, LogInIn(contact=contact, code=code), clock()
+        )
+
+    assert error.value.status_code == 404
