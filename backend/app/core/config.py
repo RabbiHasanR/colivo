@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # Only the test suite uses it; tests refuse to run without it.
     test_database_url: str | None = None
     redis_url: str
+    # Only the test suite uses it. Unset: tests use database 15 of REDIS_URL's
+    # server, and refuse to run on REDIS_URL's own database.
+    test_redis_url: str | None = None
     # How long any connection to PostgreSQL or Redis may take before it counts
     # as down. Whole seconds: libpq's connect_timeout takes an integer.
     connect_timeout_seconds: int = 2
