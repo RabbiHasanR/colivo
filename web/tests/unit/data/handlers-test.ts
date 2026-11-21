@@ -135,4 +135,20 @@ module('Unit | Data | handlers', function () {
       'no Authorization header',
     );
   });
+
+  test('error handler maps 429 to too-many and keeps its data', async function (assert) {
+    // GIVEN the API refuses a new code: asked again too soon
+    // WHEN  the request fails with that 429
+    // THEN  an ApiError of kind "too-many" carries the reason and the wait
+    const error = (await errorFrom(
+      failWith(429, {
+        success: false,
+        message: 'A new code can be sent once a minute.',
+        data: { reason: 'too_soon', retry_in_seconds: 42 },
+      }),
+    )) as ApiError;
+
+    assert.strictEqual(error.kind, 'too-many');
+    assert.deepEqual(error.data, { reason: 'too_soon', retry_in_seconds: 42 });
+  });
 });

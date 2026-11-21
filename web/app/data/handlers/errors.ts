@@ -10,6 +10,7 @@ const KIND_BY_STATUS: Record<number, ApiErrorKind> = {
   404: 'not-found',
   409: 'conflict',
   422: 'validation',
+  429: 'too-many',
 };
 
 export function kindForStatus(status: number | null): ApiErrorKind {

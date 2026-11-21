@@ -134,8 +134,8 @@ Web acceptance: `web/tests/acceptance/log-in-test.ts` › owner logs back in wit
 - [x] T11.2 unit — `test_only_5_codes_an_hour` ✅: the 6th within the hour → 429 `hourly_limit`, wait until the oldest is an hour old; then sent
 - [x] T11.3 unit — `test_new_code_replaces_the_old_one` ✅: the old code → 400 `expired`; the new one works
 - [x] T11.4 integration — `test_codes_say_when_the_next_one_can_be_sent` ✅: the first answer has `resend_in_seconds: 60`; asking again at once → 429 with `retry_in_seconds: 60`
-- [x] T11.5 web unit — the error handler maps 429 to `too-many` and keeps its `data` (`handlers-test.ts`, a new test)
-- [x] T11.6 web integration — log-in form: the code step shows "Resend in 1:00" and no Resend button; when it reaches 0:00, "Resend" sends a new code and says "New code sent to …. The old one no longer works."
+- [x] T11.5 web unit — `error handler maps 429 to too-many and keeps its data` ✅: the error handler maps 429 to `too-many` and keeps its `data` (`handlers-test.ts`, a new test)
+- [x] T11.6 web integration — `shows when a new code can be sent, then resends it` ✅: log-in form: the code step shows "Didn't get it? Resend in 1:00" and no Resend button; when it reaches 0:00, "Resend" sends a new code and says "New code sent to …. The old one no longer works."
 
 ### B12 — A person with an active membership logs in
 

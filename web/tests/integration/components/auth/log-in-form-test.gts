@@ -137,4 +137,45 @@ module('Integration | Component | auth/log-in-form', function (hooks) {
     assert.dom('[data-test-code-field]').doesNotExist();
     assert.dom('[data-test-log-in-send-code]').exists();
   });
+
+  test('shows when a new code can be sent, then resends it', async function (assert) {
+    // GIVEN a code was sent; first a new one can be sent in 60 seconds,
+    //       then (another time) straight away
+    // WHEN  the code step shows, and "Resend" is pressed when it is offered
+    // THEN  it first shows "Resend in 1:00" and no Resend button; with no
+    //       wait, Resend asks for a new code and says the old one is gone
+    let resendIn = 60;
+    let codeRequests = 0;
+    worker.use(
+      http.post('*/api/v1/auth/codes', () => {
+        codeRequests += 1;
+        return HttpResponse.json({
+          ...codeSentBody,
+          data: {
+            channel: 'sms',
+            expires_in_seconds: 300,
+            resend_in_seconds: resendIn,
+          },
+        });
+      }),
+    );
+    const onLoggedIn = () => {};
+    await render(<template><LogInForm @onLoggedIn={{onLoggedIn}} /></template>);
+
+    await sendCodeAndType('');
+    assert
+      .dom('[data-test-resend-wait]')
+      .hasText("Didn't get it? Resend in 1:00");
+    assert.dom('[data-test-resend]').doesNotExist();
+
+    resendIn = 0;
+    await render(<template><LogInForm @onLoggedIn={{onLoggedIn}} /></template>);
+    await sendCodeAndType('');
+    await click('[data-test-resend]');
+
+    assert.strictEqual(codeRequests, 3, 'three codes were asked for');
+    assert
+      .dom('[data-test-code-resent]')
+      .hasText('New code sent to 01712 345678. The old one no longer works.');
+  });
 });

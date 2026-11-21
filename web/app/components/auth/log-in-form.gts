@@ -11,6 +11,7 @@ import Stack from '../ui/stack';
 import TextInput from '../ui/text-input';
 import CodeErrors from './code-errors';
 import CodeField from './code-field';
+import Countdown from '../ui/countdown';
 
 interface LogInFormSignature {
   Args: { onLoggedIn: () => void };
@@ -27,6 +28,11 @@ export default class LogInForm extends Component<LogInFormSignature> {
   @tracked code = '';
   @tracked sentTo: string | null = null;
   @tracked codeError: CodeError | null = null;
+  /** Seconds until a new code may be sent, from the API's last answer. */
+  @tracked resendIn = 0;
+  @tracked canResend = false;
+  /** Shown after "Resend": where the new code went. */
+  @tracked resentTo: string | null = null;
 
   @action setContact(value: string): void {
     this.contact = value;
@@ -57,10 +63,26 @@ export default class LogInForm extends Component<LogInFormSignature> {
     this.codeError = null;
   }
 
+  @action
+  async resend(): Promise<void> {
+    await this.refusable(async () => {
+      await this.sendCode();
+      this.resentTo = this.contact;
+    });
+  }
+
+  @action
+  allowResend(): void {
+    this.canResend = true;
+  }
+
   async sendCode(): Promise<void> {
-    await this.session.requestCode(this.contact);
+    const sent = await this.session.requestCode(this.contact);
     this.sentTo = this.contact;
     this.code = '';
+    this.resentTo = null;
+    this.resendIn = sent.resend_in_seconds;
+    this.canResend = sent.resend_in_seconds <= 0;
   }
 
   async logIn(): Promise<void> {
@@ -101,7 +123,24 @@ export default class LogInForm extends Component<LogInFormSignature> {
         {{#if this.sentTo}}
           <p data-test-code-sent-to>Sent to {{this.sentTo}}</p>
           <CodeField @value={{this.code}} @onInput={{this.setCode}} />
+          {{#if this.resentTo}}
+            <p data-test-code-resent>New code sent to
+              {{this.resentTo}}. The old one no longer works.</p>
+          {{/if}}
           <Button type="submit" data-test-log-in-submit>Log in</Button>
+          {{#if this.canResend}}
+            <Button
+              @variant="secondary"
+              data-test-resend
+              {{on "click" this.resend}}
+            >Resend</Button>
+          {{else}}
+            <p data-test-resend-wait>Didn't get it? Resend in
+              <Countdown
+                @seconds={{this.resendIn}}
+                @onDone={{this.allowResend}}
+              /></p>
+          {{/if}}
         {{else}}
           <Button type="submit" data-test-log-in-send-code>Send code</Button>
         {{/if}}

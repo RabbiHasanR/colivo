@@ -5,6 +5,7 @@ export type ApiErrorKind =
   | 'not-found' // 404
   | 'conflict' // 409
   | 'validation' // 422
+  | 'too-many' // 429: too many tries; wait and try again
   | 'server' // 5xx
   | 'network' // no response at all
   | 'unknown';
