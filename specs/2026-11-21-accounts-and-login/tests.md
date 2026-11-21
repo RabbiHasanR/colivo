@@ -65,8 +65,8 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 ### B8 — A code is used once
 
-- [x] T8.1 unit — `test_code_works_only_once`: a second use answers 400
-- [x] T8.2 unit — `test_sign_up_refused_with_a_wrong_code`: 400, nothing created
+- [x] T8.1 unit — `test_code_works_only_once` ✅: a second use answers 400
+- [x] T8.2 unit — `test_sign_up_refused_with_a_wrong_code` ✅: 400, nothing created
 
 ### B14 — A log-in lasts 30 days from the last use; log-out ends it
 

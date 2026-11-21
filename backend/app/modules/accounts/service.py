@@ -95,8 +95,11 @@ def sign_up(
         HTTPException: 400 for a first month that isn't this month or next;
             409 when the person is already active in a home (FR-85).
     """
-    codes.use_code(redis_client, data.contact, data.code, now)
+    # The first month says nothing about who someone is, so it is checked
+    # before the code (a wrong month doesn't use the code up). "Already in a
+    # home" is told only to someone with the right code.
     homes_service.check_first_month(data.first_month, now, DEFAULT_TIME_ZONE)
+    codes.use_code(redis_client, data.contact, data.code, now)
     person = find_person(session, data.contact) or new_person(data.contact)
     if active_membership(session, person) is not None:
         raise HTTPException(409, "You're already in a home. Log in instead.")

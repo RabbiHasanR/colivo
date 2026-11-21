@@ -244,3 +244,22 @@ def test_email_in_any_letter_case_is_the_same_person(
     assert error.value.status_code == 409
     person = session.get_one(Person, owner.person_id)
     assert (person.email, person.phone) == ("rabbi@example.com", None)
+
+
+def test_sign_up_refused_with_a_wrong_code(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN a code was sent to 01712 345678
+    WHEN  they sign up typing a different code
+    THEN  it is refused with 400, and no home is created
+    """
+    contact = Contact(channel=Channel.SMS, value=PHONE_E164)
+    code = codes.issue_code(redis_client, contact, clock())
+    wrong = f"{(int(code) + 1) % 1_000_000:06d}"
+
+    with pytest.raises(HTTPException) as error:
+        service.sign_up(session, redis_client, sign_up_data(contact, wrong), clock())
+
+    assert error.value.status_code == 400
+    assert session.exec(select(func.count()).select_from(Home)).one() == 0
