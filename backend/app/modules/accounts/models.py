@@ -53,6 +53,8 @@ class Membership(TableBase, table=True):
         short_text_check("name"),
         check_in("role", Role),
         check_in("status", MembershipStatus),
+        # The owner is always active (FR-63).
+        CheckConstraint("role <> 'owner' OR status = 'active'", name="owner_active"),
         # One membership per person per home: a returning member is reactivated.
         UniqueConstraint("home_id", "person_id"),
         # Names unique among a home's active members, any letter case (FR-04).

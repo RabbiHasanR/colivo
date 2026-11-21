@@ -239,3 +239,30 @@ def test_stay_cannot_end_before_it_starts(session: Session) -> None:
 
     with pytest.raises(IntegrityError):
         session.flush()
+
+
+def test_owner_is_always_active(session: Session) -> None:
+    """
+    GIVEN nothing yet
+    WHEN  an inactive owner is saved, past the service
+    THEN  the database refuses it: the owner is always active (FR-63)
+    """
+    home = homes_service.create_home(
+        session, name="Our Flat", area=None, first_month=date(2026, 11, 1)
+    )
+    person = Person(phone="+8801712345678")
+    session.add(person)
+    session.flush()
+
+    session.add(
+        Membership(
+            home_id=home.id,
+            person_id=person.id,
+            name="Rabbi",
+            role=Role.OWNER,
+            status=MembershipStatus.INACTIVE,
+        )
+    )
+
+    with pytest.raises(IntegrityError):
+        session.flush()

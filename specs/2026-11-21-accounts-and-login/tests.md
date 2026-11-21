@@ -260,9 +260,9 @@ End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who
 
 ### B34 — The owner can't be deactivated; a manager can't deactivate a manager
 
-- [x] T34.1 unit — `test_owner_cannot_be_deactivated`: 400
-- [x] T34.2 unit — `test_manager_cannot_deactivate_another_manager`: 403
-- [x] T34.3 unit (database rule) — `test_owner_is_always_active`
+- [x] T34.1 unit — `test_owner_cannot_be_deactivated` ✅: 400
+- [x] T34.2 unit — `test_manager_cannot_deactivate_another_manager` ✅: 403
+- [x] T34.3 unit (database rule) — `test_owner_is_always_active` ✅
 - [x] T34.4 web integration — member list: no Deactivate on the owner's row; a manager sees none on a manager's row
 
 ### B35 — Reactivating, from the date charges start again

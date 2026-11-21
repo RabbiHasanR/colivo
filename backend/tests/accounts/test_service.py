@@ -836,3 +836,52 @@ def test_inactive_member_cannot_be_deactivated_again(
         service.deactivate(session, owner, member.id, today, clock())
 
     assert error.value.status_code == 409
+
+
+TODAY = date(2026, 11, 21)
+
+
+def test_owner_cannot_be_deactivated(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat" and lives there
+    WHEN  he is deactivated
+    THEN  it is refused with 400: the owner always stays (FR-63)
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+
+    with pytest.raises(HTTPException) as error:
+        service.deactivate(session, owner, owner.id, DeactivateIn(on=TODAY), clock())
+
+    assert error.value.status_code == 400
+
+
+def test_manager_cannot_deactivate_another_manager(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN "Our Flat" has two managers, Hijam and Maruf
+    WHEN  Hijam deactivates Maruf
+    THEN  it is refused with 403: removing a manager is the owner's call
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    hijam = service.add_member(
+        session,
+        notifier,
+        owner,
+        maruf(
+            name="Hijam",
+            contact=Contact(channel=Channel.SMS, value=OTHER_PHONE),
+            role="manager",
+        ),
+        clock(),
+    )
+    manager = service.add_member(
+        session, notifier, owner, maruf(role="manager"), clock()
+    )
+
+    with pytest.raises(HTTPException) as error:
+        service.deactivate(session, hijam, manager.id, DeactivateIn(on=TODAY), clock())
+
+    assert error.value.status_code == 403

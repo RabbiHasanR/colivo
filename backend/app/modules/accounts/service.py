@@ -48,6 +48,8 @@ MEMBER_NOT_FOUND = "Member not found."
 OWNER_ROLE_FIXED = "The owner's role can't change."
 DEACTIVATE_LATER = "Deactivation starts today or earlier."
 ALREADY_INACTIVE = "This member is already deactivated."
+OWNER_STAYS = "The owner can't be deactivated."
+MANAGER_FOR_OWNER = "Only the owner can deactivate a manager."
 DEACTIVATE_BEFORE_STAY = "Deactivation can't start before their stay began."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
@@ -684,10 +686,16 @@ def deactivate(
         The deactivated membership.
 
     Raises:
-        HTTPException: 404 for another home's member; 409 when already
+        HTTPException: 404 for another home's member; 400 for the owner;
+            403 for a manager deactivating a manager; 409 when already
             inactive; 400 for a date after today or before their stay began.
     """
     member = get_member(session, editor.home_id, member_id, lock=True)
+    if member.role == Role.OWNER:
+        raise HTTPException(400, OWNER_STAYS)
+    if member.role == Role.MANAGER and editor.role != Role.OWNER:
+        # A manager can't make managers (FR-64), so can't remove one either.
+        raise HTTPException(403, MANAGER_FOR_OWNER)
     if member.status == MembershipStatus.INACTIVE:
         raise HTTPException(409, ALREADY_INACTIVE)
     if data.on > home_today(session, member.home_id, now):

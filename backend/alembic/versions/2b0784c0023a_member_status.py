@@ -29,6 +29,12 @@ def upgrade() -> None:
         unique=True,
         postgresql_where=sa.text("role = 'owner'"),
     )
+    # The owner is always active (FR-63).
+    op.create_check_constraint(
+        op.f("ck_membership_owner_active"),
+        "membership",
+        "role <> 'owner' OR status = 'active'",
+    )
     # A stay never ends before it starts.
     op.create_check_constraint(
         op.f("ck_membership_period_ends_on"),
@@ -42,4 +48,5 @@ def downgrade() -> None:
     op.drop_constraint(
         op.f("ck_membership_period_ends_on"), "membership_period", type_="check"
     )
+    op.drop_constraint(op.f("ck_membership_owner_active"), "membership", type_="check")
     op.drop_index("uq_membership_one_owner", table_name="membership")
