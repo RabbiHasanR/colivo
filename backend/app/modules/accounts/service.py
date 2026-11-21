@@ -33,6 +33,7 @@ from app.modules.homes.models import Home
 
 ALREADY_IN_A_HOME = "This phone or email is already in a home."
 PAST_MEMBER = "This person was a member of this home. Reactivate them instead."
+NAME_TAKEN = "Someone in this home already has that name."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -82,6 +83,36 @@ def active_membership(session: Session, person: Person) -> Membership | None:
             Membership.status == MembershipStatus.ACTIVE,
         )
     ).first()
+
+
+def check_name_free(
+    session: Session,
+    home_id: uuid.UUID,
+    name: str,
+    except_id: uuid.UUID | None = None,
+) -> None:
+    """Refuse a name an active member of the home already has (FR-04).
+
+    Letter case doesn't count: "Maruf" and "maruf" are the same name.
+
+    Args:
+        session: The database session.
+        home_id: The home.
+        name: The name wanted.
+        except_id: A member whose own current name doesn't count (editing).
+
+    Raises:
+        HTTPException: 409 when the name is taken.
+    """
+    query = select(Membership.id).where(
+        Membership.home_id == home_id,
+        Membership.status == MembershipStatus.ACTIVE,
+        func.lower(Membership.name) == name.lower(),
+    )
+    if except_id is not None:
+        query = query.where(Membership.id != except_id)
+    if session.exec(query).first():
+        raise HTTPException(409, NAME_TAKEN)
 
 
 def membership_in(
@@ -270,8 +301,9 @@ def add_member(
         The new membership.
 
     Raises:
-        HTTPException: 409 when the person is already active in a home, or
-            was a member of this one (they are reactivated instead).
+        HTTPException: 409 when the person is already active in a home, was
+            a member of this one (they are reactivated instead), or an active
+            member already has the name.
     """
     person = find_person(session, data.contact)
     if person and active_membership(session, person):
@@ -279,6 +311,7 @@ def add_member(
         raise HTTPException(409, ALREADY_IN_A_HOME)
     if person and membership_in(session, person, adder.home_id):
         raise HTTPException(409, PAST_MEMBER)
+    check_name_free(session, adder.home_id, data.name)
     person = person or new_person(data.contact)
     session.add(person)
     session.flush()

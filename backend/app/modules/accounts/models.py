@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import CheckConstraint, Index, Text, UniqueConstraint, text
+from sqlalchemy import CheckConstraint, Index, Text, UniqueConstraint, func, text
 from sqlmodel import Field
 
 from app.core.models import TableBase, check_in, short_text_check
@@ -47,6 +47,14 @@ class Membership(TableBase, table=True):
         check_in("status", MembershipStatus),
         # One membership per person per home: a returning member is reactivated.
         UniqueConstraint("home_id", "person_id"),
+        # Names unique among a home's active members, any letter case (FR-04).
+        Index(
+            "uq_membership_active_name",
+            "home_id",
+            func.lower(text("name")),
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+        ),
         # One active home per person (FR-85).
         Index(
             "uq_membership_active_person_id",

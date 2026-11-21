@@ -457,3 +457,50 @@ def test_deactivated_member_of_this_home_is_not_added_again(
     assert error.value.status_code == 409
     assert "Reactivate" in str(error.value.detail)
     assert maruf_memberships(session, person) == 1
+
+
+OTHER_PHONE = "+8801912345678"
+
+
+@pytest.mark.parametrize("name", ["Maruf", "maruf"])
+def test_two_active_members_cannot_share_a_name(
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    name: str,
+) -> None:
+    """
+    GIVEN Maruf is an active member of "Our Flat"
+    WHEN  the owner adds someone else named "Maruf" or "maruf"
+    THEN  it is refused with 409: names are unique among active members (FR-04)
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    service.add_member(session, notifier, owner, maruf(), clock())
+    other = Contact(channel=Channel.SMS, value=OTHER_PHONE)
+
+    with pytest.raises(HTTPException) as error:
+        service.add_member(
+            session, notifier, owner, maruf(name=name, contact=other), clock()
+        )
+
+    assert error.value.status_code == 409
+
+
+def test_a_deactivated_members_name_can_be_used_again(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN an earlier Maruf left "Our Flat" and was deactivated
+    WHEN  the owner adds a new person also named Maruf
+    THEN  the new Maruf is added: only active members' names must differ
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    add_past_member(session, owner.home_id)
+    newcomer = Contact(channel=Channel.SMS, value=OTHER_PHONE)
+
+    member = service.add_member(
+        session, notifier, owner, maruf(contact=newcomer), clock()
+    )
+
+    assert member.name == "Maruf"

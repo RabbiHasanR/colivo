@@ -189,9 +189,9 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 
 ### B25 — Active members' names are unique, ignoring letter case
 
-- [x] T25.1 unit — `test_two_active_members_cannot_share_a_name` (parametrised): "Maruf" and "maruf" → 409
-- [x] T25.2 unit — `test_a_deactivated_members_name_can_be_used_again`
-- [x] T25.3 unit (database rule) — `test_database_refuses_two_active_members_with_one_name`
+- [x] T25.1 unit — `test_two_active_members_cannot_share_a_name` ✅ (parametrised): "Maruf" and "maruf" → 409
+- [x] T25.2 unit — `test_a_deactivated_members_name_can_be_used_again` ✅ _(passes once only active members are checked; seen failing against a check of every member)_
+- [x] T25.3 unit (database rule) — `test_database_refuses_two_active_members_with_one_name` ✅
 
 ### B26 — The owner or a manager changes a member's name or join date
 

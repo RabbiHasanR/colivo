@@ -154,3 +154,24 @@ def test_person_has_one_membership_per_home(session: Session) -> None:
 
     with pytest.raises(IntegrityError):
         session.flush()
+
+
+def test_database_refuses_two_active_members_with_one_name(session: Session) -> None:
+    """
+    GIVEN Maruf is an active member of "Our Flat"
+    WHEN  another active member named "maruf" is saved, past the service
+    THEN  the database refuses it (names unique among active members, any case)
+    """
+    home = homes_service.create_home(
+        session, name="Our Flat", area=None, first_month=date(2026, 11, 1)
+    )
+    people = [Person(phone="+8801812345678"), Person(phone="+8801912345678")]
+    session.add_all(people)
+    session.flush()
+    session.add(Membership(home_id=home.id, person_id=people[0].id, name="Maruf"))
+    session.flush()
+
+    session.add(Membership(home_id=home.id, person_id=people[1].id, name="maruf"))
+
+    with pytest.raises(IntegrityError):
+        session.flush()
