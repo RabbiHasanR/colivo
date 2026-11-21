@@ -21,8 +21,8 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 - [x] T1.2 integration — `POST /api/v1/auth/sign-up` ✅ answers 201 with `MeOut` and sets the session cookie
 - [x] T1.3 integration — `POST /api/v1/auth/sign-up` ✅ answers 422 for a missing, blank or over-80-character name or home name
 - [x] T1.4 unit (database rule) — `test_home_and_member_checks_reject_bad_rows` ✅: blank or 81-character home or member name, 81-character area, first month not on the 1st; a badly formed Home ID is added with `home.code` in B4
-- [x] T1.5 web integration — sign-up form: "Send code and create home" asks for a code, then shows the code step ("Sent to …"), then sends every field with the code
-- [x] T1.6 web integration — sign-up form shows 422 messages under their fields
+- [x] T1.5 web integration — `sends a code, then creates the home with every field` ✅: sign-up form: "Send code and create home" asks for a code, then shows the code step ("Sent to …"), then sends every field with the code
+- [x] T1.6 web integration — `shows 422 messages under their fields` ✅: sign-up form shows 422 messages under their fields
 
 ### B2 — "I live here too" decides whether the owner pays
 

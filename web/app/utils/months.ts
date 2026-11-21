@@ -1,3 +1,6 @@
+/** A new home's time zone (NFR-10); the backend's `home.time_zone` default. */
+export const DEFAULT_TIME_ZONE = 'Asia/Dhaka';
+
 export interface MonthChoice {
   /** The month's 1st, as the API takes it: `2026-11-01`. */
   value: string;
