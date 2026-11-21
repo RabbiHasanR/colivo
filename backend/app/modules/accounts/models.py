@@ -103,6 +103,13 @@ class MembershipPeriod(TableBase, table=True):
 
     __table_args__ = (
         CheckConstraint("ends_on IS NULL OR ends_on >= starts_on", name="ends_on"),
+        # At most one open stay per member.
+        Index(
+            "uq_membership_period_open",
+            "membership_id",
+            unique=True,
+            postgresql_where=text("ends_on IS NULL"),
+        ),
     )
 
     home_id: uuid.UUID = Field(foreign_key="home.id")

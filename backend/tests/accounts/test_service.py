@@ -23,6 +23,7 @@ from app.modules.accounts.schemas import (
     MemberIn,
     MemberUpdateIn,
     MeUpdateIn,
+    ReactivateIn,
     RoleIn,
     SignUpIn,
 )
@@ -885,3 +886,82 @@ def test_manager_cannot_deactivate_another_manager(
         service.deactivate(session, hijam, manager.id, DeactivateIn(on=TODAY), clock())
 
     assert error.value.status_code == 403
+
+
+def maruf_who_left(
+    session: Session, notifier: FakeNotifier, owner: Membership, clock: MovableClock
+) -> Membership:
+    """Maruf, who lived in "Our Flat" from 1 to 20 Nov 2026 and was deactivated."""
+    member = service.add_member(
+        session, notifier, owner, maruf(joined_on=date(2026, 11, 1)), clock()
+    )
+    return service.deactivate(
+        session, owner, member.id, DeactivateIn(on=date(2026, 11, 20)), clock()
+    )
+
+
+def test_reactivating_opens_a_new_stay_from_the_chosen_date(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf lived in "Our Flat" from 1 to 20 Nov 2026 and was deactivated
+    WHEN  the owner reactivates him, charges starting again on 1 Dec
+    THEN  he is active, his old stay is kept, a new one starts on 1 Dec, and
+          the history keeps it
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = maruf_who_left(session, notifier, owner, clock)
+
+    back = service.reactivate(
+        session, owner, member.id, ReactivateIn(on=date(2026, 12, 1)), clock()
+    )
+
+    assert back.status == MembershipStatus.ACTIVE
+    assert stays_of(session, back) == [
+        (date(2026, 11, 1), date(2026, 11, 20)),
+        (date(2026, 12, 1), None),
+    ]
+    last = history_of(session, back)[-1]
+    assert (last.action, last.old_values, last.new_values) == (
+        "update",
+        {"status": "inactive"},
+        {"status": "active", "on": "2026-12-01"},
+    )
+
+
+def test_reactivation_date_must_be_after_the_deactivation(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf's stay in "Our Flat" ended on 20 Nov 2026
+    WHEN  he is reactivated from 20 Nov, the same day
+    THEN  it is refused with 400: charges start again after he left
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = maruf_who_left(session, notifier, owner, clock)
+
+    with pytest.raises(HTTPException) as error:
+        service.reactivate(
+            session, owner, member.id, ReactivateIn(on=date(2026, 11, 20)), clock()
+        )
+
+    assert error.value.status_code == 400
+
+
+def test_active_member_cannot_be_reactivated(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf is an active member of "Our Flat"
+    WHEN  he is reactivated from 1 Dec 2026
+    THEN  it is refused with 409
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+
+    with pytest.raises(HTTPException) as error:
+        service.reactivate(
+            session, owner, member.id, ReactivateIn(on=date(2026, 12, 1)), clock()
+        )
+
+    assert error.value.status_code == 409

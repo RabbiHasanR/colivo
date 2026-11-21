@@ -30,6 +30,7 @@ from app.modules.accounts.schemas import (
     MeOut,
     MePersonOut,
     MeUpdateIn,
+    ReactivateIn,
     RoleIn,
     SignUpIn,
 )
@@ -50,6 +51,8 @@ DEACTIVATE_LATER = "Deactivation starts today or earlier."
 ALREADY_INACTIVE = "This member is already deactivated."
 OWNER_STAYS = "The owner can't be deactivated."
 MANAGER_FOR_OWNER = "Only the owner can deactivate a manager."
+REACTIVATE_TOO_EARLY = "Charges can start again only after their last stay ended."
+ALREADY_ACTIVE = "This member is already active."
 DEACTIVATE_BEFORE_STAY = "Deactivation can't start before their stay began."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
@@ -750,3 +753,71 @@ def home_today(session: Session, home_id: uuid.UUID, now: datetime) -> date:
     """
     home = session.get_one(Home, home_id)
     return now.astimezone(ZoneInfo(home.time_zone)).date()
+
+
+def reactivate(
+    session: Session,
+    editor: Membership,
+    member_id: uuid.UUID,
+    data: ReactivateIn,
+    now: datetime,
+) -> Membership:
+    """Reactivate a member from the date charges start again (FR-92).
+
+    A new stay opens on that date; the old ones are kept. The member's row is
+    locked first.
+
+    Args:
+        session: The database session.
+        editor: The owner or manager reactivating them.
+        member_id: The member.
+        data: The date charges start again.
+        now: The current time.
+
+    Returns:
+        The reactivated membership.
+
+    Raises:
+        HTTPException: 404 for another home's member; 409 when already
+            active; 400 for a date not after their last stay ended.
+    """
+    member = get_member(session, editor.home_id, member_id, lock=True)
+    if member.status == MembershipStatus.ACTIVE:
+        raise HTTPException(409, ALREADY_ACTIVE)
+    last_end = last_stay_end(session, member)
+    if last_end is not None and data.on <= last_end:
+        raise HTTPException(400, REACTIVATE_TOO_EARLY)
+    session.add(
+        MembershipPeriod(
+            home_id=member.home_id, membership_id=member.id, starts_on=data.on
+        )
+    )
+    record_member_change(
+        session,
+        member,
+        changed_by=editor,
+        action=ChangeAction.UPDATE,
+        old_values={"status": member.status},
+        new_values={"status": MembershipStatus.ACTIVE, "on": data.on.isoformat()},
+    )
+    member.status = MembershipStatus.ACTIVE
+    session.commit()
+    session.refresh(member)
+    return member
+
+
+def last_stay_end(session: Session, member: Membership) -> date | None:
+    """The day the member's latest stay ended, if any stay ended.
+
+    Args:
+        session: The database session.
+        member: The member.
+
+    Returns:
+        The date, or None when no stay has ended.
+    """
+    return session.exec(
+        select(func.max(MembershipPeriod.ends_on)).where(
+            MembershipPeriod.membership_id == member.id
+        )
+    ).one()

@@ -97,6 +97,12 @@ class DeactivateIn(BaseModel):
     reason: str | None = None
 
 
+class ReactivateIn(BaseModel):
+    """Reactivate a member from the date charges start again (FR-92)."""
+
+    on: date
+
+
 class MemberOut(BaseModel):
     """A member of the home, for the owner and managers' members list."""
 

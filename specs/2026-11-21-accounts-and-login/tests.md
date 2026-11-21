@@ -267,11 +267,11 @@ End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who
 
 ### B35 — Reactivating, from the date charges start again
 
-- [x] T35.1 unit — `test_reactivating_opens_a_new_stay_from_the_chosen_date`: active; the old stay kept and a new one opened; recorded in the history
-- [x] T35.2 unit — `test_reactivation_date_must_be_after_the_deactivation`: the same day → 400
-- [x] T35.3 unit — `test_active_member_cannot_be_reactivated`: 409
-- [x] T35.4 unit (database rule) — `test_member_has_one_open_stay`
-- [x] T35.5 integration — `test_reactivate_answers_422_without_a_date`
+- [x] T35.1 unit — `test_reactivating_opens_a_new_stay_from_the_chosen_date` ✅: active; the old stay kept and a new one opened; recorded in the history
+- [x] T35.2 unit — `test_reactivation_date_must_be_after_the_deactivation` ✅: the same day → 400
+- [x] T35.3 unit — `test_active_member_cannot_be_reactivated` ✅: 409
+- [x] T35.4 unit (database rule) — `test_member_has_one_open_stay` ✅
+- [x] T35.5 integration — `test_reactivate_answers_422_without_a_date` ✅
 - [x] T35.6 web integration — reactivate dialog: Confirm sends the date charges start again and tells the page
 
 ### B36 — Reactivating is refused while active elsewhere or the name is taken

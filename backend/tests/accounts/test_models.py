@@ -266,3 +266,35 @@ def test_owner_is_always_active(session: Session) -> None:
 
     with pytest.raises(IntegrityError):
         session.flush()
+
+
+def test_member_has_one_open_stay(session: Session) -> None:
+    """
+    GIVEN Maruf has an open stay in "Our Flat" (no end yet)
+    WHEN  a second open stay is saved for him, past the service
+    THEN  the database refuses it
+    """
+    home = homes_service.create_home(
+        session, name="Our Flat", area=None, first_month=date(2026, 11, 1)
+    )
+    person = Person(phone="+8801812345678")
+    session.add(person)
+    session.flush()
+    member = Membership(home_id=home.id, person_id=person.id, name="Maruf")
+    session.add(member)
+    session.flush()
+    session.add(
+        MembershipPeriod(
+            home_id=home.id, membership_id=member.id, starts_on=date(2026, 11, 1)
+        )
+    )
+    session.flush()
+
+    session.add(
+        MembershipPeriod(
+            home_id=home.id, membership_id=member.id, starts_on=date(2026, 12, 1)
+        )
+    )
+
+    with pytest.raises(IntegrityError):
+        session.flush()

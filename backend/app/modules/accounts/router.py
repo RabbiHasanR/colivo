@@ -26,6 +26,7 @@ from app.modules.accounts.schemas import (
     MemberUpdateIn,
     MeOut,
     MeUpdateIn,
+    ReactivateIn,
     RoleIn,
     SignUpIn,
 )
@@ -236,5 +237,22 @@ def deactivate(
     """Deactivate a member from a date; they can't log in from then on."""
     member = service.deactivate(session, editor, member_id, data, clock())
     set_response_message(request, "Member deactivated")
+    response.status_code = 200
+    return service.member_out(session, member)
+
+
+@router.post("/members/{member_id}/reactivate")
+def reactivate(
+    request: Request,
+    response: Response,
+    member_id: uuid.UUID,
+    data: ReactivateIn,
+    editor: OwnerOrManagerDep,
+    session: SessionDep,
+    clock: ClockDep,
+) -> MemberOut:
+    """Reactivate a member from the date charges start again."""
+    member = service.reactivate(session, editor, member_id, data, clock())
+    set_response_message(request, "Member reactivated")
     response.status_code = 200
     return service.member_out(session, member)

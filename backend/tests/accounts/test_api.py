@@ -742,3 +742,20 @@ def test_deactivate_answers_422_without_a_date(
     response = client.post(f"/api/v1/members/{member_id}/deactivate", json={})
 
     assert response.status_code == 422
+
+
+def test_reactivate_answers_422_without_a_date(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf and deactivated him
+    WHEN  they reactivate Maruf without saying from when
+    THEN  it answers 422
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    client.post(f"/api/v1/members/{member_id}/deactivate", json={"on": "2026-11-21"})
+
+    response = client.post(f"/api/v1/members/{member_id}/reactivate", json={})
+
+    assert response.status_code == 422

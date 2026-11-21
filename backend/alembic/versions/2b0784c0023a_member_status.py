@@ -35,6 +35,14 @@ def upgrade() -> None:
         "membership",
         "role <> 'owner' OR status = 'active'",
     )
+    # At most one open stay per member.
+    op.create_index(
+        "uq_membership_period_open",
+        "membership_period",
+        ["membership_id"],
+        unique=True,
+        postgresql_where=sa.text("ends_on IS NULL"),
+    )
     # A stay never ends before it starts.
     op.create_check_constraint(
         op.f("ck_membership_period_ends_on"),
@@ -48,5 +56,6 @@ def downgrade() -> None:
     op.drop_constraint(
         op.f("ck_membership_period_ends_on"), "membership_period", type_="check"
     )
+    op.drop_index("uq_membership_period_open", table_name="membership_period")
     op.drop_constraint(op.f("ck_membership_owner_active"), "membership", type_="check")
     op.drop_index("uq_membership_one_owner", table_name="membership")
