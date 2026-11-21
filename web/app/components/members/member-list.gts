@@ -41,9 +41,7 @@ export default class MemberList extends Component<MemberListSignature> {
             <th scope="col">Role</th>
             <th scope="col">Status</th>
             <th scope="col">Joined</th>
-            {{#if @onEdit}}<th scope="col"><span
-                  class="sr-only"
-                >Change</span></th>{{/if}}
+            <th scope="col"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
