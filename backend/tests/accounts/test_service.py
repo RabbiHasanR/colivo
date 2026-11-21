@@ -1061,3 +1061,30 @@ def test_manager_cannot_reactivate_a_manager(
     assert error.value.status_code == 403
     session.refresh(manager)
     assert manager.status == MembershipStatus.INACTIVE
+
+
+def test_manager_cannot_change_the_owners_details(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat", living there since 1 Nov 2026, and
+          Hijam is a manager
+    WHEN  Hijam renames the owner and moves his join date
+    THEN  it is refused with 403, and the owner's details stay as they were
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    hijam = hijam_the_manager(session, notifier, owner, clock)
+
+    with pytest.raises(HTTPException) as error:
+        service.update_member(
+            session,
+            hijam,
+            owner.id,
+            MemberUpdateIn(name="Somebody Else", joined_on=date(2026, 11, 15)),
+            clock(),
+        )
+
+    assert error.value.status_code == 403
+    session.refresh(owner)
+    assert owner.name == "Rabbi Hasan"
+    assert stays_of(session, owner) == [(date(2026, 11, 1), None)]

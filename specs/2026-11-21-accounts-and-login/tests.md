@@ -296,8 +296,8 @@ From the `/security-review` of the branch (21 Nov 2026), agreed with the user.
 
 ### B39 — A manager can't change the owner's name or join date
 
-- [x] T39.1 unit — `test_manager_cannot_change_the_owners_details`: 403; the owner's name and join date stay
-- [x] T39.2 web integration — member list: a manager sees no Edit on the owner's row
+- [x] T39.1 unit — `test_manager_cannot_change_the_owners_details` ✅: 403; the owner's name and join date stay
+- [x] T39.2 web integration — `a manager can't edit the owner's details` ✅: member list: a manager sees no Edit on the owner's row
 
 ### B40 — Production refuses the development notifier
 

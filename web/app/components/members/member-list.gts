@@ -6,7 +6,7 @@ import type { Member } from '../../services/members';
 import type SessionService from '../../services/session';
 import type { Me } from '../../services/session';
 import { formatDate } from '../../utils/dates';
-import { canChangeStatus } from '../../utils/members';
+import { canChangeStatus, canEditDetails } from '../../utils/members';
 import { eq } from '../../utils/template';
 import { roleLabel } from '../../utils/roles';
 import Button from '../ui/button';
@@ -66,12 +66,14 @@ export default class MemberList extends Component<MemberListSignature> {
                   {{/if}}
                 {{/if}}
                 {{#if @onEdit}}
-                  <Button
-                    @variant="secondary"
-                    aria-label="Change {{member.name}}"
-                    data-test-edit-member={{member.name}}
-                    {{on "click" (fn @onEdit member)}}
-                  >Edit</Button>
+                  {{#if (canEditDetails this.viewer member)}}
+                    <Button
+                      @variant="secondary"
+                      aria-label="Change {{member.name}}"
+                      data-test-edit-member={{member.name}}
+                      {{on "click" (fn @onEdit member)}}
+                    >Edit</Button>
+                  {{/if}}
                 {{/if}}
                 {{#if (eq member.status "active")}}
                   {{#if @onDeactivate}}

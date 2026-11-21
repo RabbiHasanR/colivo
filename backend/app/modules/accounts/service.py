@@ -52,6 +52,7 @@ ALREADY_INACTIVE = "This member is already deactivated."
 OWNER_STAYS = "The owner can't be deactivated."
 MANAGER_FOR_OWNER = "Only the owner can deactivate a manager."
 REACTIVATE_MANAGER_FOR_OWNER = "Only the owner can reactivate a manager."
+OWNER_DETAILS_FOR_OWNER = "Only the owner can change the owner's details."
 REACTIVATE_TOO_EARLY = "Charges can start again only after their last stay ended."
 ALREADY_ACTIVE = "This member is already active."
 DEACTIVATE_BEFORE_STAY = "Deactivation can't start before their stay began."
@@ -466,10 +467,13 @@ def update_member(
         The changed membership.
 
     Raises:
-        HTTPException: 404 for a member of another home; 400 for a join date
-            they can't have; 409 for a name an active member already has.
+        HTTPException: 404 for a member of another home; 403 for a manager
+            changing the owner; 400 for a join date they can't have; 409 for
+            a name an active member already has.
     """
     member = get_member(session, editor.home_id, member_id)
+    if member.role == Role.OWNER and editor.role != Role.OWNER:
+        raise HTTPException(403, OWNER_DETAILS_FOR_OWNER)
     old_values: dict[str, Any] = {}
     new_values: dict[str, Any] = {}
     if data.name is not None and data.name != member.name:

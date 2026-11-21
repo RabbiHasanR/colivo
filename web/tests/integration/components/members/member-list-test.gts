@@ -163,4 +163,22 @@ module('Integration | Component | members/member-list', function (hooks) {
     assert.dom('[data-test-reactivate="Rahim"]').exists();
     assert.dom('[data-test-reactivate="Karim"]').doesNotExist();
   });
+
+  test("a manager can't edit the owner's details", async function (assert) {
+    // GIVEN "Our Flat": its owner and Maruf
+    // WHEN  a manager looks at the list
+    // THEN  Maruf's row has Edit; the owner's row doesn't
+    this.owner.lookup('service:session').me = me('manager');
+    const members = [owner, member()];
+    const onEdit = () => {};
+
+    await render(
+      <template>
+        <MemberList @members={{members}} @onEdit={{onEdit}} />
+      </template>,
+    );
+
+    assert.dom('[data-test-edit-member="Maruf"]').exists();
+    assert.dom('[data-test-edit-member="Rabbi Hasan"]').doesNotExist();
+  });
 });
