@@ -8,7 +8,7 @@ import {
   type CodeSent,
   type SignUpFields,
 } from '../data/builders/auth';
-import { getMe, type Me } from '../data/builders/me';
+import { getMe, updateMe, type Me } from '../data/builders/me';
 import { ApiError } from '../utils/api-error';
 
 // For components, which don't import the data layer.
@@ -62,6 +62,13 @@ export default class SessionService extends Service {
 
   async signUp(fields: SignUpFields): Promise<Me> {
     const { content } = await this.store.request<Me>(signUp(fields));
+    this.me = content;
+    return content;
+  }
+
+  /** Fix your own name and finish the first log-in check (FR-86). */
+  async updateMe(name: string): Promise<Me> {
+    const { content } = await this.store.request<Me>(updateMe(name));
     this.me = content;
     return content;
   }

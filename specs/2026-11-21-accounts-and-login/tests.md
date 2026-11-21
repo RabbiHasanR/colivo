@@ -206,8 +206,8 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 - [x] T27.1 unit — `test_me_says_who_added_the_member_and_whether_they_checked` ✅: a new member → added by "Rabbi Hasan", not checked; the owner who signed up → checked
 - [x] T27.2 unit — `test_member_fixes_their_name_and_checks_their_details` ✅
 - [x] T27.3 integration — `test_change_me_answers_422_for_a_blank_name` ✅
-- [x] T27.4 web integration — first log-in check: shows the home, role, join date and who added them; "Go to my home" sends the name
-- [x] T27.5 web acceptance — a member who hasn't checked their details sees the check first, then their home; the next time, straight home (`first-log-in-test.ts`)
+- [x] T27.4 web integration — `shows where they were added, then sends their name` ✅: first log-in check: shows the home, role, join date and who added them; "Go to my home" sends the name
+- [x] T27.5 web acceptance — `a member checks their details once, then goes straight home` ✅: a member who hasn't checked their details sees the check first, then their home; the next time, straight home (`first-log-in-test.ts`)
 
 ### B28 — Another home's member, or an unknown id, gives 404
 
