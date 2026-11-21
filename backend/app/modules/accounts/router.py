@@ -134,6 +134,19 @@ def get_me(
     return service.get_me(session, membership)
 
 
+@router.get("/members")
+def list_members(
+    request: Request,
+    response: Response,
+    membership: OwnerOrManagerDep,
+    session: SessionDep,
+) -> list[MemberOut]:
+    """Everyone in the home, for the owner and managers."""
+    set_response_message(request, "Members")
+    response.status_code = 200
+    return service.list_members(session, membership.home_id)
+
+
 @router.post("/members", status_code=201)
 def add_member(
     request: Request,

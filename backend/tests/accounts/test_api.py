@@ -514,3 +514,31 @@ def test_only_the_owner_can_add_a_manager(
     response = client.post("/api/v1/members", json=maruf_body(role="manager"))
 
     assert (response.status_code, members_named(session, "Maruf")) == (status, added)
+
+
+@pytest.mark.parametrize(
+    ("method", "body"),
+    [
+        pytest.param("GET", None, id="see the list"),
+        pytest.param("POST", maruf_body(), id="add a member"),
+    ],
+)
+def test_members_answer_403_for_a_member(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    clock: MovableClock,
+    method: str,
+    body: dict[str, Any] | None,
+) -> None:
+    """
+    GIVEN a member (not the owner or a manager) of "Our Flat" is logged in
+    WHEN  they ask for the members list, or try to add a member
+    THEN  both answer 403
+    """
+    sign_up_owner(client, redis_client, clock)
+    log_in_as_new(client, session, redis_client, clock, role=Role.MEMBER)
+
+    response = client.request(method, "/api/v1/members", json=body)
+
+    assert response.status_code == 403

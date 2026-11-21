@@ -1,3 +1,4 @@
+import uuid
 from datetime import date, datetime
 
 from redis import Redis
@@ -312,3 +313,21 @@ def member_out(session: Session, membership: Membership) -> MemberOut:
         status=membership.status,
         joined_on=joined_on(session, membership),
     )
+
+
+def list_members(session: Session, home_id: uuid.UUID) -> list[MemberOut]:
+    """Everyone in a home, A to Z, for the owner and managers.
+
+    Args:
+        session: The database session.
+        home_id: The home.
+
+    Returns:
+        The members, active and deactivated.
+    """
+    members = session.exec(
+        select(Membership)
+        .where(Membership.home_id == home_id)
+        .order_by(func.lower(Membership.name))
+    ).all()
+    return [member_out(session, member) for member in members]
