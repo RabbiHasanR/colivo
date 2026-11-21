@@ -109,29 +109,27 @@ module('Unit | Data | handlers', function () {
     assert.strictEqual(error.status, null);
   });
 
-  test('auth handler sends the token only when the session has one', async function (assert) {
-    // GIVEN a session with a token, and one without
-    // WHEN  a request passes through the auth handler
-    // THEN  it carries "Bearer <token>" only when there is a token
-    const cases: Array<[string | null, string | null]> = [
-      ['abc', 'Bearer abc'],
-      [null, null],
-    ];
+  test('auth handler sends cookies and no Authorization header', async function (assert) {
+    // GIVEN a request to the API, even one that still carries an old bearer token
+    // WHEN  it passes through the auth handler
+    // THEN  it goes with the session cookie (credentials: include) and no
+    //       Authorization header: the log-in lives in an httpOnly cookie
+    let sent: AppRequest | undefined;
 
-    for (const [token, expected] of cases) {
-      let sent: AppRequest | undefined;
-      const handler = createAuthHandler(() => token);
-
-      await handler.request(
-        { request: { url: '/api/v1/health' } },
-        (request) => {
-          sent = request;
-          return Promise.resolve({ content: null });
+    await createAuthHandler().request(
+      {
+        request: {
+          url: '/api/v1/me',
+          headers: new Headers({ Authorization: 'Bearer stale' }),
         },
-      );
+      },
+      (request) => {
+        sent = request;
+        return Promise.resolve({ content: null });
+      },
+    );
 
-      const authorization = sent?.headers?.get('Authorization') ?? null;
-      assert.strictEqual(authorization, expected, `token ${String(token)}`);
-    }
+    assert.strictEqual(sent?.credentials, 'include');
+    assert.strictEqual(sent?.headers?.get('Authorization') ?? null, null);
   });
 });

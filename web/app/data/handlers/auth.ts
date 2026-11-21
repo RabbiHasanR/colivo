@@ -1,24 +1,19 @@
 import type { Handler, NextFn, RequestContext } from './types';
 
 /**
- * Adds the session's bearer token to every request.
+ * Sends every API request with the session cookie, and never a token.
  *
- * What a 401 does (log out, go to log-in) is decided with log-in in Phase 1.
- *
- * @param getToken returns the current token, or null when logged out
+ * The log-in lives in an httpOnly cookie that page scripts can't read
+ * (specs/tech-stack.md → Decided in Phase 1), so the browser attaches it:
+ * `credentials: 'include'` lets it do so for the API's own origin.
  */
-export function createAuthHandler(getToken: () => string | null): Handler {
+export function createAuthHandler(): Handler {
   return {
     request<T>(context: RequestContext, next: NextFn<T>) {
       const headers = new Headers(context.request.headers);
       headers.set('Accept', 'application/json');
-
-      const token = getToken();
-      if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
-      }
-
-      return next({ ...context.request, headers });
+      headers.delete('Authorization');
+      return next({ ...context.request, headers, credentials: 'include' });
     },
   };
 }

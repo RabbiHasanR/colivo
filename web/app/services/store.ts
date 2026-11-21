@@ -5,7 +5,6 @@ import { ErrorHandler } from '../data/handlers/errors';
 import { createAuthHandler } from '../data/handlers/auth';
 import { createEnvelopeHandler } from '../data/handlers/api-envelope';
 import type { Handler } from '../data/handlers/types';
-import { readToken } from './session';
 
 /**
  * Our handlers use the small structural types in data/handlers/types.ts, so
@@ -27,7 +26,7 @@ const Store = useLegacyStore({
   cache: JSONAPICache,
   handlers: [
     ErrorHandler,
-    createAuthHandler(readToken),
+    createAuthHandler(),
     createEnvelopeHandler(),
   ].map(asWarpDriveHandler),
   schemas: [],
