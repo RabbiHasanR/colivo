@@ -1,16 +1,19 @@
 import re
+import uuid
 from datetime import timedelta
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 from redis import Redis
+from sqlmodel import Session, func, select
 
 from app.core.config import settings
 from app.core.notifier import Channel
-from app.modules.accounts import codes
+from app.modules.accounts import codes, sessions
 from app.modules.accounts.constants import SESSION_COOKIE
 from app.modules.accounts.contact import Contact
+from app.modules.accounts.models import Membership, Person, Role
 from tests.conftest import FakeNotifier, MovableClock
 
 PHONE = "01712 345678"
@@ -443,3 +446,71 @@ def test_add_member_answers_422_for_a_bad_name_or_contact(
     response = client.post("/api/v1/members", json=maruf_body(**changes))
 
     assert response.status_code == 422
+
+
+def owner_home_id(client: TestClient) -> uuid.UUID:
+    """The logged-in person's home."""
+    return uuid.UUID(client.get("/api/v1/me").json()["data"]["home"]["id"])
+
+
+def log_in_as_new(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    clock: MovableClock,
+    *,
+    role: Role,
+    phone: str = "+8801912345678",
+) -> None:
+    """Put someone with ``role`` in the logged-in person's home, and log in as them.
+
+    Set-up only: members can't be given roles through the API until group 5.
+    """
+    home_id = owner_home_id(client)
+    person = Person(phone=phone)
+    session.add(person)
+    session.flush()
+    session.add(
+        Membership(home_id=home_id, person_id=person.id, name="Hijam", role=role)
+    )
+    session.flush()
+    token = sessions.create_session(redis_client, person.id, clock())
+    client.cookies.clear()
+    client.cookies.set(SESSION_COOKIE, token)
+
+
+def members_named(session: Session, name: str) -> int:
+    """How many memberships have ``name``."""
+    return session.exec(
+        select(func.count()).select_from(Membership).where(Membership.name == name)
+    ).one()
+
+
+@pytest.mark.parametrize(
+    ("adder", "status", "added"),
+    [
+        pytest.param(Role.OWNER, 201, 1, id="owner"),
+        pytest.param(Role.MANAGER, 403, 0, id="manager"),
+    ],
+)
+def test_only_the_owner_can_add_a_manager(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    clock: MovableClock,
+    adder: Role,
+    status: int,
+    added: int,
+) -> None:
+    """
+    GIVEN "Our Flat", with its owner and (in one case) a manager logged in
+    WHEN  they add Maruf as a manager
+    THEN  the owner may (201); a manager may not (403), and nobody is added
+    """
+    sign_up_owner(client, redis_client, clock)
+    if adder == Role.MANAGER:
+        log_in_as_new(client, session, redis_client, clock, role=Role.MANAGER)
+
+    response = client.post("/api/v1/members", json=maruf_body(role="manager"))
+
+    assert (response.status_code, members_named(session, "Maruf")) == (status, added)

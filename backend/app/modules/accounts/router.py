@@ -1,4 +1,5 @@
 from fastapi import Request, Response
+from starlette.exceptions import HTTPException
 
 from app.api.deps import CurrentMemberDep, OwnerOrManagerDep
 from app.core.clock import ClockDep
@@ -11,6 +12,7 @@ from app.core.schemas import StandardResponse
 from app.core.utils import set_response_message
 from app.modules.accounts import service, sessions
 from app.modules.accounts.constants import SESSION_COOKIE, SESSION_LIFETIME
+from app.modules.accounts.models import Role
 from app.modules.accounts.schemas import (
     CodeErrorOut,
     CodeRequestIn,
@@ -143,6 +145,9 @@ def add_member(
     clock: ClockDep,
 ) -> MemberOut:
     """Add a member to the home; they get an SMS or email to log in."""
+    if data.role == Role.MANAGER and adder.role != Role.OWNER:
+        # FR-64: only the owner makes managers.
+        raise HTTPException(403, "Only the owner can add a manager.")
     member = service.add_member(session, notifier, adder, data, clock())
     set_response_message(request, "Member added")
     response.status_code = 201
