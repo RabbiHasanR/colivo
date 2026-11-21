@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
 from app.modules.accounts.models import Membership, Person, Role
+from app.modules.homes import service as homes_service
 from app.modules.homes.models import Home
 
 LONG = "x" * 81
@@ -56,4 +57,27 @@ def test_home_and_member_checks_reject_bad_rows(
                 home_id=home.id, person_id=person.id, name=member_name, role=Role.OWNER
             )
         )
+        session.flush()
+
+
+def test_person_cannot_have_two_active_memberships(session: Session) -> None:
+    """
+    GIVEN a person who is an active member of "Our Flat"
+    WHEN  an active membership of "Old Fort" is saved for them, past the service
+    THEN  the database refuses it (one active home per person, FR-85)
+    """
+    person = Person(phone="+8801712345678")
+    session.add(person)
+    homes = [
+        homes_service.create_home(
+            session, name=name, area=None, first_month=date(2026, 11, 1)
+        )
+        for name in ("Our Flat", "Old Fort")
+    ]
+    session.add(Membership(home_id=homes[0].id, person_id=person.id, name="Rabbi"))
+    session.flush()
+
+    session.add(Membership(home_id=homes[1].id, person_id=person.id, name="Rabbi"))
+
+    with pytest.raises(IntegrityError):
         session.flush()

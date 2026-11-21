@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import Text
+from sqlalchemy import Index, Text, text
 from sqlmodel import Field
 
 from app.core.models import TableBase, check_in, short_text_check
@@ -36,6 +36,13 @@ class Membership(TableBase, table=True):
         short_text_check("name"),
         check_in("role", Role),
         check_in("status", MembershipStatus),
+        # One active home per person (FR-85).
+        Index(
+            "uq_membership_active_person_id",
+            "person_id",
+            unique=True,
+            postgresql_where=text("status = 'active'"),
+        ),
     )
 
     home_id: uuid.UUID = Field(foreign_key="home.id")

@@ -3,14 +3,21 @@ from datetime import UTC, date, datetime
 
 import pytest
 from redis import Redis
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 from starlette.exceptions import HTTPException
 
 from app.core.notifier import Channel
 from app.modules.accounts import codes, service
 from app.modules.accounts.contact import Contact
-from app.modules.accounts.models import MembershipPeriod, MembershipStatus, Role
+from app.modules.accounts.models import (
+    Membership,
+    MembershipPeriod,
+    MembershipStatus,
+    Person,
+    Role,
+)
 from app.modules.accounts.schemas import SignUpIn
+from app.modules.homes import service as homes_service
 from app.modules.homes.models import Home
 from tests.conftest import MovableClock
 
@@ -131,3 +138,59 @@ def test_first_month_must_be_this_month_or_next(
 
     if isinstance(error, pytest.ExceptionInfo):
         assert error.value.status_code == 400
+
+
+def sign_up_with_new_code(
+    session: Session, redis_client: Redis, clock: MovableClock, **changes: object
+) -> Membership:
+    """Sign 01712 345678 up, with a fresh code and any form field changed."""
+    contact = Contact(channel=Channel.SMS, value=PHONE_E164)
+    code = codes.issue_code(redis_client, contact, clock())
+    data = sign_up_data(contact, code, **changes)
+    return service.sign_up(session, redis_client, data, clock())
+
+
+def test_sign_up_refused_when_already_active_in_a_home(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN 01712 345678 is the active owner of "Our Flat"
+    WHEN  they sign up again to create "Second Home"
+    THEN  it is refused with 409 ("log in instead"), and no second home exists
+    """
+    sign_up_with_new_code(session, redis_client, clock)
+
+    with pytest.raises(HTTPException) as error:
+        sign_up_with_new_code(session, redis_client, clock, home_name="Second Home")
+
+    assert error.value.status_code == 409
+    assert session.exec(select(func.count()).select_from(Home)).one() == 1
+
+
+def test_person_no_longer_active_anywhere_can_sign_up(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN 01712 345678 was a member of "Old Flat" and is now inactive there
+    WHEN  they sign up to create "Our Flat"
+    THEN  they own Our Flat, under the same person (one log-in)
+    """
+    person = Person(phone=PHONE_E164)
+    old_flat = homes_service.create_home(
+        session, name="Old Flat", area=None, first_month=date(2026, 1, 1)
+    )
+    session.add(person)
+    session.flush()
+    session.add(
+        Membership(
+            home_id=old_flat.id,
+            person_id=person.id,
+            name="Rabbi Hasan",
+            status=MembershipStatus.INACTIVE,
+        )
+    )
+    session.flush()
+
+    membership = sign_up_with_new_code(session, redis_client, clock)
+
+    assert membership.person_id == person.id
