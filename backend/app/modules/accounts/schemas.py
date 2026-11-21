@@ -90,6 +90,13 @@ class RoleIn(BaseModel):
     role: Literal[Role.MEMBER, Role.MANAGER]
 
 
+class DeactivateIn(BaseModel):
+    """Deactivate a member from a date: today or earlier (FR-92)."""
+
+    on: date
+    reason: str | None = None
+
+
 class MemberOut(BaseModel):
     """A member of the home, for the owner and managers' members list."""
 

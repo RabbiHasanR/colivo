@@ -99,6 +99,10 @@ class Membership(TableBase, table=True):
 class MembershipPeriod(TableBase, table=True):
     """A stay: when a member lives in the home and is charged (FR-92)."""
 
+    __table_args__ = (
+        CheckConstraint("ends_on IS NULL OR ends_on >= starts_on", name="ends_on"),
+    )
+
     home_id: uuid.UUID = Field(foreign_key="home.id")
     membership_id: uuid.UUID = Field(foreign_key="membership.id")
     starts_on: date

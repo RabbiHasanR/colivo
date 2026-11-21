@@ -29,8 +29,17 @@ def upgrade() -> None:
         unique=True,
         postgresql_where=sa.text("role = 'owner'"),
     )
+    # A stay never ends before it starts.
+    op.create_check_constraint(
+        op.f("ck_membership_period_ends_on"),
+        "membership_period",
+        "ends_on IS NULL OR ends_on >= starts_on",
+    )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
+    op.drop_constraint(
+        op.f("ck_membership_period_ends_on"), "membership_period", type_="check"
+    )
     op.drop_index("uq_membership_one_owner", table_name="membership")

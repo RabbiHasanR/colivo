@@ -18,6 +18,7 @@ from app.modules.accounts.models import (
     Role,
 )
 from app.modules.accounts.schemas import (
+    DeactivateIn,
     LogInIn,
     MemberIn,
     MemberUpdateIn,
@@ -758,3 +759,80 @@ def test_owners_own_role_cannot_change(
         service.change_role(session, owner, owner.id, RoleIn(role=Role.MEMBER), clock())
 
     assert error.value.status_code == 400
+
+
+def test_deactivating_closes_the_stay_on_the_chosen_date(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf has lived in "Our Flat" since 1 Nov 2026 (today is 21 Nov)
+    WHEN  the owner deactivates him from 20 Nov
+    THEN  he is inactive, his stay ends on 20 Nov, and the history keeps it
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(
+        session, notifier, owner, maruf(joined_on=date(2026, 11, 1)), clock()
+    )
+
+    gone = service.deactivate(
+        session, owner, member.id, DeactivateIn(on=date(2026, 11, 20)), clock()
+    )
+
+    assert gone.status == MembershipStatus.INACTIVE
+    assert stays_of(session, gone) == [(date(2026, 11, 1), date(2026, 11, 20))]
+    last = history_of(session, gone)[-1]
+    assert (last.action, last.changed_by, last.old_values, last.new_values) == (
+        "update",
+        owner.id,
+        {"status": "active"},
+        {"status": "inactive", "on": "2026-11-20"},
+    )
+
+
+@pytest.mark.parametrize(
+    "on",
+    [
+        pytest.param(date(2026, 11, 22), id="tomorrow"),
+        pytest.param(date(2026, 10, 31), id="before he joined"),
+    ],
+)
+def test_deactivation_date_must_be_today_or_earlier_and_in_the_stay(
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    on: date,
+) -> None:
+    """
+    GIVEN Maruf has lived in "Our Flat" since 1 Nov 2026, and today is 21 Nov
+    WHEN  the owner deactivates him from tomorrow, or from 31 Oct
+    THEN  it is refused with 400
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(
+        session, notifier, owner, maruf(joined_on=date(2026, 11, 1)), clock()
+    )
+
+    with pytest.raises(HTTPException) as error:
+        service.deactivate(session, owner, member.id, DeactivateIn(on=on), clock())
+
+    assert error.value.status_code == 400
+
+
+def test_inactive_member_cannot_be_deactivated_again(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf was deactivated from today
+    WHEN  the owner deactivates him again
+    THEN  it is refused with 409
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+    today = DeactivateIn(on=date(2026, 11, 21))
+    service.deactivate(session, owner, member.id, today, clock())
+
+    with pytest.raises(HTTPException) as error:
+        service.deactivate(session, owner, member.id, today, clock())
+
+    assert error.value.status_code == 409

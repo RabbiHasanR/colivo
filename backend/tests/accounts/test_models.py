@@ -4,7 +4,13 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
-from app.modules.accounts.models import Membership, MembershipStatus, Person, Role
+from app.modules.accounts.models import (
+    Membership,
+    MembershipPeriod,
+    MembershipStatus,
+    Person,
+    Role,
+)
 from app.modules.homes import service as homes_service
 from app.modules.homes.models import Home
 
@@ -199,6 +205,35 @@ def test_home_has_at_most_one_owner(session: Session) -> None:
     session.add(
         Membership(
             home_id=home.id, person_id=people[1].id, name="Maruf", role=Role.OWNER
+        )
+    )
+
+    with pytest.raises(IntegrityError):
+        session.flush()
+
+
+def test_stay_cannot_end_before_it_starts(session: Session) -> None:
+    """
+    GIVEN a member of "Our Flat"
+    WHEN  a stay ending before it starts is saved, past the service
+    THEN  the database refuses it
+    """
+    home = homes_service.create_home(
+        session, name="Our Flat", area=None, first_month=date(2026, 11, 1)
+    )
+    person = Person(phone="+8801812345678")
+    session.add(person)
+    session.flush()
+    member = Membership(home_id=home.id, person_id=person.id, name="Maruf")
+    session.add(member)
+    session.flush()
+
+    session.add(
+        MembershipPeriod(
+            home_id=home.id,
+            membership_id=member.id,
+            starts_on=date(2026, 11, 20),
+            ends_on=date(2026, 11, 19),
         )
     )
 

@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, datetime
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from redis import Redis
 from sqlmodel import Session, col, func, select
@@ -19,6 +20,7 @@ from app.modules.accounts.models import (
 )
 from app.modules.accounts.schemas import (
     CodeSentOut,
+    DeactivateIn,
     LogInIn,
     MeHomeOut,
     MemberIn,
@@ -44,6 +46,9 @@ NO_STAY = "Only someone who lives in the home has a join date."
 JOINED_AFTER_LEAVING = "The join date can't be after the end of their first stay."
 MEMBER_NOT_FOUND = "Member not found."
 OWNER_ROLE_FIXED = "The owner's role can't change."
+DEACTIVATE_LATER = "Deactivation starts today or earlier."
+ALREADY_INACTIVE = "This member is already deactivated."
+DEACTIVATE_BEFORE_STAY = "Deactivation can't start before their stay began."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -486,7 +491,11 @@ def update_member(
 
 
 def get_member(
-    session: Session, home_id: uuid.UUID, member_id: uuid.UUID
+    session: Session,
+    home_id: uuid.UUID,
+    member_id: uuid.UUID,
+    *,
+    lock: bool = False,
 ) -> Membership:
     """A member of ``home_id``; another home's members are never found.
 
@@ -494,6 +503,8 @@ def get_member(
         session: The database session.
         home_id: The home the request is for.
         member_id: The member asked for.
+        lock: Lock their row until the commit (status changes), so two
+            changes at the same moment can't both pass their checks.
 
     Returns:
         The membership.
@@ -502,7 +513,10 @@ def get_member(
         HTTPException: 404 for another home's member or an unknown id, so
             nobody learns another home's members exist (NFR-03).
     """
-    member = session.get(Membership, member_id)
+    query = select(Membership).where(Membership.id == member_id)
+    if lock:
+        query = query.with_for_update()
+    member = session.exec(query).first()
     if member is None or member.home_id != home_id:
         raise HTTPException(404, MEMBER_NOT_FOUND)
     return member
@@ -646,3 +660,85 @@ def change_role(
     session.commit()
     session.refresh(member)
     return member
+
+
+def deactivate(
+    session: Session,
+    editor: Membership,
+    member_id: uuid.UUID,
+    data: DeactivateIn,
+    now: datetime,
+) -> Membership:
+    """Deactivate a member from a date (FR-80, FR-92); they can't log in after.
+
+    Their open stay ends on that date. The member's row is locked first.
+
+    Args:
+        session: The database session.
+        editor: The owner or manager deactivating them.
+        member_id: The member.
+        data: The date it starts, and an optional reason.
+        now: The current time.
+
+    Returns:
+        The deactivated membership.
+
+    Raises:
+        HTTPException: 404 for another home's member; 409 when already
+            inactive; 400 for a date after today or before their stay began.
+    """
+    member = get_member(session, editor.home_id, member_id, lock=True)
+    if member.status == MembershipStatus.INACTIVE:
+        raise HTTPException(409, ALREADY_INACTIVE)
+    if data.on > home_today(session, member.home_id, now):
+        raise HTTPException(400, DEACTIVATE_LATER)
+    stay = open_stay(session, member)
+    if stay is not None and data.on < stay.starts_on:
+        raise HTTPException(400, DEACTIVATE_BEFORE_STAY)
+    if stay is not None:
+        stay.ends_on = data.on
+    record_member_change(
+        session,
+        member,
+        changed_by=editor,
+        action=ChangeAction.UPDATE,
+        old_values={"status": member.status},
+        new_values={"status": MembershipStatus.INACTIVE, "on": data.on.isoformat()},
+    )
+    member.status = MembershipStatus.INACTIVE
+    session.commit()
+    session.refresh(member)
+    return member
+
+
+def open_stay(session: Session, member: Membership) -> MembershipPeriod | None:
+    """The member's current stay, the one with no end yet.
+
+    Args:
+        session: The database session.
+        member: The member.
+
+    Returns:
+        The stay, or None when they have none open.
+    """
+    return session.exec(
+        select(MembershipPeriod).where(
+            MembershipPeriod.membership_id == member.id,
+            col(MembershipPeriod.ends_on).is_(None),
+        )
+    ).first()
+
+
+def home_today(session: Session, home_id: uuid.UUID, now: datetime) -> date:
+    """Today's date where the home is (NFR-10), not on the server.
+
+    Args:
+        session: The database session.
+        home_id: The home.
+        now: The current time.
+
+    Returns:
+        The date in the home's time zone.
+    """
+    home = session.get_one(Home, home_id)
+    return now.astimezone(ZoneInfo(home.time_zone)).date()

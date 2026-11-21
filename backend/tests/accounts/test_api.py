@@ -630,10 +630,6 @@ def test_members_list_shows_only_this_homes_members(
     assert "Old Fort" not in response.text
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="acceptance: the owner deactivates a member, who can no longer log in",
-)
 def test_owner_deactivates_member_who_can_no_longer_log_in(
     client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
 ) -> None:
@@ -701,5 +697,48 @@ def test_change_role_answers_422_for_a_role_that_cannot_be_given(
     member_id = add_maruf(client)
 
     response = client.put(f"/api/v1/members/{member_id}/role", json={"role": role})
+
+    assert response.status_code == 422
+
+
+def test_deactivated_member_is_logged_out_at_once(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf is a member of "Our Flat", logged in on his own phone
+    WHEN  the owner deactivates him from today
+    THEN  Maruf's next request on that phone answers 401 (FR-80)
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    maruf = session.get_one(Membership, uuid.UUID(member_id))
+    # Maruf's phone: its own client, with its own cookies.
+    with TestClient(client.app, base_url="https://testserver") as marufs_phone:
+        marufs_phone.cookies.set(
+            SESSION_COOKIE,
+            sessions.create_session(redis_client, maruf.person_id, clock()),
+        )
+        before = marufs_phone.get("/api/v1/me").json()["data"]
+        assert before["membership"]["name"] == "Maruf", "the phone is Maruf's"
+
+        client.post(
+            f"/api/v1/members/{member_id}/deactivate", json={"on": "2026-11-21"}
+        )
+
+        assert marufs_phone.get("/api/v1/me").status_code == 401
+
+
+def test_deactivate_answers_422_without_a_date(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf
+    WHEN  they deactivate Maruf without saying from when
+    THEN  it answers 422
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+
+    response = client.post(f"/api/v1/members/{member_id}/deactivate", json={})
 
     assert response.status_code == 422

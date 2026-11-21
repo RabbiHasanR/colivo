@@ -19,6 +19,7 @@ from app.modules.accounts.schemas import (
     CodeErrorOut,
     CodeRequestIn,
     CodeSentOut,
+    DeactivateIn,
     LogInIn,
     MemberIn,
     MemberOut,
@@ -218,5 +219,22 @@ def change_role(
     """Give or take away the Manager role; the owner only."""
     member = service.change_role(session, owner, member_id, data, clock())
     set_response_message(request, "Role changed")
+    response.status_code = 200
+    return service.member_out(session, member)
+
+
+@router.post("/members/{member_id}/deactivate")
+def deactivate(
+    request: Request,
+    response: Response,
+    member_id: uuid.UUID,
+    data: DeactivateIn,
+    editor: OwnerOrManagerDep,
+    session: SessionDep,
+    clock: ClockDep,
+) -> MemberOut:
+    """Deactivate a member from a date; they can't log in from then on."""
+    member = service.deactivate(session, editor, member_id, data, clock())
+    set_response_message(request, "Member deactivated")
     response.status_code = 200
     return service.member_out(session, member)

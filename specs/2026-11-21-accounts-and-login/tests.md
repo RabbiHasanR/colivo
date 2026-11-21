@@ -249,12 +249,12 @@ End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who
 
 ### B33 — Deactivating, from a date, logs the member out at once
 
-- [x] T33.1 unit — `test_deactivating_closes_the_stay_on_the_chosen_date`: inactive; the open stay ends that day; recorded in the history
-- [x] T33.2 unit — `test_deactivation_date_must_be_today_or_earlier_and_in_the_stay` (parametrised): tomorrow, before the stay began → 400
-- [x] T33.3 unit — `test_inactive_member_cannot_be_deactivated_again`: 409
-- [x] T33.4 integration — `test_deactivated_member_is_logged_out_at_once`: the member's session answers 401 on its next request
-- [x] T33.5 unit (database rule) — `test_stay_cannot_end_before_it_starts`
-- [x] T33.6 integration — `test_deactivate_answers_422_without_a_date`
+- [x] T33.1 unit — `test_deactivating_closes_the_stay_on_the_chosen_date` ✅: inactive; the open stay ends that day; recorded in the history
+- [x] T33.2 unit — `test_deactivation_date_must_be_today_or_earlier_and_in_the_stay` ✅ (parametrised): tomorrow, before the stay began → 400
+- [x] T33.3 unit — `test_inactive_member_cannot_be_deactivated_again` ✅: 409
+- [x] T33.4 integration — `test_deactivated_member_is_logged_out_at_once` ✅: the member's session answers 401 on its next request
+- [x] T33.5 unit (database rule) — `test_stay_cannot_end_before_it_starts` ✅
+- [x] T33.6 integration — `test_deactivate_answers_422_without_a_date` ✅ _(the schema came with T33.1; seen failing with a default date)_
 - [x] T33.7 web integration — deactivate dialog: starts at today; Confirm sends the date and tells the page; Cancel sends nothing
 - [x] T33.8 web acceptance — a page that gets a 401 (the session ended) goes to log-in (`member-status-test.ts`)
 
