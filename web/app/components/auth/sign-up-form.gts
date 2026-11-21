@@ -20,6 +20,8 @@ interface SignUpFormSignature {
   Args: {
     /** The current time; tests fix it. */
     now?: Date;
+    /** A phone or email to start with ("Not added yet" → "Create my own home"). */
+    contact?: string | null;
     onSignedUp: () => void;
   };
 }
@@ -37,7 +39,12 @@ export default class SignUpForm extends Component<SignUpFormSignature> {
   );
 
   @tracked name = '';
-  @tracked contact = '';
+  /** What the person typed; until then, `@contact`. */
+  @tracked typedContact: string | null = null;
+
+  get contact(): string {
+    return this.typedContact ?? this.args.contact ?? '';
+  }
   @tracked homeName = '';
   @tracked area = '';
   @tracked firstMonth = this.monthChoices[0]?.value ?? '';
@@ -54,7 +61,7 @@ export default class SignUpForm extends Component<SignUpFormSignature> {
   }
 
   @action setContact(value: string): void {
-    this.contact = value;
+    this.typedContact = value;
   }
 
   @action setHomeName(value: string): void {

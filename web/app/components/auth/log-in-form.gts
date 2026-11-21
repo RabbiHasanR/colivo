@@ -4,6 +4,7 @@ import { action } from '@ember/object';
 import { on } from '@ember/modifier';
 import { service } from '@ember/service';
 import type SessionService from '../../services/session';
+import { ApiError } from '../../utils/api-error';
 import { codeErrorFrom, type CodeError } from '../../utils/code-error';
 import Button from '../ui/button';
 import Field from '../ui/field';
@@ -11,10 +12,15 @@ import Stack from '../ui/stack';
 import TextInput from '../ui/text-input';
 import CodeErrors from './code-errors';
 import CodeField from './code-field';
+import NotAdded from './not-added';
 import Countdown from '../ui/countdown';
 
 interface LogInFormSignature {
-  Args: { onLoggedIn: () => void };
+  Args: {
+    onLoggedIn: () => void;
+    /** "Create my own home" after "Not added yet", with the phone or email. */
+    onCreateHome?: (contact: string) => void;
+  };
 }
 
 /**
@@ -28,6 +34,8 @@ export default class LogInForm extends Component<LogInFormSignature> {
   @tracked code = '';
   @tracked sentTo: string | null = null;
   @tracked codeError: CodeError | null = null;
+  /** The phone or email no home uses, after a 404 (FR-87). */
+  @tracked notAdded: string | null = null;
   /** Seconds until a new code may be sent, from the API's last answer. */
   @tracked resendIn = 0;
   @tracked canResend = false;
@@ -57,6 +65,7 @@ export default class LogInForm extends Component<LogInFormSignature> {
 
   @action
   useDifferentContact(): void {
+    this.notAdded = null;
     this.sentTo = null;
     this.contact = '';
     this.code = '';
@@ -69,6 +78,12 @@ export default class LogInForm extends Component<LogInFormSignature> {
       await this.sendCode();
       this.resentTo = this.contact;
     });
+  }
+
+  @action
+  createHome(contact: string): void {
+    this.useDifferentContact();
+    this.args.onCreateHome?.(contact);
   }
 
   @action
@@ -96,55 +111,67 @@ export default class LogInForm extends Component<LogInFormSignature> {
     try {
       await step();
     } catch (error) {
+      if (error instanceof ApiError && error.kind === 'not-found') {
+        this.notAdded = this.contact;
+        return;
+      }
       this.codeError = codeErrorFrom(error);
       if (!this.codeError) throw error;
     }
   }
 
   <template>
-    <form data-test-log-in-form {{on "submit" this.submit}}>
-      <Stack>
-        <Field @label="Phone or email" data-test-field="contact" as |id|>
-          <TextInput
-            id={{id}}
-            autocomplete="username"
-            @value={{this.contact}}
-            @onInput={{this.setContact}}
-            data-test-log-in-contact
-          />
-        </Field>
-        {{#if this.codeError}}
-          <CodeErrors
-            @error={{this.codeError}}
-            @onSendNewCode={{this.sendNewCode}}
-            @onUseDifferentContact={{this.useDifferentContact}}
-          />
-        {{/if}}
-        {{#if this.sentTo}}
-          <p data-test-code-sent-to>Sent to {{this.sentTo}}</p>
-          <CodeField @value={{this.code}} @onInput={{this.setCode}} />
-          {{#if this.resentTo}}
-            <p data-test-code-resent>New code sent to
-              {{this.resentTo}}. The old one no longer works.</p>
+    {{#if this.notAdded}}
+      <NotAdded
+        @contact={{this.notAdded}}
+        @onCreateHome={{this.createHome}}
+        @onTryAnother={{this.useDifferentContact}}
+      />
+    {{else}}
+      <form data-test-log-in-form {{on "submit" this.submit}}>
+        <Stack>
+          <Field @label="Phone or email" data-test-field="contact" as |id|>
+            <TextInput
+              id={{id}}
+              autocomplete="username"
+              @value={{this.contact}}
+              @onInput={{this.setContact}}
+              data-test-log-in-contact
+            />
+          </Field>
+          {{#if this.codeError}}
+            <CodeErrors
+              @error={{this.codeError}}
+              @onSendNewCode={{this.sendNewCode}}
+              @onUseDifferentContact={{this.useDifferentContact}}
+            />
           {{/if}}
-          <Button type="submit" data-test-log-in-submit>Log in</Button>
-          {{#if this.canResend}}
-            <Button
-              @variant="secondary"
-              data-test-resend
-              {{on "click" this.resend}}
-            >Resend</Button>
+          {{#if this.sentTo}}
+            <p data-test-code-sent-to>Sent to {{this.sentTo}}</p>
+            <CodeField @value={{this.code}} @onInput={{this.setCode}} />
+            {{#if this.resentTo}}
+              <p data-test-code-resent>New code sent to
+                {{this.resentTo}}. The old one no longer works.</p>
+            {{/if}}
+            <Button type="submit" data-test-log-in-submit>Log in</Button>
+            {{#if this.canResend}}
+              <Button
+                @variant="secondary"
+                data-test-resend
+                {{on "click" this.resend}}
+              >Resend</Button>
+            {{else}}
+              <p data-test-resend-wait>Didn't get it? Resend in
+                <Countdown
+                  @seconds={{this.resendIn}}
+                  @onDone={{this.allowResend}}
+                /></p>
+            {{/if}}
           {{else}}
-            <p data-test-resend-wait>Didn't get it? Resend in
-              <Countdown
-                @seconds={{this.resendIn}}
-                @onDone={{this.allowResend}}
-              /></p>
+            <Button type="submit" data-test-log-in-send-code>Send code</Button>
           {{/if}}
-        {{else}}
-          <Button type="submit" data-test-log-in-send-code>Send code</Button>
-        {{/if}}
-      </Stack>
-    </form>
+        </Stack>
+      </form>
+    {{/if}}
   </template>
 }
