@@ -203,7 +203,10 @@ Configuration and docs only. Commit: `chore: add phase 1 groundwork`.
 
 ### Web
 
-- `web/app/models/member.ts`, `web/app/data/builders/members.ts`.
+- `web/app/data/builders/members.ts` and `web/app/services/members.ts`. No
+  WarpDrive model: members are plain data read with `SkipCache`, like every
+  request so far (a model needs the JSON:API cache, and the API sends plain
+  JSON in an envelope; agreed in group 4's design sketch).
 - Routes and templates: `web/app/routes/authenticated/members.ts` (owner
   and managers only, else back home), `web/app/templates/authenticated/members.gts`,
   `web/app/routes/authenticated/welcome.ts` and

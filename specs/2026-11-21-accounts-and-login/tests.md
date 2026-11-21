@@ -91,7 +91,7 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 ### B17 — The owner and managers see the setup checklist
 
 - [x] T17.1 unit — `test_new_home_checklist_has_only_home_created_done` ✅
-- [ ] T17.2 unit — "Add members" is done once another member is active _(group 4: needs members)_
+- [ ] T17.2 unit — "Add members" is done once another member is active _(moved to group 4, where members can be added)_
 - [ ] T17.3 integration — `GET /api/v1/home/setup` answers 200 for the owner _(skipped: the backend acceptance test calls it)_
 - [x] T17.4 web integration — `shows each step done or not, and how many are done` ✅: the checklist shows each step done or not, and "1 of 5 done"
 
@@ -148,3 +148,78 @@ Web acceptance: `web/tests/acceptance/log-in-test.ts` › owner logs back in wit
 
 - [x] T13.1 unit — `test_log_in_with_no_active_membership_is_not_added_yet` ✅ (parametrised): never added; deactivated → 404, after the right code
 - [x] T13.2 web integration — `not added yet: ask the home, or create a home, or try another` ✅: log-in page: a 404 shows "No home uses 01712 345678 yet", "ask its owner or manager", "Create my own home" (fills the sign-up form's phone or email) and "Try another phone or email" (back to the first step)
+
+## Group 4 — Add members
+
+Backend acceptance: `backend/tests/accounts/test_api.py::test_owner_adds_member_who_then_logs_in`
+Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
+
+### B17 — The setup checklist's "Add members" step
+
+- [x] T17.2 unit — `test_members_step_is_done_once_another_member_is_active` _(moved here from group 2)_
+
+### B20 — The owner or a manager adds a member, who gets a notice
+
+- [x] T20.1 unit — `test_owner_adds_a_member_who_gets_a_notice`: an active member, added by the owner, staying from the join date; one SMS to their phone naming the home
+- [ ] T20.2 integration — `POST /api/v1/members` answers 201 with `MemberOut` _(skipped: the backend acceptance test adds a member through it)_
+- [x] T20.3 integration — `test_add_member_answers_422_for_a_bad_name_or_contact` (parametrised)
+- [x] T20.4 web integration — add-member form: sends the name, phone or email, join date and role, then tells the page
+- [x] T20.5 web integration — member list: shows each member's name, role, status and join date
+
+### B21 — Only the owner can add a manager
+
+- [x] T21.1 integration — `test_only_the_owner_can_add_a_manager` (parametrised): the owner → 201; a manager → 403, nothing added
+- [x] T21.2 web integration — add-member form: the "Manager" choice is there for the owner, not for a manager
+
+### B22 — Members can't see or change the members list
+
+- [x] T22.1 integration — `test_members_answer_403_for_a_member` (parametrised over `GET` and `POST /api/v1/members`)
+- [x] T22.2 web acceptance — a member has no Members link and opening `/members` sends them home (`members-test.ts`)
+
+### B23 — Active in another home can't be added
+
+- [x] T23.1 unit — `test_member_active_in_another_home_cannot_be_added`: 409; no membership, no notice
+- [x] T23.2 web integration — add-member form shows the 409 message
+
+### B24 — A deactivated member of this home is reactivated, not added again
+
+- [x] T24.1 unit — `test_deactivated_member_of_this_home_is_not_added_again`: 409 that says to reactivate them
+- [x] T24.2 unit (database rule) — `test_person_has_one_membership_per_home`
+- [ ] T24.3 web integration — the form shows that 409 _(skipped: the same message path as T23.2)_
+
+### B25 — Active members' names are unique, ignoring letter case
+
+- [x] T25.1 unit — `test_two_active_members_cannot_share_a_name` (parametrised): "Maruf" and "maruf" → 409
+- [x] T25.2 unit — `test_a_deactivated_members_name_can_be_used_again`
+- [x] T25.3 unit (database rule) — `test_database_refuses_two_active_members_with_one_name`
+
+### B26 — The owner or a manager changes a member's name or join date
+
+- [x] T26.1 unit — `test_owner_changes_a_members_name_and_join_date`: the name changes and the first stay starts on the new date
+- [x] T26.2 unit — `test_join_date_cannot_be_after_the_end_of_the_first_stay`: 400
+- [x] T26.3 unit — `test_new_name_cannot_be_one_already_taken`: 409
+- [x] T26.4 integration — `test_change_member_answers_422_for_a_blank_name`
+- [x] T26.5 web integration — edit-member form: sends the new name and join date, then tells the page
+
+### B27 — The first log-in check
+
+- [x] T27.1 unit — `test_me_says_who_added_the_member_and_whether_they_checked`: a new member → added by "Rabbi Hasan", not checked; the owner who signed up → checked
+- [x] T27.2 unit — `test_member_fixes_their_name_and_checks_their_details`
+- [x] T27.3 integration — `test_change_me_answers_422_for_a_blank_name`
+- [x] T27.4 web integration — first log-in check: shows the home, role, join date and who added them; "Go to my home" sends the name
+- [x] T27.5 web acceptance — a member who hasn't checked their details sees the check first, then their home; the next time, straight home (`first-log-in-test.ts`)
+
+### B28 — Another home's member, or an unknown id, gives 404
+
+- [x] T28.1 integration — `test_changing_another_homes_member_answers_404` (parametrised): another home's member, an id that doesn't exist; nothing of the other home in the body
+- [x] T28.2 integration — `test_members_list_shows_only_this_homes_members`
+
+### B29 — Invalid names and contacts are refused with a clear message
+
+- [ ] T29.1 backend — _(covered: T20.3, T26.4 and T27.3 are the 422 tests of the three endpoints)_
+- [x] T29.2 web integration — add-member form shows 422 messages under their fields
+
+### B30 — Every change to a member is kept in the history
+
+- [x] T30.1 unit — `test_record_change_keeps_who_when_and_old_and_new_values` (`backend/tests/history/test_service.py`)
+- [x] T30.2 unit — `test_adding_and_changing_members_is_recorded` (parametrised): added (create, new values); name or join date changed (update, old and new values); own name fixed (update, by the member)
