@@ -1,4 +1,5 @@
 import re
+from datetime import timedelta
 from typing import Any
 
 import pytest
@@ -250,3 +251,32 @@ def test_session_cookie_is_httponly_lax_and_secure_when_set(
     assert {"httponly", "samesite"} <= attributes
     assert "samesite=lax" in response.headers["set-cookie"].lower()
     assert ("secure" in attributes) == secure
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="acceptance: an owner logs back in with a one-time code",
+)
+def test_owner_logs_back_in_with_one_time_code(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" signed up and then logged out
+    WHEN  two minutes later they ask for a code and log in with it
+    THEN  they are logged in again as the owner of Our Flat
+    """
+    client.post(
+        "/api/v1/auth/sign-up", json=sign_up_body(code_for_phone(redis_client, clock))
+    )
+    client.post("/api/v1/auth/log-out")
+    clock.advance(timedelta(minutes=2))
+
+    client.post("/api/v1/auth/codes", json={"contact": PHONE})
+    logged_in = client.post(
+        "/api/v1/auth/log-in",
+        json={"contact": PHONE, "code": notifier.last_code_to(PHONE_E164)},
+    )
+    me = client.get("/api/v1/me").json()["data"]
+
+    assert logged_in.status_code == 200
+    assert (me["membership"]["role"], me["home"]["name"]) == ("owner", "Our Flat")
