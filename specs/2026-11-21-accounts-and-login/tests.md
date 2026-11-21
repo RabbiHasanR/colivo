@@ -40,7 +40,7 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 - [x] T4.1 unit — `test_home_code_takes_two_letters_from_the_name` ✅ (parametrised): "Our Flat" → `OF-`, "Sunrise" → `SU-`, "A" → `AX-`, a Bangla name → `XX-`
 - [x] T4.2 unit — `test_home_code_is_drawn_again_when_taken` ✅
 - [x] T4.3 unit (database rule) — `test_two_homes_cannot_share_a_code` ✅
-- [x] T4.4 web integration — the welcome block shows the home name and its Home ID
+- [x] T4.4 web integration — `greets the person and shows the home name and its Home ID` ✅: the welcome block shows the home name and its Home ID
 
 ### B5 — Active in another home → "log in instead"
 

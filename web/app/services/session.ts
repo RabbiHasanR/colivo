@@ -7,6 +7,9 @@ import {
   type SignUpFields,
 } from '../data/builders/auth';
 import type { Me } from '../data/builders/me';
+
+// For components, which don't import the data layer.
+export type { Me, Role } from '../data/builders/me';
 import type Store from './store';
 
 /**
