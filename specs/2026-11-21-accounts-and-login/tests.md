@@ -255,8 +255,8 @@ End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who
 - [x] T33.4 integration — `test_deactivated_member_is_logged_out_at_once` ✅: the member's session answers 401 on its next request
 - [x] T33.5 unit (database rule) — `test_stay_cannot_end_before_it_starts` ✅
 - [x] T33.6 integration — `test_deactivate_answers_422_without_a_date` ✅ _(the schema came with T33.1; seen failing with a default date)_
-- [x] T33.7 web integration — deactivate dialog: starts at today; Confirm sends the date and tells the page; Cancel sends nothing
-- [x] T33.8 web acceptance — a page that gets a 401 (the session ended) goes to log-in (`member-status-test.ts`)
+- [x] T33.7 web integration — `starts at today; Confirm deactivates, Cancel sends nothing` ✅: deactivate dialog: starts at today; Confirm sends the date and tells the page; Cancel sends nothing
+- [x] T33.8 web acceptance — `a page whose session ended goes to log-in` ✅: a page that gets a 401 (the session ended) goes to log-in (`member-status-test.ts`)
 
 ### B34 — The owner can't be deactivated; a manager can't deactivate a manager
 

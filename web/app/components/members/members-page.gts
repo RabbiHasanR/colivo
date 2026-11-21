@@ -5,8 +5,9 @@ import { service } from '@ember/service';
 import type MembersService from '../../services/members';
 import type { Member } from '../../services/members';
 import AddMemberForm from './add-member-form';
+import DeactivateDialog from './deactivate-dialog';
 import EditMemberForm from './edit-member-form';
-import MemberList from './member-list';
+import MemberTabs from './member-tabs';
 
 interface MembersPageSignature {
   Args: { members: Member[] };
@@ -20,6 +21,8 @@ export default class MembersPage extends Component<MembersPageSignature> {
   @tracked reloaded: Member[] | null = null;
   /** The member whose details are being changed, if any. */
   @tracked editing: Member | null = null;
+  /** The member being deactivated (the dialog is open), if any. */
+  @tracked deactivating: Member | null = null;
 
   get shown(): Member[] {
     return this.reloaded ?? this.args.members;
@@ -28,7 +31,18 @@ export default class MembersPage extends Component<MembersPageSignature> {
   @action
   async reload(): Promise<void> {
     this.editing = null;
+    this.deactivating = null;
     this.reloaded = await this.members.list();
+  }
+
+  @action
+  askToDeactivate(member: Member): void {
+    this.deactivating = member;
+  }
+
+  @action
+  closeDialogs(): void {
+    this.deactivating = null;
   }
 
   @action
@@ -38,7 +52,18 @@ export default class MembersPage extends Component<MembersPageSignature> {
 
   <template>
     <h1>Members &amp; roles</h1>
-    <MemberList @members={{this.shown}} @onEdit={{this.edit}} />
+    <MemberTabs
+      @members={{this.shown}}
+      @onEdit={{this.edit}}
+      @onDeactivate={{this.askToDeactivate}}
+    />
+    {{#if this.deactivating}}
+      <DeactivateDialog
+        @member={{this.deactivating}}
+        @onDone={{this.reload}}
+        @onCancel={{this.closeDialogs}}
+      />
+    {{/if}}
     {{#if this.editing}}
       <section aria-labelledby="edit-member-title">
         <h2 id="edit-member-title">Change {{this.editing.name}}</h2>

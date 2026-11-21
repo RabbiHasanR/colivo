@@ -1,8 +1,13 @@
 import { module, test } from 'qunit';
-import { click, fillIn, visit } from '@ember/test-helpers';
+import { click, currentURL, fillIn, visit } from '@ember/test-helpers';
+import { http, HttpResponse } from 'msw';
 import { setupApplicationTest } from 'colivo-web/tests/helpers';
 import { setupMsw, worker } from 'colivo-web/tests/helpers/msw';
-import { loggedInAs, newHomeSetup } from 'colivo-web/tests/helpers/accounts';
+import {
+  loggedInAs,
+  newHomeSetup,
+  notLoggedInBody,
+} from 'colivo-web/tests/helpers/accounts';
 import { member, membersApi, owner } from 'colivo-web/tests/helpers/members';
 
 module('Acceptance | member status', function (hooks) {
@@ -35,4 +40,23 @@ module('Acceptance | member status', function (hooks) {
         .exists('Maruf is current again');
     },
   );
+
+  test('a page whose session ended goes to log-in', async function (assert) {
+    // GIVEN a manager has the Members page open
+    // WHEN  their session ends (they were deactivated elsewhere) and they
+    //       press Deactivate for Maruf
+    // THEN  the API answers 401, and the app goes to the log-in page
+    worker.use(loggedInAs('manager'), ...membersApi([owner, member()]));
+    await visit('/members');
+    worker.use(
+      http.all('*/api/v1/*', () =>
+        HttpResponse.json(notLoggedInBody, { status: 401 }),
+      ),
+    );
+
+    await click('[data-test-deactivate="Maruf"]');
+    await click('[data-test-deactivate-confirm]');
+
+    assert.strictEqual(currentURL(), '/log-in');
+  });
 });

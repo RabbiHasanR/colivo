@@ -13,6 +13,7 @@ import { ApiError } from '../utils/api-error';
 
 // For components, which don't import the data layer.
 export type { Me, Role } from '../data/builders/me';
+import type RouterService from '@ember/routing/router-service';
 import type Store from './store';
 
 /**
@@ -21,6 +22,7 @@ import type Store from './store';
  */
 export default class SessionService extends Service {
   @service declare store: Store;
+  @service declare router: RouterService;
 
   @tracked me: Me | null = null;
 
@@ -78,6 +80,16 @@ export default class SessionService extends Service {
     const { content } = await this.store.request<Me>(logIn(contact, code));
     this.me = content;
     return content;
+  }
+
+  /**
+   * The session ended without a log-out here (a 401): forget who it was and
+   * go to log-in. Nothing happens when nobody was logged in.
+   */
+  expire(): void {
+    if (!this.me) return;
+    this.me = null;
+    this.router.transitionTo('log-in');
   }
 
   /** End the session in the API (it clears the cookie) and forget who it was. */

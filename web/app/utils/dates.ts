@@ -23,3 +23,14 @@ export function formatDate(isoDate: string | null | undefined): string {
   const [year, month, day] = isoDate.split('-').map(Number);
   return `${day} ${MONTHS[(month ?? 1) - 1]} ${year}`;
 }
+
+/** Today's date where the home is (NFR-10), as the API takes it: `2026-11-21`. */
+export function todayIn(now: Date, timeZone: string): string {
+  // en-CA writes dates as YYYY-MM-DD.
+  return new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone,
+  }).format(now);
+}

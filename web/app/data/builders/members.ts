@@ -7,6 +7,7 @@ type Schemas = components['schemas'];
 export type Member = Schemas['MemberOut'];
 export type MemberFields = Schemas['MemberIn'];
 export type MemberChanges = Schemas['MemberUpdateIn'];
+export type NewRole = Schemas['RoleIn']['role'];
 
 /**
  * Members are plain data, not WarpDrive records: every request skips the
@@ -14,7 +15,11 @@ export type MemberChanges = Schemas['MemberUpdateIn'];
  */
 const NO_CACHE = { [SkipCache]: true as const };
 
-function jsonBody(method: 'POST' | 'PATCH', path: string, body: unknown) {
+function jsonBody(
+  method: 'POST' | 'PATCH' | 'PUT',
+  path: string,
+  body: unknown,
+) {
   return {
     url: apiUrl(path),
     method,
@@ -41,4 +46,19 @@ export function addMember(fields: MemberFields) {
 /** Change a member's name or join date. */
 export function updateMember(id: string, changes: MemberChanges) {
   return jsonBody('PATCH', `members/${id}`, changes);
+}
+
+/** Deactivate a member from a date (today or earlier). */
+export function deactivateMember(id: string, on: string) {
+  return jsonBody('POST', `members/${id}/deactivate`, { on });
+}
+
+/** Reactivate a member from the date charges start again. */
+export function reactivateMember(id: string, on: string) {
+  return jsonBody('POST', `members/${id}/reactivate`, { on });
+}
+
+/** Give or take away the Manager role (the owner only). */
+export function changeRole(id: string, role: NewRole) {
+  return jsonBody('PUT', `members/${id}/role`, { role });
 }
