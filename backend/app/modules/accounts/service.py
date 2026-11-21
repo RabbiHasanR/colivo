@@ -6,7 +6,7 @@ from starlette.exceptions import HTTPException
 
 from app.core.notifier import Channel, Notifier
 from app.modules.accounts import codes, sessions
-from app.modules.accounts.constants import CODE_LIFETIME
+from app.modules.accounts.constants import CODE_LIFETIME, CODE_RESEND_AFTER
 from app.modules.accounts.contact import Contact
 from app.modules.accounts.models import (
     Membership,
@@ -169,7 +169,7 @@ def request_code(
         now: The current time.
 
     Returns:
-        How it was sent and how long it works.
+        How it was sent, how long it works and when a new one can be sent.
     """
     code = codes.issue_code(redis_client, contact, now)
     minutes = int(CODE_LIFETIME.total_seconds() // 60)
@@ -181,6 +181,7 @@ def request_code(
     return CodeSentOut(
         channel=contact.channel,
         expires_in_seconds=int(CODE_LIFETIME.total_seconds()),
+        resend_in_seconds=int(CODE_RESEND_AFTER.total_seconds()),
     )
 
 

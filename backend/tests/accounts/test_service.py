@@ -159,6 +159,8 @@ def test_sign_up_refused_when_already_active_in_a_home(
     THEN  it is refused with 409 ("log in instead"), and no second home exists
     """
     sign_up_with_new_code(session, redis_client, clock)
+    # A new code waits a minute after the last one (B11).
+    clock.advance(timedelta(minutes=2))
 
     with pytest.raises(HTTPException) as error:
         sign_up_with_new_code(session, redis_client, clock, home_name="Second Home")
@@ -233,6 +235,8 @@ def test_email_in_any_letter_case_is_the_same_person(
     first = Contact.model_validate(parse_contact("Rabbi@Example.com"))
     code = codes.issue_code(redis_client, first, clock())
     owner = service.sign_up(session, redis_client, sign_up_data(first, code), clock())
+    # A new code waits a minute after the last one (B11).
+    clock.advance(timedelta(minutes=2))
     again = Contact.model_validate(parse_contact("rabbi@example.COM"))
     code = codes.issue_code(redis_client, again, clock())
 

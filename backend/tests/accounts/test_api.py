@@ -130,6 +130,8 @@ def test_codes_answer_the_same_for_anyone(
     client.post(
         "/api/v1/auth/sign-up", json=sign_up_body(code_for_phone(redis_client, clock))
     )
+    # A new code waits a minute after the last one (B11).
+    clock.advance(timedelta(minutes=2))
 
     owner = client.post("/api/v1/auth/codes", json={"contact": PHONE_E164})
     stranger = client.post("/api/v1/auth/codes", json={"contact": "+8801812345678"})
@@ -335,3 +337,18 @@ def test_log_in_with_a_wrong_code_answers_400_with_tries_left(
 
     assert response.status_code == 400
     assert response.json()["data"] == {"reason": "wrong", "tries_left": 4}
+
+
+def test_codes_say_when_the_next_one_can_be_sent(client: TestClient) -> None:
+    """
+    GIVEN nobody has asked for a code for 01712 345678 yet
+    WHEN  POST /api/v1/auth/codes is called, and again at once
+    THEN  the first answer says a new code can be sent in 60 seconds; the
+          second is refused with 429 and the same 60 seconds to wait
+    """
+    first = client.post("/api/v1/auth/codes", json={"contact": PHONE})
+    again = client.post("/api/v1/auth/codes", json={"contact": PHONE})
+
+    assert first.json()["data"]["resend_in_seconds"] == 60
+    assert again.status_code == 429
+    assert again.json()["data"] == {"reason": "too_soon", "retry_in_seconds": 60}

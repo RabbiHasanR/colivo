@@ -130,10 +130,10 @@ Web acceptance: `web/tests/acceptance/log-in-test.ts` › owner logs back in wit
 
 ### B11 — A new code once a minute, 5 an hour, replacing the old one
 
-- [x] T11.1 unit — `test_new_code_waits_a_minute_after_the_last`: at once → 429 `too_soon`, 60 s; a minute later → sent
-- [x] T11.2 unit — `test_only_5_codes_an_hour`: the 6th within the hour → 429 `hourly_limit`, wait until the oldest is an hour old; then sent
-- [x] T11.3 unit — `test_new_code_replaces_the_old_one`: the old code → 400 `expired`; the new one works
-- [x] T11.4 integration — `test_codes_say_when_the_next_one_can_be_sent`: the first answer has `resend_in_seconds: 60`; asking again at once → 429 with `retry_in_seconds: 60`
+- [x] T11.1 unit — `test_new_code_waits_a_minute_after_the_last` ✅: at once → 429 `too_soon`, 60 s; a minute later → sent
+- [x] T11.2 unit — `test_only_5_codes_an_hour` ✅: the 6th within the hour → 429 `hourly_limit`, wait until the oldest is an hour old; then sent
+- [x] T11.3 unit — `test_new_code_replaces_the_old_one` ✅: the old code → 400 `expired`; the new one works
+- [x] T11.4 integration — `test_codes_say_when_the_next_one_can_be_sent` ✅: the first answer has `resend_in_seconds: 60`; asking again at once → 429 with `retry_in_seconds: 60`
 - [x] T11.5 web unit — the error handler maps 429 to `too-many` and keeps its `data` (`handlers-test.ts`, a new test)
 - [x] T11.6 web integration — log-in form: the code step shows "Resend in 1:00" and no Resend button; when it reaches 0:00, "Resend" sends a new code and says "New code sent to …. The old one no longer works."
 

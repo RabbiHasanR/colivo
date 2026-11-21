@@ -3,7 +3,7 @@ import hmac
 import json
 import math
 import secrets
-from datetime import datetime
+from datetime import UTC, datetime
 
 from redis import Redis
 
@@ -12,7 +12,10 @@ from app.modules.accounts.constants import (
     CODE_LENGTH,
     CODE_LIFETIME,
     CODE_LOCK,
+    CODE_MAX_PER_HOUR,
     CODE_MAX_WRONG,
+    CODE_RESEND_AFTER,
+    CODE_SEND_WINDOW,
 )
 from app.modules.accounts.contact import Contact
 from app.modules.accounts.schemas import CodeErrorOut, CodeErrorReason
@@ -20,6 +23,8 @@ from app.modules.accounts.schemas import CodeErrorOut, CodeErrorReason
 WRONG_CODE = "That code isn't right."
 EXPIRED_CODE = "This code expired. Codes work for 5 minutes."
 LOCKED = "Too many wrong codes. Try again later."
+TOO_SOON = "A new code can be sent once a minute."
+HOURLY_LIMIT = "Only 5 codes can be sent in an hour."
 
 
 def code_key(contact: Contact) -> str:
@@ -63,6 +68,63 @@ def check_not_locked(redis_client: Redis, contact: Contact, now: datetime) -> No
         )
 
 
+def sent_key(contact: Contact) -> str:
+    """The Redis key holding when codes were sent to ``contact``."""
+    return f"otp:sent:{contact.value}"
+
+
+def record_send(redis_client: Redis, contact: Contact, now: datetime) -> None:
+    """Refuse a new code too soon or over the hourly limit; otherwise note it.
+
+    Send times are a sorted set scored by time; sends older than an hour are
+    dropped first, in the same transaction that reads the rest.
+
+    Raises:
+        AppError: 429 "too_soon" within a minute of the last code; 429
+            "hourly_limit" when 5 were sent in the last hour. Both say how
+            many seconds to wait.
+    """
+    key = sent_key(contact)
+    window_start = (now - CODE_SEND_WINDOW).timestamp()
+    with redis_client.pipeline(transaction=True) as pipe:
+        pipe.zremrangebyscore(key, "-inf", window_start)
+        pipe.zrange(key, 0, -1, withscores=True)
+        _, sends = pipe.execute()
+    times = sorted(datetime.fromtimestamp(score, UTC) for _, score in sends)
+    if times and now < times[-1] + CODE_RESEND_AFTER:
+        refuse_send(
+            CodeErrorReason.TOO_SOON, TOO_SOON, times[-1] + CODE_RESEND_AFTER, now
+        )
+    if len(times) >= CODE_MAX_PER_HOUR:
+        refuse_send(
+            CodeErrorReason.HOURLY_LIMIT, HOURLY_LIMIT, times[0] + CODE_SEND_WINDOW, now
+        )
+    with redis_client.pipeline(transaction=True) as pipe:
+        pipe.zadd(key, {now.isoformat(): now.timestamp()})
+        pipe.expire(key, CODE_SEND_WINDOW)
+        pipe.execute()
+
+
+def refuse_send(
+    reason: CodeErrorReason, message: str, allowed_at: datetime, now: datetime
+) -> None:
+    """Refuse a new code until ``allowed_at``.
+
+    Raises:
+        AppError: 429 with ``reason`` and the seconds to wait.
+    """
+    raise AppError(
+        429,
+        message,
+        CodeErrorOut(reason=reason, retry_in_seconds=seconds_until(allowed_at, now)),
+    )
+
+
+def old_codes_key(contact: Contact) -> str:
+    """The Redis key holding the hashes of codes a newer one replaced."""
+    return f"otp:old:{contact.value}"
+
+
 def code_hash(contact: Contact, code: str) -> str:
     """Hash a code with its contact, so Redis never holds a code in plain text.
 
@@ -84,16 +146,25 @@ def issue_code(redis_client: Redis, contact: Contact, now: datetime) -> str:
         The code, ``CODE_LENGTH`` digits.
 
     Raises:
-        AppError: 429 "locked" while the contact is locked.
+        AppError: 429 "locked" while the contact is locked; 429 "too_soon"
+            within a minute of the last code.
     """
     check_not_locked(redis_client, contact, now)
+    record_send(redis_client, contact, now)
     code = f"{secrets.randbelow(10**CODE_LENGTH):0{CODE_LENGTH}d}"
     stored = {
         "hash": code_hash(contact, code),
         "expires_at": (now + CODE_LIFETIME).isoformat(),
     }
-    # Compared with the app's clock; the Redis expiry only clears old keys.
-    redis_client.set(code_key(contact), json.dumps(stored), ex=CODE_LIFETIME)
+    previous = redis_client.get(code_key(contact))
+    with redis_client.pipeline(transaction=True) as pipe:
+        if isinstance(previous, bytes):
+            # Replaced, not wrong: typing it later answers "expired".
+            pipe.sadd(old_codes_key(contact), json.loads(previous)["hash"])
+            pipe.expire(old_codes_key(contact), CODE_SEND_WINDOW)
+        # Compared with the app's clock; the Redis expiry only clears old keys.
+        pipe.set(code_key(contact), json.dumps(stored), ex=CODE_LIFETIME)
+        pipe.execute()
     return code
 
 
@@ -108,7 +179,7 @@ def use_code(redis_client: Redis, contact: Contact, code: str, now: datetime) ->
 
     Raises:
         AppError: 429 "locked" while locked; 400 "expired" when no code is
-            waiting or it is 5 minutes old.
+            waiting, it is 5 minutes old, or a newer code replaced it.
         AppError: 400 "wrong", with the tries left, for another code.
     """
     check_not_locked(redis_client, contact, now)
@@ -118,7 +189,12 @@ def use_code(redis_client: Redis, contact: Contact, code: str, now: datetime) ->
     sent = json.loads(stored)
     if now >= datetime.fromisoformat(sent["expires_at"]):
         raise AppError(400, EXPIRED_CODE, CodeErrorOut(reason=CodeErrorReason.EXPIRED))
-    if not hmac.compare_digest(sent["hash"], code_hash(contact, code)):
+    typed = code_hash(contact, code)
+    if not hmac.compare_digest(sent["hash"], typed):
+        if redis_client.sismember(old_codes_key(contact), typed):
+            raise AppError(
+                400, EXPIRED_CODE, CodeErrorOut(reason=CodeErrorReason.EXPIRED)
+            )
         count_wrong_code(redis_client, contact, now)
     redis_client.delete(code_key(contact))
 

@@ -165,3 +165,67 @@ def test_lock_ends_after_15_minutes(redis_client: Redis, clock: MovableClock) ->
 
     code = codes.issue_code(redis_client, PHONE, clock())
     codes.use_code(redis_client, PHONE, code, clock())
+
+
+def test_new_code_waits_a_minute_after_the_last(
+    redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN a code was just sent to 01712 345678
+    WHEN  another is asked for at once, and again a minute later
+    THEN  at once it is refused with 429 "too_soon", 60 seconds to wait;
+          a minute later it is sent
+    """
+    codes.issue_code(redis_client, PHONE, clock())
+
+    with pytest.raises(HTTPException) as at_once:
+        codes.issue_code(redis_client, PHONE, clock())
+    clock.advance(timedelta(minutes=1))
+    codes.issue_code(redis_client, PHONE, clock())
+
+    assert code_error(at_once) == (
+        429,
+        CodeErrorOut(reason=CodeErrorReason.TOO_SOON, retry_in_seconds=60),
+    )
+
+
+def test_only_5_codes_an_hour(redis_client: Redis, clock: MovableClock) -> None:
+    """
+    GIVEN 5 codes were sent to 01712 345678, a minute apart (minutes 0 to 4)
+    WHEN  a 6th is asked for at minute 5, and again at minute 60
+    THEN  at minute 5 it is refused with 429 "hourly_limit", to wait until the
+          first is an hour old (55 minutes); at minute 60 it is sent
+    """
+    for _ in range(5):
+        codes.issue_code(redis_client, PHONE, clock())
+        clock.advance(timedelta(minutes=1))
+
+    with pytest.raises(HTTPException) as sixth:
+        codes.issue_code(redis_client, PHONE, clock())
+    clock.advance(timedelta(minutes=55))
+    codes.issue_code(redis_client, PHONE, clock())
+
+    assert code_error(sixth) == (
+        429,
+        CodeErrorOut(reason=CodeErrorReason.HOURLY_LIMIT, retry_in_seconds=55 * 60),
+    )
+
+
+def test_new_code_replaces_the_old_one(
+    redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN a code was sent to 01712 345678, and a minute later a new one
+    WHEN  the old code is typed, then the new one
+    THEN  the old code is refused with 400 "expired" (not a wrong try); the
+          new one works
+    """
+    old_code = codes.issue_code(redis_client, PHONE, clock())
+    clock.advance(timedelta(minutes=1))
+    new_code = codes.issue_code(redis_client, PHONE, clock())
+
+    with pytest.raises(HTTPException) as old:
+        codes.use_code(redis_client, PHONE, old_code, clock())
+    codes.use_code(redis_client, PHONE, new_code, clock())
+
+    assert code_error(old) == (400, CodeErrorOut(reason=CodeErrorReason.EXPIRED))

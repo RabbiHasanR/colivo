@@ -39,6 +39,7 @@ class CodeSentOut(BaseModel):
 
     channel: Channel
     expires_in_seconds: int
+    resend_in_seconds: int
 
 
 class LogInIn(BaseModel):
