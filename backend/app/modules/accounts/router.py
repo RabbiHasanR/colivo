@@ -2,6 +2,7 @@ from fastapi import Request, Response
 
 from app.api.deps import CurrentMemberDep
 from app.core.clock import ClockDep
+from app.core.config import settings
 from app.core.database import SessionDep
 from app.core.notifier import NotifierDep
 from app.core.redis import RedisDep
@@ -22,6 +23,10 @@ router = CoreRouter()
 def set_session_cookie(response: Response, token: str) -> None:
     """Send the session cookie, valid as long as the session (30 days).
 
+    ``HttpOnly``: page scripts can't read it, so an XSS bug can't steal it.
+    ``SameSite=Lax``: other sites can't send it with their forms (CSRF).
+    ``Secure`` (on outside localhost): it travels over HTTPS only.
+
     Args:
         response: The response to set it on.
         token: The session token.
@@ -30,6 +35,9 @@ def set_session_cookie(response: Response, token: str) -> None:
         SESSION_COOKIE,
         token,
         max_age=int(SESSION_LIFETIME.total_seconds()),
+        httponly=True,
+        samesite="lax",
+        secure=settings.session_cookie_secure,
     )
 
 

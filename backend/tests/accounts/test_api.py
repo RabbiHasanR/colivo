@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 from redis import Redis
 
+from app.core.config import settings
 from app.core.notifier import Channel
 from app.modules.accounts import codes
 from app.modules.accounts.constants import SESSION_COOKIE
@@ -224,3 +225,32 @@ def test_me_sends_the_cookie_again_for_30_days(
 
     assert f"{SESSION_COOKIE}=" in response.headers["set-cookie"]
     assert "Max-Age=2592000" in response.headers["set-cookie"]
+
+
+@pytest.mark.parametrize("secure", [True, False], ids=["secure on", "secure off"])
+def test_session_cookie_is_httponly_lax_and_secure_when_set(
+    client: TestClient,
+    redis_client: Redis,
+    clock: MovableClock,
+    monkeypatch: pytest.MonkeyPatch,
+    secure: bool,
+) -> None:
+    """
+    GIVEN SESSION_COOKIE_SECURE is on (any real deployment) or off (localhost)
+    WHEN  someone signs up and gets the session cookie
+    THEN  page scripts can't read it (HttpOnly), other sites can't send it on
+          their forms (SameSite=Lax), and it travels over HTTPS only when on
+    """
+    monkeypatch.setattr(settings, "session_cookie_secure", secure)
+
+    response = client.post(
+        "/api/v1/auth/sign-up", json=sign_up_body(code_for_phone(redis_client, clock))
+    )
+
+    attributes = {
+        part.strip().split("=")[0].lower()
+        for part in response.headers["set-cookie"].split(";")
+    }
+    assert {"httponly", "samesite"} <= attributes
+    assert "samesite=lax" in response.headers["set-cookie"].lower()
+    assert ("secure" in attributes) == secure

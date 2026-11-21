@@ -77,8 +77,8 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 ### B15 — The cookie is out of page scripts' reach, and only the web app may send it
 
-- [x] T15.1 integration — `test_session_cookie_is_httponly_lax_and_secure_when_set` (parametrised on `SESSION_COOKIE_SECURE`)
-- [x] T15.2 integration — `test_only_the_web_origin_may_send_credentials`: a pre-flight from the web origin gets `Access-Control-Allow-Credentials: true`; another origin gets nothing
+- [x] T15.1 integration — `test_session_cookie_is_httponly_lax_and_secure_when_set` ✅ (parametrised on `SESSION_COOKIE_SECURE`)
+- [x] T15.2 integration — `test_only_the_web_origin_may_send_credentials` ✅: a pre-flight from the web origin gets 200, its origin and `Access-Control-Allow-Credentials: true`; another origin gets 400 and no allowed origin, so the browser never sends the request
 - [x] T15.3 web unit — the auth handler sends every request with `credentials: 'include'` and no `Authorization` header
 
 ### B16 — Everything else needs a log-in

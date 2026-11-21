@@ -137,3 +137,50 @@ def test_only_the_web_origin_gets_cors_permission(
 
     expected = origin if allowed else None
     assert response.headers.get("access-control-allow-origin") == expected
+
+
+@pytest.mark.parametrize(
+    ("origin", "expected"),
+    [
+        pytest.param(
+            WEB_ORIGIN,
+            {
+                "status": 200,
+                "access-control-allow-origin": WEB_ORIGIN,
+                "access-control-allow-credentials": "true",
+            },
+            id="web origin",
+        ),
+        pytest.param(
+            "https://other.example",
+            {"status": 400, "access-control-allow-origin": None},
+            id="other origin",
+        ),
+    ],
+)
+def test_only_the_web_origin_may_send_credentials(
+    origin: str, expected: dict[str, object], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """
+    GIVEN BACKEND_CORS_ORIGINS lists only the web app's origin
+    WHEN  a browser asks (pre-flight) whether a page on `origin` may POST with
+          its cookies and a JSON body
+    THEN  the web origin may, with credentials; another origin is refused
+          (400, no allowed origin), so the browser never sends its request
+    """
+    monkeypatch.setattr(settings, "backend_cors_origins", [WEB_ORIGIN])
+    client = TestClient(create_app())
+
+    response = client.options(
+        "/api/v1/auth/log-out",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    actual = {"status": response.status_code} | {
+        name: response.headers.get(name) for name in expected if name != "status"
+    }
+    assert actual == expected
