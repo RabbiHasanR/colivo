@@ -80,33 +80,49 @@ export default class SignUpForm extends Component<SignUpFormSignature> {
   @action
   async submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    if (this.sentTo === null) {
-      await this.session.requestCode(this.contact);
-      this.sentTo = this.contact;
-      return;
-    }
+    this.fieldErrors = {};
+    this.error = null;
     try {
-      await this.session.signUp({
-        contact: this.contact,
-        code: this.code,
-        name: this.name,
-        home_name: this.homeName,
-        area: this.area.trim() || null,
-        first_month: this.firstMonth,
-        lives_here: this.livesHere,
-      });
+      if (this.sentTo === null) {
+        await this.sendCode();
+      } else {
+        await this.createHome();
+      }
     } catch (error) {
-      if (error instanceof ApiError && error.kind === 'validation') {
-        this.fieldErrors = error.fieldErrors;
-        return;
-      }
-      if (error instanceof ApiError && error.status !== null) {
-        this.error = error.message;
-        return;
-      }
-      throw error;
+      if (!this.showRefusal(error)) throw error;
     }
+  }
+
+  async sendCode(): Promise<void> {
+    await this.session.requestCode(this.contact);
+    this.sentTo = this.contact;
+  }
+
+  async createHome(): Promise<void> {
+    await this.session.signUp({
+      contact: this.contact,
+      code: this.code,
+      name: this.name,
+      home_name: this.homeName,
+      area: this.area.trim() || null,
+      first_month: this.firstMonth,
+      lives_here: this.livesHere,
+    });
     this.args.onSignedUp();
+  }
+
+  /**
+   * Show why the API refused: 422 messages under their fields, anything else
+   * above the button. Returns false for errors that aren't a refusal.
+   */
+  showRefusal(error: unknown): boolean {
+    if (!(error instanceof ApiError) || error.status === null) return false;
+    if (error.kind === 'validation') {
+      this.fieldErrors = error.fieldErrors;
+    } else {
+      this.error = error.message;
+    }
+    return true;
   }
 
   <template>

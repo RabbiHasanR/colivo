@@ -54,6 +54,7 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 - [x] T6.1 unit — `test_code_goes_by_sms_to_a_phone_and_by_email_to_an_email` ✅ (parametrised): six digits, through the notifier
 - [x] T6.2 integration — `test_codes_answer_the_same_for_anyone` ✅: `POST /api/v1/auth/codes` gives the same answer for a contact nobody uses and for an owner's
 - [x] T6.3 integration — `test_codes_answer_422_for_something_that_is_not_a_phone_or_email` ✅: `POST /api/v1/auth/codes` answers 422 for something that isn't a phone or email
+- [x] T6.4 web integration — `shows a refused contact under its field, until it is fixed` ✅: a refused code request shows its 422 under "Phone or email"; fixing it and sending again clears it and opens the code step _(added while building: the code step had no error handling)_
 
 ### B7 — One phone in any form is one person; emails ignore case
 

@@ -144,4 +144,47 @@ module('Integration | Component | auth/sign-up-form', function (hooks) {
       .dom('[data-test-sign-up-error]')
       .hasText("You're already in a home. Log in instead.");
   });
+
+  test('shows a refused contact under its field, until it is fixed', async function (assert) {
+    // GIVEN the API refuses "hello" as a phone or email, and accepts a phone
+    // WHEN  the owner sends a code to "hello", then fixes it and sends again
+    // THEN  the message shows under "Phone or email", then goes away and the
+    //       code step opens
+    worker.use(
+      http.post('*/api/v1/auth/codes', async ({ request }) => {
+        const { contact } = (await request.json()) as { contact: string };
+        if (contact === 'hello') {
+          return HttpResponse.json(
+            {
+              success: false,
+              message: 'Validation Error',
+              errors: [
+                'body.contact: Value error, Enter a phone number or an email.',
+              ],
+            },
+            { status: 422 },
+          );
+        }
+        return HttpResponse.json(codeSentBody);
+      }),
+    );
+    const onSignedUp = () => {};
+    await render(
+      <template>
+        <SignUpForm @now={{NOW}} @onSignedUp={{onSignedUp}} />
+      </template>,
+    );
+    await fillInOurFlat();
+
+    await fillIn('[data-test-sign-up-contact]', 'hello');
+    await click('[data-test-sign-up-send-code]');
+    assert
+      .dom('[data-test-field="contact"] [data-test-field-error]')
+      .hasText('Value error, Enter a phone number or an email.');
+
+    await fillIn('[data-test-sign-up-contact]', '01712 345678');
+    await click('[data-test-sign-up-send-code]');
+    assert.dom('[data-test-field-error]').doesNotExist();
+    assert.dom('[data-test-code-sent-to]').hasText('Sent to 01712 345678');
+  });
 });
