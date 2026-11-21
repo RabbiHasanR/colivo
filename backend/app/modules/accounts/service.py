@@ -37,10 +37,12 @@ def sign_up(
     codes.use_code(redis_client, data.contact, data.code, now)
     homes_service.check_first_month(data.first_month, now, DEFAULT_TIME_ZONE)
     person = Person(phone=data.contact.value)
-    home = Home(name=data.home_name, area=data.area, first_month=data.first_month)
+    home = homes_service.create_home(
+        session, name=data.home_name, area=data.area, first_month=data.first_month
+    )
     # No ORM relationships, so the session doesn't order inserts by foreign
     # key: flush the parents first.
-    session.add_all([person, home])
+    session.add(person)
     session.flush()
     membership = Membership(
         home_id=home.id, person_id=person.id, name=data.name, role=Role.OWNER

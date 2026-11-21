@@ -13,7 +13,12 @@ LONG = "x" * 81
 def our_flat(**changes: object) -> Home:
     """A valid home, with any column changed."""
     return Home.model_validate(
-        {"name": "Our Flat", "area": "Mirpur", "first_month": date(2026, 11, 1)}
+        {
+            "code": "OF-4827",
+            "name": "Our Flat",
+            "area": "Mirpur",
+            "first_month": date(2026, 11, 1),
+        }
         | changes
     )
 
@@ -27,6 +32,7 @@ def our_flat(**changes: object) -> Home:
         pytest.param(
             {"first_month": date(2026, 11, 2)}, "Rabbi Hasan", id="month not on the 1st"
         ),
+        pytest.param({"code": "of-48"}, "Rabbi Hasan", id="badly formed Home ID"),
         pytest.param({}, "  ", id="blank member name"),
         pytest.param({}, LONG, id="member name over 80"),
     ],

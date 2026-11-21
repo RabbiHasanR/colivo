@@ -1,7 +1,13 @@
+import re
+import secrets
+from collections.abc import Callable
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
+from sqlmodel import Session, select
 from starlette.exceptions import HTTPException
+
+from app.modules.homes.models import Home
 
 
 def month_start(day: date) -> date:
@@ -46,3 +52,71 @@ def check_first_month(first_month: date, now: datetime, time_zone: str) -> None:
     today = now.astimezone(ZoneInfo(time_zone)).date()
     if first_month not in {month_start(today), next_month_start(today)}:
         raise HTTPException(400, "The first month must be this month or next.")
+
+
+def home_code_for(name: str, digits: str) -> str:
+    """Make a Home ID such as ``OF-4827`` from a home's name (FR-88).
+
+    The letters are the first letters of the name's first two words ("Our
+    Flat" → ``OF``), or the first two of a one-word name ("Sunrise" → ``SU``).
+    Only Latin letters count; missing letters are ``X``.
+
+    Args:
+        name: The home's name.
+        digits: Four drawn digits.
+
+    Returns:
+        The Home ID.
+    """
+    words = re.findall(r"[A-Za-z]+", name)
+    letters = (
+        "".join(word[0] for word in words[:2]) if len(words) > 1 else "".join(words)
+    )
+    return f"{letters[:2].upper():X<2}-{digits}"
+
+
+def random_digits() -> str:
+    """Draw four random digits for a Home ID.
+
+    Returns:
+        Four digits, e.g. ``"0482"``.
+    """
+    return f"{secrets.randbelow(10_000):04d}"
+
+
+def create_home(
+    session: Session,
+    *,
+    name: str,
+    area: str | None,
+    first_month: date,
+    draw_digits: Callable[[], str] = random_digits,
+) -> Home:
+    """Add a new home with a Home ID no other home has (not committed).
+
+    A taken ID is drawn again. Two sign-ups drawing the same free ID at the
+    same moment are stopped by the unique index (a 500, very unlikely with
+    10,000 IDs per pair of letters).
+
+    Args:
+        session: The database session.
+        name: The home's name.
+        area: Its optional area.
+        first_month: Its first month, as the 1st.
+        draw_digits: Where the Home ID's digits come from (tests fix them).
+
+    Returns:
+        The home, flushed.
+    """
+    code = home_code_for(name, draw_digits())
+    while session.exec(select(Home.id).where(Home.code == code)).first():
+        code = home_code_for(name, draw_digits())
+    home = Home(
+        code=code,
+        name=name,
+        area=area,
+        first_month=first_month,
+    )
+    session.add(home)
+    session.flush()
+    return home

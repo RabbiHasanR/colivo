@@ -18,9 +18,9 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 ### B1 — Owner signs up and the home is created
 
 - [x] T1.1 unit — `test_sign_up_creates_the_home_and_its_owner` ✅: home name, area, first month; an active `owner` membership with the given name
-- [x] T1.2 integration — `POST /api/v1/auth/sign-up` answers 201 with `MeOut` and sets the session cookie ✅
-- [x] T1.3 integration — `POST /api/v1/auth/sign-up` answers 422 for a missing, blank or over-80-character name or home name ✅
-- [x] T1.4 unit (database rule) — `test_home_and_member_checks_reject_bad_rows`: blank or 81-character home or member name, 81-character area, first month not on the 1st; a badly formed Home ID is added with `home.code` in B4 ✅
+- [x] T1.2 integration — `POST /api/v1/auth/sign-up` ✅ answers 201 with `MeOut` and sets the session cookie
+- [x] T1.3 integration — `POST /api/v1/auth/sign-up` ✅ answers 422 for a missing, blank or over-80-character name or home name
+- [x] T1.4 unit (database rule) — `test_home_and_member_checks_reject_bad_rows` ✅: blank or 81-character home or member name, 81-character area, first month not on the 1st; a badly formed Home ID is added with `home.code` in B4
 - [x] T1.5 web integration — sign-up form: "Send code and create home" asks for a code, then shows the code step ("Sent to …"), then sends every field with the code
 - [x] T1.6 web integration — sign-up form shows 422 messages under their fields
 
@@ -37,9 +37,9 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 ### B4 — Each home gets a unique Home ID
 
-- [x] T4.1 unit — `test_home_code_takes_two_letters_from_the_name` (parametrised): "Our Flat" → `OF-`, "Sunrise" → `SU-`, "A" → `AX-`, a Bangla name → `XX-`
-- [x] T4.2 unit — `test_home_code_is_drawn_again_when_taken`
-- [x] T4.3 unit (database rule) — `test_two_homes_cannot_share_a_code`
+- [x] T4.1 unit — `test_home_code_takes_two_letters_from_the_name` ✅ (parametrised): "Our Flat" → `OF-`, "Sunrise" → `SU-`, "A" → `AX-`, a Bangla name → `XX-`
+- [x] T4.2 unit — `test_home_code_is_drawn_again_when_taken` ✅
+- [x] T4.3 unit (database rule) — `test_two_homes_cannot_share_a_code` ✅
 - [x] T4.4 web integration — the welcome block shows the home name and its Home ID
 
 ### B5 — Active in another home → "log in instead"

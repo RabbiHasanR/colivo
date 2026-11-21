@@ -39,6 +39,7 @@ class MeHomeOut(BaseModel):
     """The logged-in person's home."""
 
     id: uuid.UUID
+    code: str
     name: str
     area: str | None
     first_month: date
