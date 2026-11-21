@@ -76,4 +76,65 @@ module('Integration | Component | auth/log-in-form', function (hooks) {
 
     assert.strictEqual(codeRequests, 2, 'a new code was asked for');
   });
+
+  test('a wrong code says how many tries are left', async function (assert) {
+    // GIVEN the API refuses the typed code with 3 tries left
+    // WHEN  someone tries to log in with it
+    // THEN  the form says the code isn't right and how many tries are left
+    worker.use(
+      http.post('*/api/v1/auth/codes', () => HttpResponse.json(codeSentBody)),
+      http.post('*/api/v1/auth/log-in', () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: "That code isn't right.",
+            errors: ["That code isn't right."],
+            data: { reason: 'wrong', tries_left: 3 },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+    const onLoggedIn = () => {};
+    await render(<template><LogInForm @onLoggedIn={{onLoggedIn}} /></template>);
+
+    await sendCodeAndType('111111');
+    await click('[data-test-log-in-submit]');
+
+    assert
+      .dom('[data-test-code-error]')
+      .hasText("That code isn't right. 3 tries left.");
+  });
+
+  test('a locked phone shows the wait and offers another phone or email', async function (assert) {
+    // GIVEN the API says the phone is locked for 14:52 after 5 wrong codes
+    // WHEN  someone tries to log in, then presses "Use a different phone or email"
+    // THEN  the form says so with the wait, then goes back to the first step
+    worker.use(
+      http.post('*/api/v1/auth/codes', () => HttpResponse.json(codeSentBody)),
+      http.post('*/api/v1/auth/log-in', () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: 'Too many wrong codes. Try again later.',
+            errors: ['Too many wrong codes. Try again later.'],
+            data: { reason: 'locked', retry_in_seconds: 892 },
+          },
+          { status: 429 },
+        ),
+      ),
+    );
+    const onLoggedIn = () => {};
+    await render(<template><LogInForm @onLoggedIn={{onLoggedIn}} /></template>);
+
+    await sendCodeAndType('111111');
+    await click('[data-test-log-in-submit]');
+    assert.dom('[data-test-code-error]').includesText('Too many wrong codes');
+    assert.dom('[data-test-code-error]').includesText('try again in 14:52');
+    await click('[data-test-use-different-contact]');
+
+    assert.dom('[data-test-log-in-contact]').hasValue('');
+    assert.dom('[data-test-code-field]').doesNotExist();
+    assert.dom('[data-test-log-in-send-code]').exists();
+  });
 });

@@ -49,6 +49,14 @@ export default class LogInForm extends Component<LogInFormSignature> {
     await this.refusable(() => this.sendCode());
   }
 
+  @action
+  useDifferentContact(): void {
+    this.sentTo = null;
+    this.contact = '';
+    this.code = '';
+    this.codeError = null;
+  }
+
   async sendCode(): Promise<void> {
     await this.session.requestCode(this.contact);
     this.sentTo = this.contact;
@@ -83,15 +91,16 @@ export default class LogInForm extends Component<LogInFormSignature> {
             data-test-log-in-contact
           />
         </Field>
+        {{#if this.codeError}}
+          <CodeErrors
+            @error={{this.codeError}}
+            @onSendNewCode={{this.sendNewCode}}
+            @onUseDifferentContact={{this.useDifferentContact}}
+          />
+        {{/if}}
         {{#if this.sentTo}}
           <p data-test-code-sent-to>Sent to {{this.sentTo}}</p>
           <CodeField @value={{this.code}} @onInput={{this.setCode}} />
-          {{#if this.codeError}}
-            <CodeErrors
-              @error={{this.codeError}}
-              @onSendNewCode={{this.sendNewCode}}
-            />
-          {{/if}}
           <Button type="submit" data-test-log-in-submit>Log in</Button>
         {{else}}
           <Button type="submit" data-test-log-in-send-code>Send code</Button>

@@ -36,3 +36,9 @@ export function codeErrorFrom(error: unknown): CodeError | null {
     retryInSeconds: numberOrNull(retry_in_seconds),
   };
 }
+
+/** "3 tries left." / "1 try left.", or nothing when the API sent no count. */
+export function triesLeftText(triesLeft: number | null): string {
+  if (triesLeft === null) return '';
+  return `${triesLeft} ${triesLeft === 1 ? 'try' : 'tries'} left.`;
+}

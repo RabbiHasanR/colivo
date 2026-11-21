@@ -124,9 +124,9 @@ Web acceptance: `web/tests/acceptance/log-in-test.ts` › owner logs back in wit
 - [x] T10.3 unit — `test_lock_ends_after_15_minutes` ✅: 15 minutes later a new code is sent and works _(passes once the lock is clock-based; seen failing against a lock that only checks the key exists)_
 - [x] T10.4 unit — `test_locked_contact_cannot_get_a_new_code` ✅: `issue_code` → 429 `locked`
 - [x] T10.5 integration — `test_log_in_with_a_wrong_code_answers_400_with_tries_left` ✅: the envelope carries `data: {reason: "wrong", tries_left: 4}` _(built by T10.1 and T9.3; seen failing with the tries left removed)_
-- [x] T10.6 web unit — `formatCountdown` gives `14:52`, `0:45`, `0:00`
-- [x] T10.7 web integration — log-in form: a wrong code shows "That code isn't right. 3 tries left."
-- [x] T10.8 web integration — log-in form: locked shows "Too many wrong codes", "try again in 14:52" and "Use a different phone or email", which goes back to the phone-or-email step
+- [x] T10.6 web unit — `formats seconds left as minutes and seconds` ✅: `formatCountdown` gives `14:52`, `0:45`, `0:00`
+- [x] T10.7 web integration — `a wrong code says how many tries are left` ✅: log-in form: a wrong code shows "That code isn't right. 3 tries left."
+- [x] T10.8 web integration — `a locked phone shows the wait and offers another phone or email` ✅: log-in form: locked shows "Too many wrong codes", "try again in 14:52" and "Use a different phone or email", which goes back to the phone-or-email step
 
 ### B11 — A new code once a minute, 5 an hour, replacing the old one
 
