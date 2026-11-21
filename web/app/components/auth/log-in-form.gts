@@ -4,10 +4,12 @@ import { action } from '@ember/object';
 import { on } from '@ember/modifier';
 import { service } from '@ember/service';
 import type SessionService from '../../services/session';
+import { codeErrorFrom, type CodeError } from '../../utils/code-error';
 import Button from '../ui/button';
 import Field from '../ui/field';
 import Stack from '../ui/stack';
 import TextInput from '../ui/text-input';
+import CodeErrors from './code-errors';
 import CodeField from './code-field';
 
 interface LogInFormSignature {
@@ -24,6 +26,7 @@ export default class LogInForm extends Component<LogInFormSignature> {
   @tracked contact = '';
   @tracked code = '';
   @tracked sentTo: string | null = null;
+  @tracked codeError: CodeError | null = null;
 
   @action setContact(value: string): void {
     this.contact = value;
@@ -36,13 +39,36 @@ export default class LogInForm extends Component<LogInFormSignature> {
   @action
   async submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    if (this.sentTo === null) {
-      await this.session.requestCode(this.contact);
-      this.sentTo = this.contact;
-      return;
-    }
+    await this.refusable(() =>
+      this.sentTo === null ? this.sendCode() : this.logIn(),
+    );
+  }
+
+  @action
+  async sendNewCode(): Promise<void> {
+    await this.refusable(() => this.sendCode());
+  }
+
+  async sendCode(): Promise<void> {
+    await this.session.requestCode(this.contact);
+    this.sentTo = this.contact;
+    this.code = '';
+  }
+
+  async logIn(): Promise<void> {
     await this.session.logIn(this.contact, this.code);
     this.args.onLoggedIn();
+  }
+
+  /** Run a step; a refused code shows why instead of failing the page. */
+  async refusable(step: () => Promise<void>): Promise<void> {
+    this.codeError = null;
+    try {
+      await step();
+    } catch (error) {
+      this.codeError = codeErrorFrom(error);
+      if (!this.codeError) throw error;
+    }
   }
 
   <template>
@@ -60,6 +86,12 @@ export default class LogInForm extends Component<LogInFormSignature> {
         {{#if this.sentTo}}
           <p data-test-code-sent-to>Sent to {{this.sentTo}}</p>
           <CodeField @value={{this.code}} @onInput={{this.setCode}} />
+          {{#if this.codeError}}
+            <CodeErrors
+              @error={{this.codeError}}
+              @onSendNewCode={{this.sendNewCode}}
+            />
+          {{/if}}
           <Button type="submit" data-test-log-in-submit>Log in</Button>
         {{else}}
           <Button type="submit" data-test-log-in-send-code>Send code</Button>

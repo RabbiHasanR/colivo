@@ -41,4 +41,39 @@ module('Integration | Component | auth/log-in-form', function (hooks) {
     assert.deepEqual(sent, [{ contact: '01712 345678', code: '123456' }]);
     assert.true(loggedIn);
   });
+
+  test('an expired code says so and offers a new one', async function (assert) {
+    // GIVEN the API says the typed code expired
+    // WHEN  someone tries to log in with it, then presses "Send a new code"
+    // THEN  the form says the code expired, and a new code is asked for
+    let codeRequests = 0;
+    worker.use(
+      http.post('*/api/v1/auth/codes', () => {
+        codeRequests += 1;
+        return HttpResponse.json(codeSentBody);
+      }),
+      http.post('*/api/v1/auth/log-in', () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: 'This code expired. Codes work for 5 minutes.',
+            errors: ['This code expired. Codes work for 5 minutes.'],
+            data: { reason: 'expired' },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+    const onLoggedIn = () => {};
+    await render(<template><LogInForm @onLoggedIn={{onLoggedIn}} /></template>);
+
+    await sendCodeAndType('123456');
+    await click('[data-test-log-in-submit]');
+    assert
+      .dom('[data-test-code-error]')
+      .hasText('This code expired. Codes work for 5 minutes.');
+    await click('[data-test-send-new-code]');
+
+    assert.strictEqual(codeRequests, 2, 'a new code was asked for');
+  });
 });
