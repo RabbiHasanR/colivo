@@ -9,7 +9,7 @@ module('Acceptance | members', function (hooks) {
   setupApplicationTest(hooks);
   setupMsw(hooks, newHomeSetup);
 
-  test.todo('acceptance: owner adds a member', async function (assert) {
+  test('owner adds a member', async function (assert) {
     // GIVEN the owner of "Our Flat" is logged in; only they are a member
     // WHEN  they open Members and add Maruf by phone, joining 21 Nov 2026
     // THEN  Maruf shows in the members list
