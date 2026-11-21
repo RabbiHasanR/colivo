@@ -292,3 +292,27 @@ def test_log_in_answers_422_for_something_that_is_not_a_phone_or_email(
 
     assert response.status_code == 422
     assert response.json()["errors"][0].startswith("body.contact: ")
+
+
+def test_log_in_with_an_expired_code_answers_400_with_the_reason(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN a code sent to 01712 345678 five minutes ago
+    WHEN  POST /api/v1/auth/log-in uses it
+    THEN  it answers 400, and the envelope's data says the code expired
+    """
+    code = code_for_phone(redis_client, clock)
+    clock.advance(timedelta(minutes=5))
+
+    response = client.post(
+        "/api/v1/auth/log-in", json={"contact": PHONE_E164, "code": code}
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "success": False,
+        "message": "This code expired. Codes work for 5 minutes.",
+        "errors": ["This code expired. Codes work for 5 minutes."],
+        "data": {"reason": "expired"},
+    }

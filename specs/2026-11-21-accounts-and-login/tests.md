@@ -112,9 +112,9 @@ Web acceptance: `web/tests/acceptance/log-in-test.ts` › owner logs back in wit
 
 ### B9 — A code works for 5 minutes
 
-- [x] T9.1 unit — `test_code_expires_after_5_minutes` (parametrised): used at 4:59 → works; at 5:00 → 400 `expired`
-- [x] T9.2 unit — `test_code_nobody_asked_for_answers_expired`: no code was sent → 400 `expired`
-- [x] T9.3 integration — `test_log_in_with_an_expired_code_answers_400_with_the_reason`: the error envelope carries `data: {reason: "expired"}`
+- [x] T9.1 unit — `test_code_expires_after_5_minutes` ✅ (parametrised): used at 4:59 → works; at 5:00 → 400 `expired`
+- [x] T9.2 unit — `test_code_nobody_asked_for_answers_expired` ✅: no code was sent → 400 `expired`
+- [x] T9.3 integration — `test_log_in_with_an_expired_code_answers_400_with_the_reason` ✅: the error envelope carries `data: {reason: "expired"}`
 - [x] T9.4 web integration — log-in form: an expired code shows "This code expired. Codes work for 5 minutes." and "Send a new code" asks for one
 
 ### B10 — Wrong codes: tries left, then a 15-minute lock

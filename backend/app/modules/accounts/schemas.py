@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from enum import StrEnum
 
 from pydantic import BaseModel
 
@@ -7,6 +8,24 @@ from app.core.notifier import Channel
 from app.core.schemas import ShortText
 from app.modules.accounts.contact import ContactIn
 from app.modules.accounts.models import MembershipStatus, Role
+
+
+class CodeErrorReason(StrEnum):
+    """Why a one-time code, or a new one, was refused (FR-94)."""
+
+    WRONG = "wrong"
+    EXPIRED = "expired"
+    LOCKED = "locked"
+    TOO_SOON = "too_soon"
+    HOURLY_LIMIT = "hourly_limit"
+
+
+class CodeErrorOut(BaseModel):
+    """The ``data`` of a refused code: why, and what the person can do next."""
+
+    reason: CodeErrorReason
+    tries_left: int | None = None
+    retry_in_seconds: int | None = None
 
 
 class CodeRequestIn(BaseModel):

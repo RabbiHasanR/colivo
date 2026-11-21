@@ -7,10 +7,12 @@ from app.core.database import SessionDep
 from app.core.notifier import NotifierDep
 from app.core.redis import RedisDep
 from app.core.router import CoreRouter
+from app.core.schemas import StandardResponse
 from app.core.utils import set_response_message
 from app.modules.accounts import service, sessions
 from app.modules.accounts.constants import SESSION_COOKIE, SESSION_LIFETIME
 from app.modules.accounts.schemas import (
+    CodeErrorOut,
     CodeRequestIn,
     CodeSentOut,
     LogInIn,
@@ -19,6 +21,12 @@ from app.modules.accounts.schemas import (
 )
 
 router = CoreRouter()
+
+# A refused one-time code: why, and what the person can do next.
+CODE_ERRORS: dict[int | str, dict[str, object]] = {
+    400: {"model": StandardResponse[CodeErrorOut]},
+    429: {"model": StandardResponse[CodeErrorOut]},
+}
 
 
 def set_session_cookie(response: Response, token: str) -> None:
@@ -42,7 +50,7 @@ def set_session_cookie(response: Response, token: str) -> None:
     )
 
 
-@router.post("/auth/codes")
+@router.post("/auth/codes", responses=CODE_ERRORS)
 def request_code(
     request: Request,
     response: Response,
@@ -58,7 +66,7 @@ def request_code(
     return sent
 
 
-@router.post("/auth/sign-up", status_code=201)
+@router.post("/auth/sign-up", status_code=201, responses=CODE_ERRORS)
 def sign_up(
     request: Request,
     response: Response,
@@ -76,7 +84,7 @@ def sign_up(
     return service.get_me(session, membership)
 
 
-@router.post("/auth/log-in")
+@router.post("/auth/log-in", responses=CODE_ERRORS)
 def log_in(
     request: Request,
     response: Response,
