@@ -1,5 +1,6 @@
 from fastapi import Request, Response
 
+from app.api.deps import CurrentMemberDep
 from app.core.clock import ClockDep
 from app.core.database import SessionDep
 from app.core.notifier import NotifierDep
@@ -49,4 +50,24 @@ def sign_up(
     response.set_cookie(SESSION_COOKIE, token)
     set_response_message(request, "Home created")
     response.status_code = 201
+    return service.get_me(session, membership)
+
+
+@router.post("/auth/log-out")
+def log_out(request: Request, response: Response, membership: CurrentMemberDep) -> None:
+    """End the session and clear its cookie."""
+    set_response_message(request, "Logged out")
+    response.status_code = 200
+
+
+@router.get("/me")
+def get_me(
+    request: Request,
+    response: Response,
+    membership: CurrentMemberDep,
+    session: SessionDep,
+) -> MeOut:
+    """Who is logged in, and in which home."""
+    set_response_message(request, "Logged in")
+    response.status_code = 200
     return service.get_me(session, membership)

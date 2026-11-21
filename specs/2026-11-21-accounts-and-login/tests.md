@@ -83,7 +83,7 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 ### B16 — Everything else needs a log-in
 
-- [x] T16.1 integration — `test_endpoints_need_a_log_in` (parametrised over `GET /me`, `POST /auth/log-out`, `GET /home/setup`): no cookie, or an unknown token → 401
+- [x] T16.1 integration — `test_endpoints_need_a_log_in` ✅ (parametrised over `GET /me`, `POST /auth/log-out`, `GET /home/setup`): no cookie, or an unknown token → 401
 - [x] T16.2 web acceptance — a visitor who isn't logged in opening `/` is sent to `/log-in` (`web/tests/acceptance/access-test.ts`)
 - [x] T16.3 web acceptance — someone logged in opening `/log-in` is sent home (same file)
 

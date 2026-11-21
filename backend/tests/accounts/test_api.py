@@ -152,3 +152,33 @@ def test_codes_answer_422_for_something_that_is_not_a_phone_or_email(
 
     assert response.status_code == 422
     assert response.json()["errors"][0].startswith("body.contact: ")
+
+
+@pytest.mark.parametrize(
+    ("method", "path"),
+    [
+        pytest.param("GET", "/api/v1/me", id="me"),
+        pytest.param("POST", "/api/v1/auth/log-out", id="log-out"),
+        pytest.param("GET", "/api/v1/home/setup", id="setup"),
+    ],
+)
+@pytest.mark.parametrize(
+    "cookie",
+    [
+        pytest.param(None, id="no cookie"),
+        pytest.param(f"{SESSION_COOKIE}=not-a-session", id="unknown token"),
+    ],
+)
+def test_endpoints_need_a_log_in(
+    client: TestClient, method: str, path: str, cookie: str | None
+) -> None:
+    """
+    GIVEN nobody is logged in, or the cookie holds a token that is no session
+    WHEN  an endpoint behind log-in is called
+    THEN  it answers 401
+    """
+    headers = {"Cookie": cookie} if cookie else {}
+
+    response = client.request(method, path, headers=headers)
+
+    assert response.status_code == 401

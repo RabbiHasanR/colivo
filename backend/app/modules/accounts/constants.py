@@ -6,3 +6,4 @@ CODE_LIFETIME = timedelta(minutes=5)
 
 # Log-in sessions.
 SESSION_COOKIE = "colivo_session"
+SESSION_LIFETIME = timedelta(days=30)
