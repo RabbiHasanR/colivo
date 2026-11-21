@@ -4,7 +4,7 @@ from redis import Redis
 from sqlmodel import Session, select
 from starlette.exceptions import HTTPException
 
-from app.core.notifier import Notifier
+from app.core.notifier import Channel, Notifier
 from app.modules.accounts import codes
 from app.modules.accounts.constants import CODE_LIFETIME
 from app.modules.accounts.contact import Contact
@@ -38,7 +38,22 @@ def find_person(session: Session, contact: Contact) -> Person | None:
     Returns:
         The person, or None.
     """
-    return session.exec(select(Person).where(Person.phone == contact.value)).first()
+    column = Person.email if contact.channel == Channel.EMAIL else Person.phone
+    return session.exec(select(Person).where(column == contact.value)).first()
+
+
+def new_person(contact: Contact) -> Person:
+    """A person who logs in with ``contact``: their phone or their email.
+
+    Args:
+        contact: A phone or email.
+
+    Returns:
+        The new person, not yet added to the session.
+    """
+    if contact.channel == Channel.EMAIL:
+        return Person(email=contact.value)
+    return Person(phone=contact.value)
 
 
 def active_membership(session: Session, person: Person) -> Membership | None:
@@ -82,7 +97,7 @@ def sign_up(
     """
     codes.use_code(redis_client, data.contact, data.code, now)
     homes_service.check_first_month(data.first_month, now, DEFAULT_TIME_ZONE)
-    person = find_person(session, data.contact) or Person(phone=data.contact.value)
+    person = find_person(session, data.contact) or new_person(data.contact)
     if active_membership(session, person) is not None:
         raise HTTPException(409, "You're already in a home. Log in instead.")
     home = homes_service.create_home(

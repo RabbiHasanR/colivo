@@ -57,10 +57,11 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 ### B7 — One phone in any form is one person; emails ignore case
 
-- [x] T7.1 unit — `test_contact_is_normalised` (parametrised): `01712 345678`, `+880 1712-345678` → `+8801712345678`; `Rabbi@Example.COM` → `rabbi@example.com`
-- [x] T7.2 unit — `test_contact_that_is_not_a_phone_or_email_is_rejected` (parametrised): `hello`, `123`, `a@`, empty
-- [x] T7.3 unit (database rule) — `test_two_people_cannot_share_a_phone_or_email` (parametrised)
-- [x] T7.4 unit (database rule) — `test_person_checks_reject_bad_rows` (parametrised): no phone and no email, a phone not in E.164, an upper-case email
+- [x] T7.1 unit — `test_contact_is_normalised` ✅ (parametrised): `01712 345678`, `+880 1712-345678` → `+8801712345678`; `Rabbi@Example.COM` → `rabbi@example.com`
+- [x] T7.2 unit — `test_contact_that_is_not_a_phone_or_email_is_rejected` ✅ (parametrised): `hello`, `123`, `a@`, empty
+- [x] T7.3 unit (database rule) — `test_two_people_cannot_share_a_phone_or_email` ✅ (parametrised)
+- [x] T7.4 unit (database rule) — `test_person_checks_reject_bad_rows` ✅ (parametrised): no phone and no email, a phone not in E.164, an upper-case email
+- [x] T7.5 unit — `test_email_in_any_letter_case_is_the_same_person` ✅: signing up by email keeps it as the person's email; the same email in other letters finds that person (409) _(added while building: nothing else checked that an email sign-up stores and finds `email`)_
 
 ### B8 — A code is used once
 

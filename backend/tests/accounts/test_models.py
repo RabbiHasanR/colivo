@@ -81,3 +81,49 @@ def test_person_cannot_have_two_active_memberships(session: Session) -> None:
 
     with pytest.raises(IntegrityError):
         session.flush()
+
+
+@pytest.mark.parametrize(
+    "contact",
+    [
+        pytest.param({"phone": "+8801712345678"}, id="phone"),
+        pytest.param({"email": "rabbi@example.com"}, id="email"),
+    ],
+)
+def test_two_people_cannot_share_a_phone_or_email(
+    session: Session, contact: dict[str, str]
+) -> None:
+    """
+    GIVEN a person with a phone or email
+    WHEN  a second person with the same one is saved, past the service
+    THEN  the database refuses it: one phone or email is one person
+    """
+    session.add(Person.model_validate(contact))
+    session.flush()
+
+    session.add(Person.model_validate(contact))
+
+    with pytest.raises(IntegrityError):
+        session.flush()
+
+
+@pytest.mark.parametrize(
+    "person",
+    [
+        pytest.param({}, id="no phone and no email"),
+        pytest.param({"phone": "01712 345678"}, id="phone not in E.164"),
+        pytest.param({"email": "Rabbi@example.com"}, id="email not in lower case"),
+    ],
+)
+def test_person_checks_reject_bad_rows(
+    session: Session, person: dict[str, str]
+) -> None:
+    """
+    GIVEN a person with no contact, a phone not in E.164 or an upper-case email
+    WHEN  it is saved straight to the database
+    THEN  the database refuses it
+    """
+    session.add(Person.model_validate(person))
+
+    with pytest.raises(IntegrityError):
+        session.flush()

@@ -1,6 +1,7 @@
 from typing import Annotated
 
 import phonenumbers
+from email_validator import EmailNotValidError, validate_email
 from pydantic import BaseModel, BeforeValidator, WithJsonSchema
 
 from app.core.notifier import Channel
@@ -31,15 +32,50 @@ def parse_contact(raw: object) -> object:
     """
     if not isinstance(raw, str):
         return raw
-    if "@" in raw:
-        return Contact(channel=Channel.EMAIL, value=raw)
+    typed = raw.strip()
+    if "@" in typed:
+        return Contact(channel=Channel.EMAIL, value=normalise_email(typed))
+    return Contact(channel=Channel.SMS, value=normalise_phone(typed))
+
+
+def normalise_email(typed: str) -> str:
+    """Check an email and put it in lower case: one address, one person.
+
+    Args:
+        typed: The email as typed.
+
+    Returns:
+        The email in lower case.
+
+    Raises:
+        ValueError: When it isn't a valid email.
+    """
     try:
-        number = phonenumbers.parse(raw, DEFAULT_PHONE_REGION)
+        email = validate_email(typed, check_deliverability=False)
+    except EmailNotValidError as error:
+        raise ValueError(NOT_A_CONTACT) from error
+    return email.normalized.lower()
+
+
+def normalise_phone(typed: str) -> str:
+    """Check a phone number and put it in E.164: one number, one person.
+
+    Args:
+        typed: The number as typed; without a country code it is Bangladeshi.
+
+    Returns:
+        The number in E.164, e.g. ``+8801712345678``.
+
+    Raises:
+        ValueError: When it isn't a valid phone number.
+    """
+    try:
+        number = phonenumbers.parse(typed, DEFAULT_PHONE_REGION)
     except phonenumbers.NumberParseException as error:
         raise ValueError(NOT_A_CONTACT) from error
     if not phonenumbers.is_valid_number(number):
         raise ValueError(NOT_A_CONTACT)
-    return Contact(channel=Channel.SMS, value=raw)
+    return phonenumbers.format_number(number, phonenumbers.PhoneNumberFormat.E164)
 
 
 # A request field holding a phone or an email: a string in the API contract,

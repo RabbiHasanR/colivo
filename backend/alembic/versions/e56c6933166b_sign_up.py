@@ -72,7 +72,17 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("phone", sa.Text(), nullable=True),
+        sa.Column("email", sa.Text(), nullable=True),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_person")),
+        sa.UniqueConstraint("phone", name=op.f("uq_person_phone")),
+        sa.UniqueConstraint("email", name=op.f("uq_person_email")),
+        sa.CheckConstraint(
+            "phone IS NOT NULL OR email IS NOT NULL", name=op.f("ck_person_contact")
+        ),
+        sa.CheckConstraint(
+            r"phone ~ '^\+[1-9][0-9]{7,14}$'", name=op.f("ck_person_phone")
+        ),
+        sa.CheckConstraint("email = lower(email)", name=op.f("ck_person_email")),
     )
     op.create_table(
         "membership",

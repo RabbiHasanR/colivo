@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import Index, Text, text
+from sqlalchemy import CheckConstraint, Index, Text, UniqueConstraint, text
 from sqlmodel import Field
 
 from app.core.models import TableBase, check_in, short_text_check
@@ -26,7 +26,16 @@ class MembershipStatus(StrEnum):
 class Person(TableBase, table=True):
     """A log-in identity, shared across homes; nothing about life in a home."""
 
+    __table_args__ = (
+        UniqueConstraint("phone"),
+        UniqueConstraint("email"),
+        CheckConstraint("phone IS NOT NULL OR email IS NOT NULL", name="contact"),
+        CheckConstraint(r"phone ~ '^\+[1-9][0-9]{7,14}$'", name="phone"),
+        CheckConstraint("email = lower(email)", name="email"),
+    )
+
     phone: str | None = Field(default=None, sa_type=Text)  # pyright: ignore[reportArgumentType]
+    email: str | None = Field(default=None, sa_type=Text)  # pyright: ignore[reportArgumentType]
 
 
 class Membership(TableBase, table=True):
