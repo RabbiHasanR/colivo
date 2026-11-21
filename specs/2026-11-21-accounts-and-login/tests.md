@@ -12,7 +12,7 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 ### Phase 0 fixes
 
-- [x] T0.1 integration — `test_invalid_input_answers_422_in_the_envelope`: `success: false`, `message: "Validation Error"`, `errors: ["body.<field>: <msg>"]` (`backend/tests/core/test_api.py`)
+- [x] T0.1 integration — `test_invalid_input_answers_422_in_the_envelope` ✅: `success: false`, `message: "Validation Error"`, `errors: ["body.<field>: <msg>"]` (`backend/tests/core/test_api.py`)
 - [x] T0.2 unit — `test_every_check_matches_its_enum`: each `CHECK (col IN …)` in the test database equals its `StrEnum` (`backend/tests/core/test_models.py`)
 
 ### B1 — Owner signs up and the home is created

@@ -2,6 +2,7 @@ import json
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 
 from app.core.config import settings
 from app.main import create_app
@@ -47,6 +48,42 @@ def test_unexpected_error_answers_500_without_internals() -> None:
         "errors": ["An unexpected error occurred."],
     }
     assert "hunter2" not in response.text
+
+
+class PetIn(BaseModel):
+    """A throwaway request body for the 422 test."""
+
+    name: str
+    age: int
+
+
+def test_invalid_input_answers_422_in_the_envelope() -> None:
+    """
+    GIVEN an endpoint whose body needs a name and an age
+    WHEN  it is called with no name and an age that isn't a number
+    THEN  it answers 422 in the envelope, one "<location>: <message>" string
+          per problem
+    """
+    app = create_app()
+
+    @app.post("/api/v1/pets")
+    def add_pet(pet: PetIn) -> None:
+        """Accept a pet."""
+
+    client = TestClient(app)
+
+    response = client.post("/api/v1/pets", json={"age": "old"})
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "success": False,
+        "message": "Validation Error",
+        "errors": [
+            "body.name: Field required",
+            "body.age: Input should be a valid integer, "
+            "unable to parse string as an integer",
+        ],
+    }
 
 
 def test_openapi_describes_health_inside_the_envelope(client: TestClient) -> None:
