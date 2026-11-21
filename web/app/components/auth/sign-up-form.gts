@@ -10,6 +10,7 @@ import { DEFAULT_TIME_ZONE, firstMonthChoices } from '../../utils/months';
 import Button from '../ui/button';
 import Checkbox from '../ui/checkbox';
 import Field from '../ui/field';
+import FormError from '../ui/form-error';
 import Select from '../ui/select';
 import Stack from '../ui/stack';
 import TextInput from '../ui/text-input';
@@ -45,6 +46,8 @@ export default class SignUpForm extends Component<SignUpFormSignature> {
   @tracked sentTo: string | null = null;
   /** The API's 422 messages, by field name (`name`, `home_name` …). */
   @tracked fieldErrors: Record<string, string[]> = {};
+  /** Why the API refused the sign-up, when it isn't about one field. */
+  @tracked error: string | null = null;
 
   @action setName(value: string): void {
     this.name = value;
@@ -95,6 +98,10 @@ export default class SignUpForm extends Component<SignUpFormSignature> {
     } catch (error) {
       if (error instanceof ApiError && error.kind === 'validation') {
         this.fieldErrors = error.fieldErrors;
+        return;
+      }
+      if (error instanceof ApiError && error.status !== null) {
+        this.error = error.message;
         return;
       }
       throw error;
@@ -180,6 +187,10 @@ export default class SignUpForm extends Component<SignUpFormSignature> {
         >
           I live here too and pay my share
         </Checkbox>
+
+        {{#if this.error}}
+          <FormError data-test-sign-up-error>{{this.error}}</FormError>
+        {{/if}}
 
         {{#if this.sentTo}}
           <p data-test-code-sent-to>Sent to {{this.sentTo}}</p>

@@ -110,4 +110,38 @@ module('Integration | Component | auth/sign-up-form', function (hooks) {
       .dom('[data-test-field="home_name"] [data-test-field-error]')
       .hasText('String should have at most 80 characters');
   });
+
+  test('shows the 409 message when the person is already in a home', async function (assert) {
+    // GIVEN the phone already belongs to an active member of a home
+    // WHEN  they try to create a home with it
+    // THEN  the form says so and points them to log in
+    worker.use(
+      http.post('*/api/v1/auth/codes', () => HttpResponse.json(codeSentBody)),
+      http.post('*/api/v1/auth/sign-up', () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: "You're already in a home. Log in instead.",
+            errors: ["You're already in a home. Log in instead."],
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    const onSignedUp = () => {};
+    await render(
+      <template>
+        <SignUpForm @now={{NOW}} @onSignedUp={{onSignedUp}} />
+      </template>,
+    );
+
+    await fillInOurFlat();
+    await click('[data-test-sign-up-send-code]');
+    await fillIn('[data-test-code-field]', '123456');
+    await click('[data-test-sign-up-submit]');
+
+    assert
+      .dom('[data-test-sign-up-error]')
+      .hasText("You're already in a home. Log in instead.");
+  });
 });

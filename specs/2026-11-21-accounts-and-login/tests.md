@@ -47,7 +47,7 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 - [x] T5.1 unit — `test_sign_up_refused_when_already_active_in_a_home` ✅: 409, nothing created
 - [x] T5.2 unit — `test_person_no_longer_active_anywhere_can_sign_up` ✅: the same person is reused
 - [x] T5.3 unit (database rule) — `test_person_cannot_have_two_active_memberships` ✅
-- [x] T5.4 web integration — sign-up form shows the 409 message
+- [x] T5.4 web integration — `shows the 409 message when the person is already in a home` ✅: sign-up form shows the 409 message
 
 ### B6 — A code is sent, with the same answer for anyone
 
