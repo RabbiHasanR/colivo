@@ -123,6 +123,15 @@ recorded in this phase.
   with Deactivate on current members and Reactivate on past ones.
   [backend] [web]
 
+### Security review follow-ups (agreed 21 Nov 2026)
+
+- B38 — A manager can't reactivate another manager: bringing a manager back
+  is the owner's call, as removing one is. [backend] [web]
+- B39 — A manager can't change the owner's name or join date. [backend]
+  [web]
+- B40 — In production the backend refuses to start with the development
+  notifier, which logs one-time codes in plain text. [backend]
+
 ## Automated checks
 
 | Check                     | Command                                                                                           | Pass criteria                                                                                  |
