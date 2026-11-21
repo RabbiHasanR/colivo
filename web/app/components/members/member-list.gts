@@ -3,12 +3,18 @@ import { fn } from '@ember/helper';
 import { on } from '@ember/modifier';
 import type { Member } from '../../services/members';
 import { formatDate } from '../../utils/dates';
+import { eq } from '../../utils/template';
 import { roleLabel } from '../../utils/roles';
 import Button from '../ui/button';
 import ScrollBox from '../ui/scroll-box';
 
 interface MemberListSignature {
-  Args: { members: Member[]; onEdit?: (member: Member) => void };
+  Args: {
+    members: Member[];
+    onEdit?: (member: Member) => void;
+    onDeactivate?: (member: Member) => void;
+    onReactivate?: (member: Member) => void;
+  };
 }
 
 /** Members & roles (colivo-design/web/WebMembers.html), one row each. */
@@ -33,16 +39,33 @@ const MemberList: TOC<MemberListSignature> = <template>
             <td>{{roleLabel member.role}}</td>
             <td>{{roleLabel member.status}}</td>
             <td>{{formatDate member.joined_on}}</td>
-            {{#if @onEdit}}
-              <td>
+            <td>
+              {{#if @onEdit}}
                 <Button
                   @variant="secondary"
                   aria-label="Change {{member.name}}"
                   data-test-edit-member={{member.name}}
                   {{on "click" (fn @onEdit member)}}
                 >Edit</Button>
-              </td>
-            {{/if}}
+              {{/if}}
+              {{#if (eq member.status "active")}}
+                {{#if @onDeactivate}}
+                  <Button
+                    @variant="secondary"
+                    aria-label="Deactivate {{member.name}}"
+                    data-test-deactivate={{member.name}}
+                    {{on "click" (fn @onDeactivate member)}}
+                  >Deactivate</Button>
+                {{/if}}
+              {{else if @onReactivate}}
+                <Button
+                  @variant="secondary"
+                  aria-label="Reactivate {{member.name}}"
+                  data-test-reactivate={{member.name}}
+                  {{on "click" (fn @onReactivate member)}}
+                >Reactivate</Button>
+              {{/if}}
+            </td>
           </tr>
         {{/each}}
       </tbody>

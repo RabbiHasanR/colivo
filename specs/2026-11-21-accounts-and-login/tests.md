@@ -283,4 +283,4 @@ End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who
 ### B37 — Current and past members on separate tabs
 
 - [x] T37.1 integration — `test_members_list_includes_deactivated_members_with_their_status` ✅ _(the list already had everyone; seen failing with the list limited to active members)_
-- [x] T37.2 web integration — member tabs: Current lists the active members with Deactivate; Past lists the deactivated ones with Reactivate
+- [x] T37.2 web integration — `current members with Deactivate, past members with Reactivate` ✅: member tabs: Current lists the active members with Deactivate; Past lists the deactivated ones with Reactivate
