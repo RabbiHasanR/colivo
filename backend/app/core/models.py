@@ -67,11 +67,11 @@ def short_text_check(column: str, *, optional: bool = False) -> CheckConstraint:
     return CheckConstraint(rule, name=column)
 
 
-class TableBase(SQLModel):
-    """The base of every table (specs/data-model.md → Conventions).
+class AppendOnlyBase(SQLModel):
+    """The base of a table whose rows are never changed (``change_log``).
 
-    A UUIDv7 ``id`` made in Python, ``created_at`` and ``updated_at`` set by
-    the database, and a singular snake_case table name.
+    A UUIDv7 ``id`` made in Python, ``created_at`` set by the database, and a
+    singular snake_case table name (specs/data-model.md → Conventions).
     """
 
     # SQLAlchemy's declared_attr pattern; pyright reads it as an instance
@@ -88,6 +88,11 @@ class TableBase(SQLModel):
         sa_type=DateTime(timezone=True),  # pyright: ignore[reportArgumentType]
         sa_column_kwargs={"server_default": func.now()},
     )
+
+
+class TableBase(AppendOnlyBase):
+    """The base of every other table: also an ``updated_at`` set by the database."""
+
     updated_at: datetime | None = Field(
         default=None,
         nullable=False,
