@@ -26,6 +26,7 @@ from app.modules.accounts.schemas import (
     MeMembershipOut,
     MeOut,
     MePersonOut,
+    MeUpdateIn,
     SignUpIn,
 )
 from app.modules.homes import service as homes_service
@@ -174,8 +175,13 @@ def sign_up(
     # key: flush the parents first.
     session.add(person)
     session.flush()
+    # The owner signed up themselves: no first log-in check to show.
     membership = Membership(
-        home_id=home.id, person_id=person.id, name=data.name, role=Role.OWNER
+        home_id=home.id,
+        person_id=person.id,
+        name=data.name,
+        role=Role.OWNER,
+        details_checked_at=now,
     )
     session.add(membership)
     if data.lives_here:
@@ -206,9 +212,18 @@ def get_me(session: Session, membership: Membership) -> MeOut:
     """
     person = session.get_one(Person, membership.person_id)
     home = session.get_one(Home, membership.home_id)
+    adder = membership.created_by and session.get(Membership, membership.created_by)
     return MeOut(
         person=MePersonOut.model_validate(person, from_attributes=True),
-        membership=MeMembershipOut.model_validate(membership, from_attributes=True),
+        membership=MeMembershipOut(
+            id=membership.id,
+            name=membership.name,
+            role=membership.role,
+            status=membership.status,
+            joined_on=joined_on(session, membership),
+            added_by_name=adder.name if adder else None,
+            details_checked=membership.details_checked_at is not None,
+        ),
         home=MeHomeOut.model_validate(home, from_attributes=True),
     )
 
@@ -467,3 +482,30 @@ def move_join_date(session: Session, member: Membership, joined_on: date) -> Non
     if stay.ends_on is not None and joined_on > stay.ends_on:
         raise HTTPException(400, JOINED_AFTER_LEAVING)
     stay.starts_on = joined_on
+
+
+def update_me(
+    session: Session, membership: Membership, data: MeUpdateIn, now: datetime
+) -> Membership:
+    """Fix your own name, and finish the first log-in check (FR-86).
+
+    The room and join date stay with the owner and managers.
+
+    Args:
+        session: The database session.
+        membership: The logged-in member.
+        data: Their name.
+        now: The current time.
+
+    Returns:
+        The changed membership.
+
+    Raises:
+        HTTPException: 409 for a name another active member has.
+    """
+    check_name_free(session, membership.home_id, data.name, except_id=membership.id)
+    membership.name = data.name
+    membership.details_checked_at = now
+    session.commit()
+    session.refresh(membership)
+    return membership

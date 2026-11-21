@@ -361,10 +361,6 @@ MARUF_PHONE = "01812 345678"
 MARUF_E164 = "+8801812345678"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="acceptance: the owner adds a member, who can then log in",
-)
 def test_owner_adds_member_who_then_logs_in(
     client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
 ) -> None:
@@ -556,5 +552,20 @@ def test_change_member_answers_422_for_a_blank_name(
     member_id = client.post("/api/v1/members", json=maruf_body()).json()["data"]["id"]
 
     response = client.patch(f"/api/v1/members/{member_id}", json={"name": "  "})
+
+    assert response.status_code == 422
+
+
+def test_change_me_answers_422_for_a_blank_name(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" is logged in
+    WHEN  PATCH /api/v1/me sends a blank name
+    THEN  it answers 422
+    """
+    sign_up_owner(client, redis_client, clock)
+
+    response = client.patch("/api/v1/me", json={"name": "  "})
 
     assert response.status_code == 422

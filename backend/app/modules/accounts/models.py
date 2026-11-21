@@ -1,8 +1,16 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 from enum import StrEnum
 
-from sqlalchemy import CheckConstraint, Index, Text, UniqueConstraint, func, text
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Index,
+    Text,
+    UniqueConstraint,
+    func,
+    text,
+)
 from sqlmodel import Field
 
 from app.core.models import TableBase, check_in, short_text_check
@@ -74,6 +82,11 @@ class Membership(TableBase, table=True):
     )
     # Who added them ("Added by Rabbi Hasan"); None for the owner.
     created_by: uuid.UUID | None = Field(default=None, foreign_key="membership.id")
+    # The first log-in check (FR-86) is shown until this is set.
+    details_checked_at: datetime | None = Field(
+        default=None,
+        sa_type=DateTime(timezone=True),  # pyright: ignore[reportArgumentType]
+    )
 
 
 class MembershipPeriod(TableBase, table=True):

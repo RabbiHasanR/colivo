@@ -24,6 +24,7 @@ from app.modules.accounts.schemas import (
     MemberOut,
     MemberUpdateIn,
     MeOut,
+    MeUpdateIn,
     SignUpIn,
 )
 
@@ -185,3 +186,19 @@ def update_member(
     set_response_message(request, "Member changed")
     response.status_code = 200
     return service.member_out(session, member)
+
+
+@router.patch("/me")
+def update_me(
+    request: Request,
+    response: Response,
+    data: MeUpdateIn,
+    membership: CurrentMemberDep,
+    session: SessionDep,
+    clock: ClockDep,
+) -> MeOut:
+    """Fix your own name; this also finishes the first log-in check."""
+    changed = service.update_me(session, membership, data, clock())
+    set_response_message(request, "Details checked")
+    response.status_code = 200
+    return service.get_me(session, changed)

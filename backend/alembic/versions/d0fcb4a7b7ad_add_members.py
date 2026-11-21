@@ -59,6 +59,10 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id", name=op.f("pk_change_log")),
     )
     op.add_column("membership", sa.Column("created_by", sa.Uuid(), nullable=True))
+    op.add_column(
+        "membership",
+        sa.Column("details_checked_at", sa.DateTime(timezone=True), nullable=True),
+    )
     op.create_foreign_key(
         op.f("fk_membership_created_by_membership"),
         "membership",
@@ -95,5 +99,6 @@ def downgrade() -> None:
     op.drop_constraint(
         op.f("fk_membership_created_by_membership"), "membership", type_="foreignkey"
     )
+    op.drop_column("membership", "details_checked_at")
     op.drop_column("membership", "created_by")
     # ### end Alembic commands ###

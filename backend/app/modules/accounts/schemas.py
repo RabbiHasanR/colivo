@@ -78,6 +78,12 @@ class MemberUpdateIn(BaseModel):
     joined_on: date | None = None
 
 
+class MeUpdateIn(BaseModel):
+    """Fix your own name; sending it also finishes the first log-in check."""
+
+    name: ShortText
+
+
 class MemberOut(BaseModel):
     """A member of the home, for the owner and managers' members list."""
 
@@ -103,6 +109,11 @@ class MeMembershipOut(BaseModel):
     name: str
     role: Role
     status: MembershipStatus
+    joined_on: date | None = None
+    # Who added them ("Added by Rabbi Hasan"); None for the owner.
+    added_by_name: str | None = None
+    # Whether the first log-in check is done (FR-86).
+    details_checked: bool = False
 
 
 class MeHomeOut(BaseModel):

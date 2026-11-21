@@ -21,6 +21,7 @@ from app.modules.accounts.schemas import (
     LogInIn,
     MemberIn,
     MemberUpdateIn,
+    MeUpdateIn,
     SignUpIn,
 )
 from app.modules.homes import service as homes_service
@@ -584,3 +585,44 @@ def test_new_name_cannot_be_one_already_taken(
         )
 
     assert error.value.status_code == 409
+
+
+def test_me_says_who_added_the_member_and_whether_they_checked(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan signed up "Our Flat" and added Maruf, joining 21 Nov 2026
+    WHEN  each of them asks who is logged in
+    THEN  Maruf was added by Rabbi Hasan and hasn't checked his details yet;
+          Rabbi Hasan, who signed up himself, has
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+
+    for_member = service.get_me(session, member).membership
+    for_owner = service.get_me(session, owner).membership
+
+    assert (
+        for_member.joined_on,
+        for_member.added_by_name,
+        for_member.details_checked,
+    ) == (date(2026, 11, 21), "Rabbi Hasan", False)
+    assert (for_owner.added_by_name, for_owner.details_checked) == (None, True)
+
+
+def test_member_fixes_their_name_and_checks_their_details(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf was added to "Our Flat" and hasn't checked his details yet
+    WHEN  at his first log-in he fixes his name to "Maruf Hossain"
+    THEN  his name is fixed, and his details are checked as of now
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+
+    changed = service.update_me(
+        session, member, MeUpdateIn(name="Maruf Hossain"), clock()
+    )
+
+    assert (changed.name, changed.details_checked_at) == ("Maruf Hossain", clock())
