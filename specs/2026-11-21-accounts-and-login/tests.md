@@ -104,3 +104,47 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 - [x] T19.1 web integration — `says what will appear, and offers its one action only when given` ✅: the empty state shows its reason and, when given, its one action
 - [ ] T19.2 web acceptance — the new home shows the "Today's meals" and "All caught up" empty states _(skipped: the web acceptance test checks them)_
+
+## Group 3 — Log-in
+
+Backend acceptance: `backend/tests/accounts/test_api.py::test_owner_logs_back_in_with_one_time_code`
+Web acceptance: `web/tests/acceptance/log-in-test.ts` › owner logs back in with a one-time code
+
+### B9 — A code works for 5 minutes
+
+- [x] T9.1 unit — `test_code_expires_after_5_minutes` (parametrised): used at 4:59 → works; at 5:00 → 400 `expired`
+- [x] T9.2 unit — `test_code_nobody_asked_for_answers_expired`: no code was sent → 400 `expired`
+- [x] T9.3 integration — `test_log_in_with_an_expired_code_answers_400_with_the_reason`: the error envelope carries `data: {reason: "expired"}`
+- [x] T9.4 web integration — log-in form: an expired code shows "This code expired. Codes work for 5 minutes." and "Send a new code" asks for one
+
+### B10 — Wrong codes: tries left, then a 15-minute lock
+
+- [x] T10.1 unit — `test_wrong_code_says_how_many_tries_are_left`: the first wrong code → 400 `wrong`, 4 tries left
+- [x] T10.2 unit — `test_fifth_wrong_code_locks_the_contact_for_15_minutes`: → 429 `locked`, 900 s to wait; even the right code is refused then
+- [x] T10.3 unit — `test_lock_ends_after_15_minutes`: 15 minutes later a new code is sent and works
+- [x] T10.4 unit — `test_locked_contact_cannot_get_a_new_code`: `issue_code` → 429 `locked`
+- [x] T10.5 integration — `test_log_in_with_a_wrong_code_answers_400_with_tries_left`: the envelope carries `data: {reason: "wrong", tries_left: 4}`
+- [x] T10.6 web unit — `formatCountdown` gives `14:52`, `0:45`, `0:00`
+- [x] T10.7 web integration — log-in form: a wrong code shows "That code isn't right. 3 tries left."
+- [x] T10.8 web integration — log-in form: locked shows "Too many wrong codes", "try again in 14:52" and "Use a different phone or email", which goes back to the phone-or-email step
+
+### B11 — A new code once a minute, 5 an hour, replacing the old one
+
+- [x] T11.1 unit — `test_new_code_waits_a_minute_after_the_last`: at once → 429 `too_soon`, 60 s; a minute later → sent
+- [x] T11.2 unit — `test_only_5_codes_an_hour`: the 6th within the hour → 429 `hourly_limit`, wait until the oldest is an hour old; then sent
+- [x] T11.3 unit — `test_new_code_replaces_the_old_one`: the old code → 400 `expired`; the new one works
+- [x] T11.4 integration — `test_codes_say_when_the_next_one_can_be_sent`: the first answer has `resend_in_seconds: 60`; asking again at once → 429 with `retry_in_seconds: 60`
+- [x] T11.5 web unit — the error handler maps 429 to `too-many` and keeps its `data` (`handlers-test.ts`, a new test)
+- [x] T11.6 web integration — log-in form: the code step shows "Resend in 1:00" and no Resend button; when it reaches 0:00, "Resend" sends a new code and says "New code sent to …. The old one no longer works."
+
+### B12 — A person with an active membership logs in
+
+- [x] T12.1 unit — `test_log_in_returns_the_active_membership`
+- [ ] T12.2 integration — `POST /api/v1/auth/log-in` answers 200 with `MeOut` and sets the cookie _(skipped: the backend acceptance test logs in, then calls `GET /me` with that cookie)_
+- [x] T12.3 integration — `test_log_in_answers_422_for_something_that_is_not_a_phone_or_email`
+- [x] T12.4 web integration — log-in form: Send code shows "Sent to …"; Log in sends the contact and code and tells the page the person is logged in
+
+### B13 — No active membership → "Not added yet"
+
+- [x] T13.1 unit — `test_log_in_with_no_active_membership_is_not_added_yet` (parametrised): never added; deactivated → 404, after the right code
+- [x] T13.2 web integration — log-in page: a 404 shows "No home uses 01712 345678 yet", "ask its owner or manager", "Create my own home" (fills the sign-up form's phone or email) and "Try another phone or email" (back to the first step)
