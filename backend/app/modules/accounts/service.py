@@ -43,6 +43,7 @@ NAME_TAKEN = "Someone in this home already has that name."
 NO_STAY = "Only someone who lives in the home has a join date."
 JOINED_AFTER_LEAVING = "The join date can't be after the end of their first stay."
 MEMBER_NOT_FOUND = "Member not found."
+OWNER_ROLE_FIXED = "The owner's role can't change."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -624,8 +625,14 @@ def change_role(
 
     Returns:
         The changed membership.
+
+    Raises:
+        HTTPException: 404 for another home's member; 400 for the owner,
+            whose role never changes.
     """
     member = get_member(session, owner.home_id, member_id)
+    if member.role == Role.OWNER:
+        raise HTTPException(400, OWNER_ROLE_FIXED)
     if member.role != data.role:
         record_member_change(
             session,

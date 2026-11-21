@@ -63,6 +63,13 @@ class Membership(TableBase, table=True):
             unique=True,
             postgresql_where=text("status = 'active'"),
         ),
+        # Exactly one owner per home (FR-63).
+        Index(
+            "uq_membership_one_owner",
+            "home_id",
+            unique=True,
+            postgresql_where=text("role = 'owner'"),
+        ),
         # One active home per person (FR-85).
         Index(
             "uq_membership_active_person_id",

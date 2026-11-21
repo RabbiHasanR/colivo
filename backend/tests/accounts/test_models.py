@@ -175,3 +175,32 @@ def test_database_refuses_two_active_members_with_one_name(session: Session) -> 
 
     with pytest.raises(IntegrityError):
         session.flush()
+
+
+def test_home_has_at_most_one_owner(session: Session) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat"
+    WHEN  a second owner of Our Flat is saved, past the service
+    THEN  the database refuses it: a home has exactly one owner (FR-63)
+    """
+    home = homes_service.create_home(
+        session, name="Our Flat", area=None, first_month=date(2026, 11, 1)
+    )
+    people = [Person(phone="+8801712345678"), Person(phone="+8801812345678")]
+    session.add_all(people)
+    session.flush()
+    session.add(
+        Membership(
+            home_id=home.id, person_id=people[0].id, name="Rabbi", role=Role.OWNER
+        )
+    )
+    session.flush()
+
+    session.add(
+        Membership(
+            home_id=home.id, person_id=people[1].id, name="Maruf", role=Role.OWNER
+        )
+    )
+
+    with pytest.raises(IntegrityError):
+        session.flush()

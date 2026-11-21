@@ -742,3 +742,19 @@ def test_owner_makes_a_member_a_manager_and_back(
         {"role": before.value},
         {"role": after.value},
     )
+
+
+def test_owners_own_role_cannot_change(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat"
+    WHEN  his own role is set to member
+    THEN  it is refused with 400: a home always has its owner (FR-63)
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+
+    with pytest.raises(HTTPException) as error:
+        service.change_role(session, owner, owner.id, RoleIn(role=Role.MEMBER), clock())
+
+    assert error.value.status_code == 400
