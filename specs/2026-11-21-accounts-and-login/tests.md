@@ -33,7 +33,7 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 - [x] T3.1 unit — `test_first_month_must_be_this_month_or_next` ✅ (parametrised, clock at 30 Nov 2026 19:00 UTC = 1 Dec 01:00 in Dhaka): December and January accepted; November and February answer 400
 - [ ] T3.2 integration — the same 400 over HTTP _(skipped: the service raises the 400; T3.1 checks it, one behaviour, one test)_
-- [x] T3.3 web unit — `firstMonthChoices` gives this month and next as `{ value, label }` in Asia/Dhaka, across the month boundary
+- [x] T3.3 web unit — `first-month choices are this month and next in the home time zone` ✅: `firstMonthChoices` gives this month and next as `{ value, label }` in Asia/Dhaka, across the month boundary
 
 ### B4 — Each home gets a unique Home ID
 
