@@ -34,8 +34,6 @@ Configuration and docs only. Commit: `chore: add phase 1 groundwork`.
   now). Cookie name and the FR-94 numbers are constants, not settings.
 - `backend/app/core/clock.py`: `now()` behind a FastAPI dependency, so tests
   move time.
-- `backend/app/main.py`: CORS `allow_credentials=True` (the allow-list is
-  already explicit).
 - `backend/app/modules/{accounts,homes,history}/__init__.py`, and empty
   routers for `accounts` and `homes` registered in
   `backend/app/api/api_v1.py`.
@@ -80,6 +78,11 @@ Configuration and docs only. Commit: `chore: add phase 1 groundwork`.
     session → active membership, else 401) and `require_role(...)`.
   - `router.py`: `POST /auth/codes`, `POST /auth/sign-up`,
     `POST /auth/log-out`, `GET /me`; cookie set and cleared here.
+- `backend/app/main.py`: CORS `allow_credentials=True` with explicit
+  methods and headers (moved here from group 1: it changes what the API
+  answers, so B15's test comes first).
+- `backend/app/core/exceptions.py`: 422 in the envelope (a Phase 0 gap,
+  fixed test-first).
 - `backend/app/modules/homes/`:
   - `models.py`: `Home`; `service.py`: Home ID generation, `get_setup`
     (checklist steps); `schemas.py`: `SetupOut`; `router.py`:
@@ -103,8 +106,8 @@ Configuration and docs only. Commit: `chore: add phase 1 groundwork`.
 - `web/app/services/session.ts`: the current person, membership and home
   from `GET /me`; `load()`, `logOut()`, `isOwnerOrManager`.
 - `web/app/data/builders/{auth,me,home}.ts`.
-- `web/app/utils/{contact,months}.ts`: what a typed contact looks like
-  (phone or email), the first-month choices and their labels.
+- `web/app/utils/months.ts`: the first-month choices and their labels.
+  Phone and email rules are backend-only (B7).
 - Routes and templates: `web/app/routes/{index,log-in}.ts`,
   `web/app/templates/log-in.gts` (the "Create your home" side of
   `WebAuth.html` in this group), `web/app/routes/authenticated.ts` (guard:
@@ -119,7 +122,7 @@ Configuration and docs only. Commit: `chore: add phase 1 groundwork`.
   roles and Log out; `web/app/components/ui/{field,text-input,checkbox}.gts`
   (fields repeat on every form from here on).
 - Tests: `web/tests/unit/data/builders-test.ts`,
-  `web/tests/unit/utils/{contact,months}-test.ts`,
+  `web/tests/unit/utils/months-test.ts`,
   `web/tests/integration/components/{auth,home,ui}/…`,
   `web/tests/acceptance/sign-up-test.ts`; `web/tests/helpers/login.ts`
   (an MSW session for acceptance tests).
