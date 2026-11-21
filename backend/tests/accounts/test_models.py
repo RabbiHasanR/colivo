@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
-from app.modules.accounts.models import Membership, Person, Role
+from app.modules.accounts.models import Membership, MembershipStatus, Person, Role
 from app.modules.homes import service as homes_service
 from app.modules.homes.models import Home
 
@@ -124,6 +124,33 @@ def test_person_checks_reject_bad_rows(
     THEN  the database refuses it
     """
     session.add(Person.model_validate(person))
+
+    with pytest.raises(IntegrityError):
+        session.flush()
+
+
+def test_person_has_one_membership_per_home(session: Session) -> None:
+    """
+    GIVEN Maruf was a member of "Our Flat" and is now deactivated
+    WHEN  a second membership of Our Flat is saved for him, past the service
+    THEN  the database refuses it: he is reactivated, never added twice
+    """
+    person = Person(phone="+8801812345678")
+    session.add(person)
+    home = homes_service.create_home(
+        session, name="Our Flat", area=None, first_month=date(2026, 11, 1)
+    )
+    session.add(
+        Membership(
+            home_id=home.id,
+            person_id=person.id,
+            name="Maruf",
+            status=MembershipStatus.INACTIVE,
+        )
+    )
+    session.flush()
+
+    session.add(Membership(home_id=home.id, person_id=person.id, name="Maruf"))
 
     with pytest.raises(IntegrityError):
         session.flush()

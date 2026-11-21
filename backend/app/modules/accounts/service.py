@@ -32,6 +32,7 @@ from app.modules.homes.constants import DEFAULT_TIME_ZONE
 from app.modules.homes.models import Home
 
 ALREADY_IN_A_HOME = "This phone or email is already in a home."
+PAST_MEMBER = "This person was a member of this home. Reactivate them instead."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -79,6 +80,26 @@ def active_membership(session: Session, person: Person) -> Membership | None:
         select(Membership).where(
             Membership.person_id == person.id,
             Membership.status == MembershipStatus.ACTIVE,
+        )
+    ).first()
+
+
+def membership_in(
+    session: Session, person: Person, home_id: uuid.UUID
+) -> Membership | None:
+    """The person's membership of one home, active or not (one per home).
+
+    Args:
+        session: The database session.
+        person: The person.
+        home_id: The home.
+
+    Returns:
+        The membership, or None if they were never in that home.
+    """
+    return session.exec(
+        select(Membership).where(
+            Membership.person_id == person.id, Membership.home_id == home_id
         )
     ).first()
 
@@ -249,12 +270,15 @@ def add_member(
         The new membership.
 
     Raises:
-        HTTPException: 409 when the person is already active in a home.
+        HTTPException: 409 when the person is already active in a home, or
+            was a member of this one (they are reactivated instead).
     """
     person = find_person(session, data.contact)
     if person and active_membership(session, person):
         # FR-85: one active home per person.
         raise HTTPException(409, ALREADY_IN_A_HOME)
+    if person and membership_in(session, person, adder.home_id):
+        raise HTTPException(409, PAST_MEMBER)
     person = person or new_person(data.contact)
     session.add(person)
     session.flush()

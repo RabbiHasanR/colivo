@@ -45,6 +45,8 @@ class Membership(TableBase, table=True):
         short_text_check("name"),
         check_in("role", Role),
         check_in("status", MembershipStatus),
+        # One membership per person per home: a returning member is reactivated.
+        UniqueConstraint("home_id", "person_id"),
         # One active home per person (FR-85).
         Index(
             "uq_membership_active_person_id",

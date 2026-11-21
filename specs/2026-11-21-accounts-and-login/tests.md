@@ -183,8 +183,8 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 
 ### B24 — A deactivated member of this home is reactivated, not added again
 
-- [x] T24.1 unit — `test_deactivated_member_of_this_home_is_not_added_again`: 409 that says to reactivate them
-- [x] T24.2 unit (database rule) — `test_person_has_one_membership_per_home`
+- [x] T24.1 unit — `test_deactivated_member_of_this_home_is_not_added_again` ✅: 409 that says to reactivate them
+- [x] T24.2 unit (database rule) — `test_person_has_one_membership_per_home` ✅
 - [ ] T24.3 web integration — the form shows that 409 _(skipped: the same message path as T23.2)_
 
 ### B25 — Active members' names are unique, ignoring letter case

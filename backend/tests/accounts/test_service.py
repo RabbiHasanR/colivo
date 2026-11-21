@@ -1,3 +1,4 @@
+import uuid
 from contextlib import AbstractContextManager, nullcontext
 from datetime import UTC, date, datetime, timedelta
 
@@ -418,3 +419,41 @@ def test_member_active_in_another_home_cannot_be_added(
 
     assert error.value.status_code == 409
     assert (maruf_memberships(session, person), notifier.sent) == (1, [])
+
+
+def add_past_member(
+    session: Session, home_id: uuid.UUID, name: str = "Maruf"
+) -> Person:
+    """Make Maruf (01812 345678) a deactivated member of ``home_id``."""
+    person = Person(phone=MARUF_E164)
+    session.add(person)
+    session.flush()
+    session.add(
+        Membership(
+            home_id=home_id,
+            person_id=person.id,
+            name=name,
+            status=MembershipStatus.INACTIVE,
+        )
+    )
+    session.flush()
+    return person
+
+
+def test_deactivated_member_of_this_home_is_not_added_again(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf was a member of "Our Flat" and was deactivated
+    WHEN  the owner adds him again
+    THEN  it is refused with 409, saying to reactivate him instead
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    person = add_past_member(session, owner.home_id)
+
+    with pytest.raises(HTTPException) as error:
+        service.add_member(session, notifier, owner, maruf(), clock())
+
+    assert error.value.status_code == 409
+    assert "Reactivate" in str(error.value.detail)
+    assert maruf_memberships(session, person) == 1
