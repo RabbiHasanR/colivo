@@ -236,9 +236,9 @@ End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who
 
 ### B31 — The owner gives and takes away the Manager role
 
-- [x] T31.1 unit — `test_owner_makes_a_member_a_manager_and_back` (parametrised): member → manager, manager → member; recorded in the history
-- [x] T31.2 integration — `test_only_the_owner_changes_roles` (parametrised): a manager, a member → 403
-- [x] T31.3 integration — `test_change_role_answers_422_for_a_role_that_cannot_be_given` (`owner`, an unknown role)
+- [x] T31.1 unit — `test_owner_makes_a_member_a_manager_and_back` ✅ (parametrised): member → manager, manager → member; recorded in the history
+- [x] T31.2 integration — `test_only_the_owner_changes_roles` ✅ (parametrised): a manager, a member → 403
+- [x] T31.3 integration — `test_change_role_answers_422_for_a_role_that_cannot_be_given` ✅ (`owner`, an unknown role) _(the schema came with T31.1; seen failing with `RoleIn` widened to every role)_
 - [x] T31.4 web integration — role editor: the owner sees "Make manager" for a member and "Remove manager" for a manager, and it sends the new role; a manager sees neither
 
 ### B32 — The owner's role can't change; a home has one owner

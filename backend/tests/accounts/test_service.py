@@ -22,6 +22,7 @@ from app.modules.accounts.schemas import (
     MemberIn,
     MemberUpdateIn,
     MeUpdateIn,
+    RoleIn,
     SignUpIn,
 )
 from app.modules.history.models import ChangeLog
@@ -704,3 +705,40 @@ def test_adding_and_changing_members_is_recorded(
         ],
     }
     assert rows == expected[change]
+
+
+@pytest.mark.parametrize(
+    ("before", "after"),
+    [
+        pytest.param(Role.MEMBER, Role.MANAGER, id="make manager"),
+        pytest.param(Role.MANAGER, Role.MEMBER, id="remove manager"),
+    ],
+)
+def test_owner_makes_a_member_a_manager_and_back(
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    before: Role,
+    after: Role,
+) -> None:
+    """
+    GIVEN Maruf is a member (or a manager) of "Our Flat"
+    WHEN  the owner makes him a manager (or a member again)
+    THEN  his role changes, and the history keeps who changed it, old and new
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(role=before), clock())
+
+    changed = service.change_role(
+        session, owner, member.id, RoleIn.model_validate({"role": after}), clock()
+    )
+
+    assert changed.role == after
+    last = history_of(session, member)[-1]
+    assert (last.action, last.changed_by, last.old_values, last.new_values) == (
+        "update",
+        owner.id,
+        {"role": before.value},
+        {"role": after.value},
+    )

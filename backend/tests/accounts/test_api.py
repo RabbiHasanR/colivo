@@ -659,3 +659,47 @@ def test_owner_deactivates_member_who_can_no_longer_log_in(
     assert deactivated.status_code == 200
     assert deactivated.json()["data"]["status"] == "inactive"
     assert log_in.status_code == 404
+
+
+def add_maruf(client: TestClient) -> str:
+    """The logged-in owner adds Maruf; returns his member id."""
+    return client.post("/api/v1/members", json=maruf_body()).json()["data"]["id"]
+
+
+@pytest.mark.parametrize("caller", [Role.MANAGER, Role.MEMBER])
+def test_only_the_owner_changes_roles(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    clock: MovableClock,
+    caller: Role,
+) -> None:
+    """
+    GIVEN "Our Flat" with Maruf, and a manager (or member) logged in
+    WHEN  they try to make Maruf a manager
+    THEN  it answers 403: only the owner gives roles (FR-63)
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    log_in_as_new(client, session, redis_client, clock, role=caller)
+
+    response = client.put(f"/api/v1/members/{member_id}/role", json={"role": "manager"})
+
+    assert response.status_code == 403
+
+
+@pytest.mark.parametrize("role", ["owner", "boss"])
+def test_change_role_answers_422_for_a_role_that_cannot_be_given(
+    client: TestClient, redis_client: Redis, clock: MovableClock, role: str
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf
+    WHEN  they try to make Maruf "owner", or a role that doesn't exist
+    THEN  it answers 422: only member and manager can be given
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+
+    response = client.put(f"/api/v1/members/{member_id}/role", json={"role": role})
+
+    assert response.status_code == 422

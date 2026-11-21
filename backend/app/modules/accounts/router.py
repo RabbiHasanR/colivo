@@ -3,7 +3,7 @@ import uuid
 from fastapi import Request, Response
 from starlette.exceptions import HTTPException
 
-from app.api.deps import CurrentMemberDep, OwnerOrManagerDep
+from app.api.deps import CurrentMemberDep, OwnerDep, OwnerOrManagerDep
 from app.core.clock import ClockDep
 from app.core.config import settings
 from app.core.database import SessionDep
@@ -25,6 +25,7 @@ from app.modules.accounts.schemas import (
     MemberUpdateIn,
     MeOut,
     MeUpdateIn,
+    RoleIn,
     SignUpIn,
 )
 
@@ -202,3 +203,20 @@ def update_me(
     set_response_message(request, "Details checked")
     response.status_code = 200
     return service.get_me(session, changed)
+
+
+@router.put("/members/{member_id}/role")
+def change_role(
+    request: Request,
+    response: Response,
+    member_id: uuid.UUID,
+    data: RoleIn,
+    owner: OwnerDep,
+    session: SessionDep,
+    clock: ClockDep,
+) -> MemberOut:
+    """Give or take away the Manager role; the owner only."""
+    member = service.change_role(session, owner, member_id, data, clock())
+    set_response_message(request, "Role changed")
+    response.status_code = 200
+    return service.member_out(session, member)

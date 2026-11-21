@@ -75,3 +75,7 @@ def require_role(*roles: Role) -> Callable[[Membership], Membership]:
 OwnerOrManagerDep = Annotated[
     Membership, Depends(require_role(Role.OWNER, Role.MANAGER))
 ]
+
+
+# The logged-in owner: `membership: OwnerDep`.
+OwnerDep = Annotated[Membership, Depends(require_role(Role.OWNER))]

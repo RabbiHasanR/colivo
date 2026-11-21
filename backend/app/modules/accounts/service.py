@@ -28,6 +28,7 @@ from app.modules.accounts.schemas import (
     MeOut,
     MePersonOut,
     MeUpdateIn,
+    RoleIn,
     SignUpIn,
 )
 from app.modules.history import service as history
@@ -603,3 +604,38 @@ def record_member_change(
         old_values=old_values,
         new_values=new_values,
     )
+
+
+def change_role(
+    session: Session,
+    owner: Membership,
+    member_id: uuid.UUID,
+    data: RoleIn,
+    now: datetime,
+) -> Membership:
+    """Give or take away the Manager role (FR-62, FR-63), for the owner only.
+
+    Args:
+        session: The database session.
+        owner: The home's owner.
+        member_id: The member whose role changes.
+        data: Their new role, member or manager.
+        now: The current time.
+
+    Returns:
+        The changed membership.
+    """
+    member = get_member(session, owner.home_id, member_id)
+    if member.role != data.role:
+        record_member_change(
+            session,
+            member,
+            changed_by=owner,
+            action=ChangeAction.UPDATE,
+            old_values={"role": member.role},
+            new_values={"role": data.role},
+        )
+        member.role = data.role
+    session.commit()
+    session.refresh(member)
+    return member

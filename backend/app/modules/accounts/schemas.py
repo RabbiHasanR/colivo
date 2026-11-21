@@ -84,6 +84,12 @@ class MeUpdateIn(BaseModel):
     name: ShortText
 
 
+class RoleIn(BaseModel):
+    """Give or take away the Manager role; the owner's role never changes."""
+
+    role: Literal[Role.MEMBER, Role.MANAGER]
+
+
 class MemberOut(BaseModel):
     """A member of the home, for the owner and managers' members list."""
 
