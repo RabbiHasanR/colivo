@@ -427,6 +427,168 @@
         }
       }
     },
+    "/api/v1/members/{member_id}/role": {
+      "put": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Change Role",
+        "description": "Give or take away the Manager role; the owner only.",
+        "operationId": "change_role_api_v1_members__member_id__role_put",
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Member Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_MemberOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/members/{member_id}/deactivate": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Deactivate",
+        "description": "Deactivate a member from a date; they can't log in from then on.",
+        "operationId": "deactivate_api_v1_members__member_id__deactivate_post",
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Member Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeactivateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_MemberOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/members/{member_id}/reactivate": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Reactivate",
+        "description": "Reactivate a member from the date charges start again.",
+        "operationId": "reactivate_api_v1_members__member_id__reactivate_post",
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Member Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReactivateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_MemberOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/home/setup": {
       "get": {
         "tags": [
@@ -562,6 +724,32 @@
         ],
         "title": "Contact",
         "description": "A phone (E.164) or an email address (lower case), and how to reach it."
+      },
+      "DeactivateIn": {
+        "properties": {
+          "on": {
+            "type": "string",
+            "format": "date",
+            "title": "On"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "on"
+        ],
+        "title": "DeactivateIn",
+        "description": "Deactivate a member from a date: today or earlier (FR-92)."
       },
       "HTTPValidationError": {
         "properties": {
@@ -911,6 +1099,21 @@
         "title": "MembershipStatus",
         "description": "Whether a member may log in now."
       },
+      "ReactivateIn": {
+        "properties": {
+          "on": {
+            "type": "string",
+            "format": "date",
+            "title": "On"
+          }
+        },
+        "type": "object",
+        "required": [
+          "on"
+        ],
+        "title": "ReactivateIn",
+        "description": "Reactivate a member from the date charges start again (FR-92)."
+      },
       "Role": {
         "type": "string",
         "enum": [
@@ -920,6 +1123,24 @@
         ],
         "title": "Role",
         "description": "A member's role in their home (specs/data-model.md → Roles)."
+      },
+      "RoleIn": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "member",
+              "manager"
+            ],
+            "title": "Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "RoleIn",
+        "description": "Give or take away the Manager role; the owner's role never changes."
       },
       "ServiceStatus": {
         "type": "string",

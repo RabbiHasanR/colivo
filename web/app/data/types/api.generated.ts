@@ -172,6 +172,66 @@ export interface paths {
         patch: operations["update_member_api_v1_members__member_id__patch"];
         trace?: never;
     };
+    "/api/v1/members/{member_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Role
+         * @description Give or take away the Manager role; the owner only.
+         */
+        put: operations["change_role_api_v1_members__member_id__role_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/{member_id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deactivate
+         * @description Deactivate a member from a date; they can't log in from then on.
+         */
+        post: operations["deactivate_api_v1_members__member_id__deactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/{member_id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reactivate
+         * @description Reactivate a member from the date charges start again.
+         */
+        post: operations["reactivate_api_v1_members__member_id__reactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/home/setup": {
         parameters: {
             query?: never;
@@ -246,6 +306,19 @@ export interface components {
             channel: components["schemas"]["Channel"];
             /** Value */
             value: string;
+        };
+        /**
+         * DeactivateIn
+         * @description Deactivate a member from a date: today or earlier (FR-92).
+         */
+        DeactivateIn: {
+            /**
+             * On
+             * Format: date
+             */
+            on: string;
+            /** Reason */
+            reason?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -400,11 +473,33 @@ export interface components {
          */
         MembershipStatus: "active" | "inactive";
         /**
+         * ReactivateIn
+         * @description Reactivate a member from the date charges start again (FR-92).
+         */
+        ReactivateIn: {
+            /**
+             * On
+             * Format: date
+             */
+            on: string;
+        };
+        /**
          * Role
          * @description A member's role in their home (specs/data-model.md → Roles).
          * @enum {string}
          */
         Role: "owner" | "manager" | "member";
+        /**
+         * RoleIn
+         * @description Give or take away the Manager role; the owner's role never changes.
+         */
+        RoleIn: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "member" | "manager";
+        };
         /**
          * ServiceStatus
          * @description Whether a dependency of the backend answered.
@@ -865,6 +960,111 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MemberUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_role_api_v1_members__member_id__role_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deactivate_api_v1_members__member_id__deactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeactivateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reactivate_api_v1_members__member_id__reactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactivateIn"];
             };
         };
         responses: {
