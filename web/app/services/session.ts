@@ -1,6 +1,7 @@
 import Service, { service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import {
+  logOut,
   requestCode,
   signUp,
   type CodeSent,
@@ -57,6 +58,12 @@ export default class SessionService extends Service {
     const { content } = await this.store.request<Me>(signUp(fields));
     this.me = content;
     return content;
+  }
+
+  /** End the session in the API (it clears the cookie) and forget who it was. */
+  async logOut(): Promise<void> {
+    await this.store.request(logOut());
+    this.me = null;
   }
 }
 

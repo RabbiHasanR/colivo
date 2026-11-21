@@ -3,6 +3,10 @@ import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { on } from '@ember/modifier';
 import { guidFor } from '@ember/object/internals';
+import { service } from '@ember/service';
+import type RouterService from '@ember/routing/router-service';
+import type SessionService from '../../services/session';
+import { roleLabel } from '../../utils/roles';
 import Button from '../ui/button';
 
 interface AppShellSignature {
@@ -15,6 +19,9 @@ interface AppShellSignature {
  * and closes the sidebar above the content. Each phase adds its nav links.
  */
 export default class AppShell extends Component<AppShellSignature> {
+  @service declare session: SessionService;
+  @service declare router: RouterService;
+
   @tracked isMenuOpen = false;
 
   readonly sidebarId = `${guidFor(this)}-sidebar`;
@@ -22,6 +29,12 @@ export default class AppShell extends Component<AppShellSignature> {
   @action
   toggleMenu(): void {
     this.isMenuOpen = !this.isMenuOpen;
+  }
+
+  @action
+  async logOut(): Promise<void> {
+    await this.session.logOut();
+    this.router.transitionTo('log-in');
   }
 
   <template>
@@ -53,6 +66,20 @@ export default class AppShell extends Component<AppShellSignature> {
         <span
           class="hidden font-display text-lg font-semibold text-primary lg:block"
         >Colivo</span>
+        {{#if this.session.me}}
+          <div class="mt-4 flex flex-col gap-2">
+            <p class="text-sm text-muted" data-test-shell-person>
+              {{this.session.me.membership.name}}
+              ·
+              {{roleLabel this.session.me.membership.role}}
+            </p>
+            <Button
+              @variant="secondary"
+              data-test-log-out
+              {{on "click" this.logOut}}
+            >Log out</Button>
+          </div>
+        {{/if}}
       </nav>
 
       <main class="min-w-0 flex-1 p-4 lg:p-8">

@@ -26,3 +26,8 @@ export function requestCode(contact: string) {
 export function signUp(fields: SignUpFields) {
   return postJson('auth/sign-up', fields);
 }
+
+/** End the session; the API clears its cookie. */
+export function logOut() {
+  return postJson('auth/log-out', {});
+}
