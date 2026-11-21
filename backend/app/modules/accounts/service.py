@@ -12,6 +12,8 @@ from app.modules.accounts.schemas import (
     MePersonOut,
     SignUpIn,
 )
+from app.modules.homes import service as homes_service
+from app.modules.homes.constants import DEFAULT_TIME_ZONE
 from app.modules.homes.models import Home
 
 
@@ -33,6 +35,7 @@ def sign_up(
         The owner's new membership.
     """
     codes.use_code(redis_client, data.contact, data.code, now)
+    homes_service.check_first_month(data.first_month, now, DEFAULT_TIME_ZONE)
     person = Person(phone=data.contact.value)
     home = Home(name=data.home_name, area=data.area, first_month=data.first_month)
     # No ORM relationships, so the session doesn't order inserts by foreign

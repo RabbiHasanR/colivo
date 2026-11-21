@@ -1,8 +1,10 @@
-from datetime import date
+from contextlib import AbstractContextManager, nullcontext
+from datetime import UTC, date, datetime
 
 import pytest
 from redis import Redis
 from sqlmodel import Session, select
+from starlette.exceptions import HTTPException
 
 from app.core.notifier import Channel
 from app.modules.accounts import codes, service
@@ -92,3 +94,40 @@ def test_owner_stay_follows_i_live_here_too(
         select(MembershipPeriod).where(MembershipPeriod.membership_id == membership.id)
     ).all()
     assert [(period.starts_on, period.ends_on) for period in periods] == stays
+
+
+@pytest.mark.parametrize(
+    ("first_month", "outcome"),
+    [
+        pytest.param(date(2026, 12, 1), nullcontext(), id="this month"),
+        pytest.param(date(2027, 1, 1), nullcontext(), id="next month"),
+        pytest.param(date(2026, 11, 1), pytest.raises(HTTPException), id="last month"),
+        pytest.param(date(2027, 2, 1), pytest.raises(HTTPException), id="in 2 months"),
+        pytest.param(
+            date(2026, 12, 15), pytest.raises(HTTPException), id="not the 1st"
+        ),
+    ],
+)
+def test_first_month_must_be_this_month_or_next(
+    session: Session,
+    redis_client: Redis,
+    clock: MovableClock,
+    first_month: date,
+    outcome: AbstractContextManager[object],
+) -> None:
+    """
+    GIVEN it is 30 Nov 2026, 19:00 UTC: already 1 December in Dhaka
+    WHEN  someone signs up with a first month
+    THEN  December and January are accepted; November, February and a
+          mid-month date are refused with 400
+    """
+    clock.now = datetime(2026, 11, 30, 19, 0, tzinfo=UTC)
+    contact = Contact(channel=Channel.SMS, value=PHONE_E164)
+    code = codes.issue_code(redis_client, contact, clock())
+    data = sign_up_data(contact, code, first_month=first_month)
+
+    with outcome as error:
+        service.sign_up(session, redis_client, data, clock())
+
+    if isinstance(error, pytest.ExceptionInfo):
+        assert error.value.status_code == 400

@@ -4,6 +4,7 @@ from sqlalchemy import CheckConstraint, Text
 from sqlmodel import Field
 
 from app.core.models import TableBase, short_text_check
+from app.modules.homes.constants import DEFAULT_TIME_ZONE
 
 
 class Home(TableBase, table=True):
@@ -18,3 +19,8 @@ class Home(TableBase, table=True):
     name: str = Field(sa_type=Text)  # pyright: ignore[reportArgumentType]
     area: str | None = Field(default=None, sa_type=Text)  # pyright: ignore[reportArgumentType]
     first_month: date
+    time_zone: str = Field(
+        default=DEFAULT_TIME_ZONE,
+        sa_type=Text,  # pyright: ignore[reportArgumentType]
+        sa_column_kwargs={"server_default": DEFAULT_TIME_ZONE},
+    )

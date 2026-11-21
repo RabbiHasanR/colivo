@@ -40,6 +40,7 @@ def upgrade() -> None:
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column("area", sa.Text(), nullable=True),
         sa.Column("first_month", sa.Date(), nullable=False),
+        sa.Column("time_zone", sa.Text(), server_default="Asia/Dhaka", nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_home")),
         sa.CheckConstraint(
             "char_length(btrim(name)) BETWEEN 1 AND 80", name=op.f("ck_home_name")

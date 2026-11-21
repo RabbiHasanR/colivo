@@ -31,7 +31,7 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 ### B3 — The first month is this month or next
 
-- [x] T3.1 unit — `test_first_month_must_be_this_month_or_next` (parametrised, clock at 30 Nov 2026 19:00 UTC = 1 Dec 01:00 in Dhaka): December and January accepted; November and February answer 400
+- [x] T3.1 unit — `test_first_month_must_be_this_month_or_next` ✅ (parametrised, clock at 30 Nov 2026 19:00 UTC = 1 Dec 01:00 in Dhaka): December and January accepted; November and February answer 400
 - [ ] T3.2 integration — the same 400 over HTTP _(skipped: the service raises the 400; T3.1 checks it, one behaviour, one test)_
 - [x] T3.3 web unit — `firstMonthChoices` gives this month and next as `{ value, label }` in Asia/Dhaka, across the month boundary
 
