@@ -67,6 +67,26 @@
               }
             }
           },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeErrorOut_"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeErrorOut_"
+                }
+              }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -105,6 +125,88 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StandardResponse_MeOut_"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeErrorOut_"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeErrorOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/log-in": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Log In",
+        "description": "Log in with a phone or email and its one-time code.",
+        "operationId": "log_in_api_v1_auth_log_in_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogInIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_MeOut_"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeErrorOut_"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeErrorOut_"
                 }
               }
             }
@@ -198,6 +300,53 @@
         "title": "Channel",
         "description": "How a message reaches a person."
       },
+      "CodeErrorOut": {
+        "properties": {
+          "reason": {
+            "$ref": "#/components/schemas/CodeErrorReason"
+          },
+          "tries_left": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tries Left"
+          },
+          "retry_in_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry In Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "CodeErrorOut",
+        "description": "The ``data`` of a refused code: why, and what the person can do next."
+      },
+      "CodeErrorReason": {
+        "type": "string",
+        "enum": [
+          "wrong",
+          "expired",
+          "locked",
+          "too_soon",
+          "hourly_limit"
+        ],
+        "title": "CodeErrorReason",
+        "description": "Why a one-time code, or a new one, was refused (FR-94)."
+      },
       "CodeRequestIn": {
         "properties": {
           "contact": {
@@ -220,12 +369,17 @@
           "expires_in_seconds": {
             "type": "integer",
             "title": "Expires In Seconds"
+          },
+          "resend_in_seconds": {
+            "type": "integer",
+            "title": "Resend In Seconds"
           }
         },
         "type": "object",
         "required": [
           "channel",
-          "expires_in_seconds"
+          "expires_in_seconds",
+          "resend_in_seconds"
         ],
         "title": "CodeSentOut",
         "description": "How the code was sent and how long it works; the same for any contact."
@@ -277,6 +431,25 @@
         ],
         "title": "HealthOut",
         "description": "The status of each dependency the backend needs."
+      },
+      "LogInIn": {
+        "properties": {
+          "contact": {
+            "type": "string",
+            "description": "A phone number or an email"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contact",
+          "code"
+        ],
+        "title": "LogInIn",
+        "description": "Log in with a phone or email and the code sent to it."
       },
       "MeHomeOut": {
         "properties": {
@@ -511,6 +684,48 @@
         ],
         "title": "SignUpIn",
         "description": "The owner's sign-up: who they are, their code and their new home."
+      },
+      "StandardResponse_CodeErrorOut_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CodeErrorOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StandardResponse[CodeErrorOut]"
       },
       "StandardResponse_CodeSentOut_": {
         "properties": {

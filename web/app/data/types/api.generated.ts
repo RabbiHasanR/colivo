@@ -64,6 +64,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/log-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log In
+         * @description Log in with a phone or email and its one-time code.
+         */
+        post: operations["log_in_api_v1_auth_log_in_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/log-out": {
         parameters: {
             query?: never;
@@ -135,6 +155,23 @@ export interface components {
          */
         Channel: "sms" | "email";
         /**
+         * CodeErrorOut
+         * @description The ``data`` of a refused code: why, and what the person can do next.
+         */
+        CodeErrorOut: {
+            reason: components["schemas"]["CodeErrorReason"];
+            /** Tries Left */
+            tries_left?: number | null;
+            /** Retry In Seconds */
+            retry_in_seconds?: number | null;
+        };
+        /**
+         * CodeErrorReason
+         * @description Why a one-time code, or a new one, was refused (FR-94).
+         * @enum {string}
+         */
+        CodeErrorReason: "wrong" | "expired" | "locked" | "too_soon" | "hourly_limit";
+        /**
          * CodeRequestIn
          * @description Ask for a one-time code for a phone or email.
          */
@@ -150,6 +187,8 @@ export interface components {
             channel: components["schemas"]["Channel"];
             /** Expires In Seconds */
             expires_in_seconds: number;
+            /** Resend In Seconds */
+            resend_in_seconds: number;
         };
         /**
          * Contact
@@ -172,6 +211,16 @@ export interface components {
         HealthOut: {
             database: components["schemas"]["ServiceStatus"];
             redis: components["schemas"]["ServiceStatus"];
+        };
+        /**
+         * LogInIn
+         * @description Log in with a phone or email and the code sent to it.
+         */
+        LogInIn: {
+            /** @description A phone number or an email */
+            contact: string;
+            /** Code */
+            code: string;
         };
         /**
          * MeHomeOut
@@ -286,6 +335,16 @@ export interface components {
             /** Lives Here */
             lives_here: boolean;
         };
+        /** StandardResponse[CodeErrorOut] */
+        StandardResponse_CodeErrorOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["CodeErrorOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
         /** StandardResponse[CodeSentOut] */
         StandardResponse_CodeSentOut_: {
             /** Success */
@@ -399,6 +458,15 @@ export interface operations {
                     "application/json": components["schemas"]["StandardResponse_CodeSentOut_"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -406,6 +474,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
                 };
             };
         };
@@ -432,6 +509,15 @@ export interface operations {
                     "application/json": components["schemas"]["StandardResponse_MeOut_"];
                 };
             };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -439,6 +525,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+        };
+    };
+    log_in_api_v1_auth_log_in_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogInIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MeOut_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
                 };
             };
         };

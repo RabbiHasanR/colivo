@@ -43,7 +43,7 @@ export const notLoggedInBody: MeBody = {
 export const codeSentBody: Schemas['StandardResponse_CodeSentOut_'] = {
   success: true,
   message: 'Code sent',
-  data: { channel: 'sms', expires_in_seconds: 300 },
+  data: { channel: 'sms', expires_in_seconds: 300, resend_in_seconds: 60 },
 };
 
 export const newHomeSetupBody: Schemas['StandardResponse_SetupOut_'] = {
