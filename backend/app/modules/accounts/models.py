@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 from enum import StrEnum
 
 from sqlalchemy import Text
@@ -45,3 +46,12 @@ class Membership(TableBase, table=True):
         default=MembershipStatus.ACTIVE,
         sa_type=Text,  # pyright: ignore[reportArgumentType]
     )
+
+
+class MembershipPeriod(TableBase, table=True):
+    """A stay: when a member lives in the home and is charged (FR-92)."""
+
+    home_id: uuid.UUID = Field(foreign_key="home.id")
+    membership_id: uuid.UUID = Field(foreign_key="membership.id")
+    starts_on: date
+    ends_on: date | None = None

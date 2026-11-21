@@ -4,7 +4,7 @@ from redis import Redis
 from sqlmodel import Session
 
 from app.modules.accounts import codes
-from app.modules.accounts.models import Membership, Person, Role
+from app.modules.accounts.models import Membership, MembershipPeriod, Person, Role
 from app.modules.accounts.schemas import (
     MeHomeOut,
     MeMembershipOut,
@@ -20,8 +20,8 @@ def sign_up(
 ) -> Membership:
     """Create a home and make the person signing up its owner (FR-83).
 
-    The person, the home and the owner's membership are saved in one
-    transaction.
+    The person, the home, the owner's membership and, when they live there,
+    their stay from the first month are saved in one transaction.
 
     Args:
         session: The database session.
@@ -43,6 +43,17 @@ def sign_up(
         home_id=home.id, person_id=person.id, name=data.name, role=Role.OWNER
     )
     session.add(membership)
+    if data.lives_here:
+        # "I live here too": the owner pays from the first month; otherwise
+        # they run the home without a stay and are never charged.
+        session.flush()
+        session.add(
+            MembershipPeriod(
+                home_id=home.id,
+                membership_id=membership.id,
+                starts_on=data.first_month,
+            )
+        )
     session.commit()
     session.refresh(membership)
     return membership

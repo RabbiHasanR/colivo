@@ -26,7 +26,7 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 ### B2 — "I live here too" decides whether the owner pays
 
-- [x] T2.1 unit — `test_owner_stay_follows_i_live_here_too` (parametrised): ticked → one stay from the first month; not ticked → no stay
+- [x] T2.1 unit — `test_owner_stay_follows_i_live_here_too` ✅ (parametrised): ticked → one stay from the first month; not ticked → no stay
 - [ ] T2.2 web integration — the checkbox is sent as `lives_here` _(skipped: covered by T1.5, which checks every field sent)_
 
 ### B3 — The first month is this month or next
