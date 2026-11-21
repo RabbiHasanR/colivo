@@ -178,7 +178,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 
 ### B23 — Active in another home can't be added
 
-- [x] T23.1 unit — `test_member_active_in_another_home_cannot_be_added`: 409; no membership, no notice
+- [x] T23.1 unit — `test_member_active_in_another_home_cannot_be_added` ✅: 409; no membership, no notice
 - [x] T23.2 web integration — add-member form shows the 409 message
 
 ### B24 — A deactivated member of this home is reactivated, not added again

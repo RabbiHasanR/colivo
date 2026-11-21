@@ -376,3 +376,45 @@ def test_owner_adds_a_member_who_gets_a_notice(
     [notice] = notifier.sent
     assert (notice.channel, notice.to) == (Channel.SMS, MARUF_E164)
     assert "Rabbi Hasan added you to Our Flat" in notice.text
+
+
+def add_maruf_to(session: Session, home_name: str, status: MembershipStatus) -> Person:
+    """Make Maruf (01812 345678) a member of a new home called ``home_name``."""
+    person = Person(phone=MARUF_E164)
+    home = homes_service.create_home(
+        session, name=home_name, area=None, first_month=date(2026, 1, 1)
+    )
+    session.add(person)
+    session.flush()
+    session.add(
+        Membership(home_id=home.id, person_id=person.id, name="Maruf", status=status)
+    )
+    session.flush()
+    return person
+
+
+def maruf_memberships(session: Session, person: Person) -> int:
+    """How many memberships Maruf has, in any home."""
+    return session.exec(
+        select(func.count())
+        .select_from(Membership)
+        .where(Membership.person_id == person.id)
+    ).one()
+
+
+def test_member_active_in_another_home_cannot_be_added(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf is an active member of "Old Flat"
+    WHEN  the owner of "Our Flat" adds him
+    THEN  it is refused with 409; he isn't added and gets no notice (FR-85)
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    person = add_maruf_to(session, "Old Flat", MembershipStatus.ACTIVE)
+
+    with pytest.raises(HTTPException) as error:
+        service.add_member(session, notifier, owner, maruf(), clock())
+
+    assert error.value.status_code == 409
+    assert (maruf_memberships(session, person), notifier.sent) == (1, [])

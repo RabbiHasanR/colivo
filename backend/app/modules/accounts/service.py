@@ -31,6 +31,7 @@ from app.modules.homes import service as homes_service
 from app.modules.homes.constants import DEFAULT_TIME_ZONE
 from app.modules.homes.models import Home
 
+ALREADY_IN_A_HOME = "This phone or email is already in a home."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -246,8 +247,15 @@ def add_member(
 
     Returns:
         The new membership.
+
+    Raises:
+        HTTPException: 409 when the person is already active in a home.
     """
-    person = find_person(session, data.contact) or new_person(data.contact)
+    person = find_person(session, data.contact)
+    if person and active_membership(session, person):
+        # FR-85: one active home per person.
+        raise HTTPException(409, ALREADY_IN_A_HOME)
+    person = person or new_person(data.contact)
     session.add(person)
     session.flush()
     member = Membership(
