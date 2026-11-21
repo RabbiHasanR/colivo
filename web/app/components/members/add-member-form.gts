@@ -6,7 +6,7 @@ import { on } from '@ember/modifier';
 import { service } from '@ember/service';
 import type MembersService from '../../services/members';
 import type SessionService from '../../services/session';
-import { ApiError } from '../../utils/api-error';
+import { refusalFrom, type Refusal } from '../../utils/refusal';
 import type { Member } from '../../services/members';
 import Button from '../ui/button';
 import DateInput from '../ui/date-input';
@@ -46,10 +46,12 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
   @tracked contact = '';
   @tracked joinedOn = '';
   @tracked role: NewRole = 'member';
-  /** Why the API refused the member, when it isn't about one field. */
-  @tracked error: string | null = null;
-  /** The API's 422 messages, by field name. */
-  @tracked fieldErrors: Record<string, string[]> = {};
+  /** Why the API refused the member: per field (422), or one message. */
+  @tracked refusal: Refusal | null = null;
+
+  get fieldErrors(): Record<string, string[]> {
+    return this.refusal?.fieldErrors ?? {};
+  }
 
   @action setName(value: string): void {
     this.name = value;
@@ -70,8 +72,7 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
   @action
   async submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    this.error = null;
-    this.fieldErrors = {};
+    this.refusal = null;
     let added: Member;
     try {
       added = await this.members.add({
@@ -81,12 +82,8 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
         role: this.role,
       });
     } catch (error) {
-      if (!(error instanceof ApiError) || error.status === null) throw error;
-      if (error.kind === 'validation') {
-        this.fieldErrors = error.fieldErrors;
-      } else {
-        this.error = error.message;
-      }
+      this.refusal = refusalFrom(error);
+      if (!this.refusal) throw error;
       return;
     }
     this.args.onAdded(added);
@@ -143,8 +140,10 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
             data-test-add-member-role
           />
         </Field>
-        {{#if this.error}}
-          <FormError data-test-add-member-error>{{this.error}}</FormError>
+        {{#if this.refusal.message}}
+          <FormError data-test-add-member-error>
+            {{this.refusal.message}}
+          </FormError>
         {{/if}}
         <Button type="submit" data-test-add-member-submit>Add member</Button>
       </Stack>

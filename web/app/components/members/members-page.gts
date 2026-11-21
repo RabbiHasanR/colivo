@@ -5,6 +5,7 @@ import { service } from '@ember/service';
 import type MembersService from '../../services/members';
 import type { Member } from '../../services/members';
 import AddMemberForm from './add-member-form';
+import EditMemberForm from './edit-member-form';
 import MemberList from './member-list';
 
 interface MembersPageSignature {
@@ -17,6 +18,8 @@ export default class MembersPage extends Component<MembersPageSignature> {
 
   /** The list read again after a change; until then, the route's. */
   @tracked reloaded: Member[] | null = null;
+  /** The member whose details are being changed, if any. */
+  @tracked editing: Member | null = null;
 
   get shown(): Member[] {
     return this.reloaded ?? this.args.members;
@@ -24,12 +27,24 @@ export default class MembersPage extends Component<MembersPageSignature> {
 
   @action
   async reload(): Promise<void> {
+    this.editing = null;
     this.reloaded = await this.members.list();
+  }
+
+  @action
+  edit(member: Member): void {
+    this.editing = member;
   }
 
   <template>
     <h1>Members &amp; roles</h1>
-    <MemberList @members={{this.shown}} />
+    <MemberList @members={{this.shown}} @onEdit={{this.edit}} />
+    {{#if this.editing}}
+      <section aria-labelledby="edit-member-title">
+        <h2 id="edit-member-title">Change {{this.editing.name}}</h2>
+        <EditMemberForm @member={{this.editing}} @onSaved={{this.reload}} />
+      </section>
+    {{/if}}
     <section aria-labelledby="add-member-title">
       <h2 id="add-member-title">Add a member</h2>
       <AddMemberForm @onAdded={{this.reload}} />

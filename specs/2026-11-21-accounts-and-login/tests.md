@@ -199,7 +199,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 - [x] T26.2 unit — `test_join_date_cannot_be_after_the_end_of_the_first_stay` ✅: 400; also 400 for an owner with no stay (design choice 4)
 - [x] T26.3 unit — `test_new_name_cannot_be_one_already_taken` ✅: 409
 - [x] T26.4 integration — `test_change_member_answers_422_for_a_blank_name` ✅
-- [x] T26.5 web integration — edit-member form: sends the new name and join date, then tells the page
+- [x] T26.5 web integration — `sends a member's new name and join date, then tells the page` ✅: edit-member form: sends the new name and join date, then tells the page
 
 ### B27 — The first log-in check
 
