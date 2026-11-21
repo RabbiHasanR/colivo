@@ -628,3 +628,34 @@ def test_members_list_shows_only_this_homes_members(
     names = [member["name"] for member in response.json()["data"]]
     assert names == ["Maruf", "Rabbi Hasan"]
     assert "Old Fort" not in response.text
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="acceptance: the owner deactivates a member, who can no longer log in",
+)
+def test_owner_deactivates_member_who_can_no_longer_log_in(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat" and added Maruf, joining 21 Nov 2026
+    WHEN  he deactivates Maruf from today, and Maruf then tries to log in
+    THEN  Maruf is inactive, and his log-in, with the right code, answers 404
+          "Not added yet"
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = client.post("/api/v1/members", json=maruf_body()).json()["data"]["id"]
+
+    deactivated = client.post(
+        f"/api/v1/members/{member_id}/deactivate", json={"on": "2026-11-21"}
+    )
+    client.post("/api/v1/auth/log-out")
+    client.post("/api/v1/auth/codes", json={"contact": MARUF_PHONE})
+    log_in = client.post(
+        "/api/v1/auth/log-in",
+        json={"contact": MARUF_PHONE, "code": notifier.last_code_to(MARUF_E164)},
+    )
+
+    assert deactivated.status_code == 200
+    assert deactivated.json()["data"]["status"] == "inactive"
+    assert log_in.status_code == 404
