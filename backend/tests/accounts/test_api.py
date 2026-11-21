@@ -542,3 +542,19 @@ def test_members_answer_403_for_a_member(
     response = client.request(method, "/api/v1/members", json=body)
 
     assert response.status_code == 403
+
+
+def test_change_member_answers_422_for_a_blank_name(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf
+    WHEN  PATCH /api/v1/members/<Maruf> sends a blank name
+    THEN  it answers 422
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = client.post("/api/v1/members", json=maruf_body()).json()["data"]["id"]
+
+    response = client.patch(f"/api/v1/members/{member_id}", json={"name": "  "})
+
+    assert response.status_code == 422

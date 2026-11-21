@@ -71,6 +71,13 @@ class MemberIn(BaseModel):
     role: Literal[Role.MEMBER, Role.MANAGER] = Role.MEMBER
 
 
+class MemberUpdateIn(BaseModel):
+    """Change a member's name or join date; leave out what stays the same."""
+
+    name: ShortText | None = None
+    joined_on: date | None = None
+
+
 class MemberOut(BaseModel):
     """A member of the home, for the owner and managers' members list."""
 

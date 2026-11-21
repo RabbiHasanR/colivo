@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 
 from redis import Redis
-from sqlmodel import Session, func, select
+from sqlmodel import Session, col, func, select
 from starlette.exceptions import HTTPException
 
 from app.core.notifier import Channel, Notifier
@@ -22,6 +22,7 @@ from app.modules.accounts.schemas import (
     MeHomeOut,
     MemberIn,
     MemberOut,
+    MemberUpdateIn,
     MeMembershipOut,
     MeOut,
     MePersonOut,
@@ -34,6 +35,8 @@ from app.modules.homes.models import Home
 ALREADY_IN_A_HOME = "This phone or email is already in a home."
 PAST_MEMBER = "This person was a member of this home. Reactivate them instead."
 NAME_TAKEN = "Someone in this home already has that name."
+NO_STAY = "Only someone who lives in the home has a join date."
+JOINED_AFTER_LEAVING = "The join date can't be after the end of their first stay."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -396,3 +399,71 @@ def list_members(session: Session, home_id: uuid.UUID) -> list[MemberOut]:
         .order_by(func.lower(Membership.name))
     ).all()
     return [member_out(session, member) for member in members]
+
+
+def update_member(
+    session: Session,
+    editor: Membership,
+    member_id: uuid.UUID,
+    data: MemberUpdateIn,
+    now: datetime,
+) -> Membership:
+    """Change a member's name or join date (FR-86), for the owner or a manager.
+
+    The join date is the start of the member's first stay, so that stay moves.
+
+    Args:
+        session: The database session.
+        editor: The owner or manager making the change.
+        member_id: The member to change.
+        data: The new name or join date; what is left out stays.
+        now: The current time.
+
+    Returns:
+        The changed membership.
+
+    Raises:
+        HTTPException: 400 for a join date they can't have; 409 for a name
+            an active member already has.
+    """
+    member = session.get_one(Membership, member_id)
+    if data.name is not None:
+        check_name_free(session, member.home_id, data.name, except_id=member.id)
+        member.name = data.name
+    if data.joined_on is not None:
+        move_join_date(session, member, data.joined_on)
+    session.commit()
+    session.refresh(member)
+    return member
+
+
+def first_stay(session: Session, member: Membership) -> MembershipPeriod | None:
+    """The member's earliest stay, the one their join date belongs to.
+
+    Args:
+        session: The database session.
+        member: The member.
+
+    Returns:
+        The stay, or None for an owner who doesn't live in the home.
+    """
+    return session.exec(
+        select(MembershipPeriod)
+        .where(MembershipPeriod.membership_id == member.id)
+        .order_by(col(MembershipPeriod.starts_on))
+    ).first()
+
+
+def move_join_date(session: Session, member: Membership, joined_on: date) -> None:
+    """Move the start of the member's first stay to ``joined_on``.
+
+    Raises:
+        HTTPException: 400 when they have no stay (an owner who doesn't live
+            there), or the date is after the first stay ended.
+    """
+    stay = first_stay(session, member)
+    if stay is None:
+        raise HTTPException(400, NO_STAY)
+    if stay.ends_on is not None and joined_on > stay.ends_on:
+        raise HTTPException(400, JOINED_AFTER_LEAVING)
+    stay.starts_on = joined_on

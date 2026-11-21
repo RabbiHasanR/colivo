@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from redis import Redis
-from sqlmodel import Session, func, select
+from sqlmodel import Session, col, func, select
 from starlette.exceptions import HTTPException
 
 from app.core.notifier import Channel
@@ -17,7 +17,12 @@ from app.modules.accounts.models import (
     Person,
     Role,
 )
-from app.modules.accounts.schemas import LogInIn, MemberIn, SignUpIn
+from app.modules.accounts.schemas import (
+    LogInIn,
+    MemberIn,
+    MemberUpdateIn,
+    SignUpIn,
+)
 from app.modules.homes import service as homes_service
 from app.modules.homes.models import Home
 from tests.conftest import FakeNotifier, MovableClock
@@ -504,3 +509,78 @@ def test_a_deactivated_members_name_can_be_used_again(
     )
 
     assert member.name == "Maruf"
+
+
+def stays_of(session: Session, member: Membership) -> list[tuple[date, date | None]]:
+    """A member's stays, as (starts_on, ends_on), earliest first."""
+    stays = session.exec(
+        select(MembershipPeriod)
+        .where(MembershipPeriod.membership_id == member.id)
+        .order_by(col(MembershipPeriod.starts_on))
+    ).all()
+    return [(stay.starts_on, stay.ends_on) for stay in stays]
+
+
+def test_owner_changes_a_members_name_and_join_date(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf joined "Our Flat" on 21 Nov 2026
+    WHEN  the owner renames him "Maruf Hossain" and moves his join date to 1 Nov
+    THEN  his name is "Maruf Hossain" and his first stay starts on 1 Nov
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+
+    changed = service.update_member(
+        session,
+        owner,
+        member.id,
+        MemberUpdateIn(name="Maruf Hossain", joined_on=date(2026, 11, 1)),
+        clock(),
+    )
+
+    assert changed.name == "Maruf Hossain"
+    assert stays_of(session, changed) == [(date(2026, 11, 1), None)]
+
+
+def test_join_date_cannot_be_after_the_end_of_the_first_stay(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf's first stay in "Our Flat" ran from 21 to 25 Nov 2026, and the
+          owner doesn't live there (no stay)
+    WHEN  Maruf's join date is moved to 28 Nov, or the owner is given one
+    THEN  both are refused with 400
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock, lives_here=False)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+    stay = service.first_stay(session, member)
+    assert stay is not None
+    stay.ends_on = date(2026, 11, 25)
+    session.flush()
+    late = MemberUpdateIn(joined_on=date(2026, 11, 28))
+
+    for target in (member, owner):
+        with pytest.raises(HTTPException) as error:
+            service.update_member(session, owner, target.id, late, clock())
+        assert error.value.status_code == 400, target.name
+
+
+def test_new_name_cannot_be_one_already_taken(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat", and Maruf is a member
+    WHEN  Maruf is renamed "rabbi hasan"
+    THEN  it is refused with 409: an active member already has that name
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+
+    with pytest.raises(HTTPException) as error:
+        service.update_member(
+            session, owner, member.id, MemberUpdateIn(name="rabbi hasan"), clock()
+        )
+
+    assert error.value.status_code == 409

@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import Request, Response
 from starlette.exceptions import HTTPException
 
@@ -20,6 +22,7 @@ from app.modules.accounts.schemas import (
     LogInIn,
     MemberIn,
     MemberOut,
+    MemberUpdateIn,
     MeOut,
     SignUpIn,
 )
@@ -164,4 +167,21 @@ def add_member(
     member = service.add_member(session, notifier, adder, data, clock())
     set_response_message(request, "Member added")
     response.status_code = 201
+    return service.member_out(session, member)
+
+
+@router.patch("/members/{member_id}")
+def update_member(
+    request: Request,
+    response: Response,
+    member_id: uuid.UUID,
+    data: MemberUpdateIn,
+    editor: OwnerOrManagerDep,
+    session: SessionDep,
+    clock: ClockDep,
+) -> MemberOut:
+    """Change a member's name or join date."""
+    member = service.update_member(session, editor, member_id, data, clock())
+    set_response_message(request, "Member changed")
+    response.status_code = 200
     return service.member_out(session, member)
