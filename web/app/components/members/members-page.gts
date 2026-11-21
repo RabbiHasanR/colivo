@@ -67,6 +67,7 @@ export default class MembersPage extends Component<MembersPageSignature> {
       @onEdit={{this.edit}}
       @onDeactivate={{this.askToDeactivate}}
       @onReactivate={{this.askToReactivate}}
+      @onRoleChanged={{this.reload}}
     />
     {{#if this.deactivating}}
       <DeactivateDialog

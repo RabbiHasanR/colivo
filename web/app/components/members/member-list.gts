@@ -11,6 +11,7 @@ import { eq } from '../../utils/template';
 import { roleLabel } from '../../utils/roles';
 import Button from '../ui/button';
 import ScrollBox from '../ui/scroll-box';
+import RoleEditor from './role-editor';
 
 interface MemberListSignature {
   Args: {
@@ -18,6 +19,7 @@ interface MemberListSignature {
     onEdit?: (member: Member) => void;
     onDeactivate?: (member: Member) => void;
     onReactivate?: (member: Member) => void;
+    onRoleChanged?: (member: Member) => void;
   };
 }
 
@@ -52,6 +54,14 @@ export default class MemberList extends Component<MemberListSignature> {
               <td>{{roleLabel member.status}}</td>
               <td>{{formatDate member.joined_on}}</td>
               <td>
+                {{#if @onRoleChanged}}
+                  {{#if this.session.isOwner}}
+                    <RoleEditor
+                      @member={{member}}
+                      @onChanged={{@onRoleChanged}}
+                    />
+                  {{/if}}
+                {{/if}}
                 {{#if @onEdit}}
                   <Button
                     @variant="secondary"

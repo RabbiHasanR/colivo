@@ -16,6 +16,7 @@ interface MemberTabsSignature {
     onEdit?: (member: Member) => void;
     onDeactivate?: (member: Member) => void;
     onReactivate?: (member: Member) => void;
+    onRoleChanged?: (member: Member) => void;
   };
 }
 
@@ -63,6 +64,7 @@ export default class MemberTabs extends Component<MemberTabsSignature> {
         @onEdit={{@onEdit}}
         @onDeactivate={{@onDeactivate}}
         @onReactivate={{@onReactivate}}
+        @onRoleChanged={{@onRoleChanged}}
       />
     </section>
   </template>
