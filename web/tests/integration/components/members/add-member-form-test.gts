@@ -95,4 +95,37 @@ module('Integration | Component | members/add-member-form', function (hooks) {
     assert.dom('[data-test-add-member-error]').hasText(refusal);
     assert.false(added);
   });
+
+  test('shows 422 messages under their fields', async function (assert) {
+    // GIVEN the API refuses the name and the contact
+    // WHEN  the owner tries to add the member
+    // THEN  each message shows under its own field
+    worker.use(
+      http.post('*/api/v1/members', () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: 'Validation Error',
+            errors: [
+              'body.name: String should have at least 1 character',
+              'body.contact: Value error, Enter a phone number or an email.',
+            ],
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    const onAdded = () => {};
+    await render(<template><AddMemberForm @onAdded={{onAdded}} /></template>);
+
+    await fillInMaruf();
+    await click('[data-test-add-member-submit]');
+
+    assert
+      .dom('[data-test-field="name"] [data-test-field-error]')
+      .hasText('String should have at least 1 character');
+    assert
+      .dom('[data-test-field="contact"] [data-test-field-error]')
+      .hasText('Value error, Enter a phone number or an email.');
+  });
 });

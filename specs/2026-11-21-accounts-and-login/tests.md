@@ -217,7 +217,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 ### B29 — Invalid names and contacts are refused with a clear message
 
 - [ ] T29.1 backend — _(covered: T20.3, T26.4 and T27.3 are the 422 tests of the three endpoints)_
-- [x] T29.2 web integration — add-member form shows 422 messages under their fields
+- [x] T29.2 web integration — `shows 422 messages under their fields` ✅: add-member form shows 422 messages under their fields
 
 ### B30 — Every change to a member is kept in the history
 

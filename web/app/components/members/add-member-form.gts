@@ -1,6 +1,7 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
+import { get } from '@ember/helper';
 import { on } from '@ember/modifier';
 import { service } from '@ember/service';
 import type MembersService from '../../services/members';
@@ -47,6 +48,8 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
   @tracked role: NewRole = 'member';
   /** Why the API refused the member, when it isn't about one field. */
   @tracked error: string | null = null;
+  /** The API's 422 messages, by field name. */
+  @tracked fieldErrors: Record<string, string[]> = {};
 
   @action setName(value: string): void {
     this.name = value;
@@ -68,6 +71,7 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
   async submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
     this.error = null;
+    this.fieldErrors = {};
     let added: Member;
     try {
       added = await this.members.add({
@@ -78,7 +82,11 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
       });
     } catch (error) {
       if (!(error instanceof ApiError) || error.status === null) throw error;
-      this.error = error.message;
+      if (error.kind === 'validation') {
+        this.fieldErrors = error.fieldErrors;
+      } else {
+        this.error = error.message;
+      }
       return;
     }
     this.args.onAdded(added);
@@ -87,7 +95,12 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
   <template>
     <form data-test-add-member-form {{on "submit" this.submit}}>
       <Stack>
-        <Field @label="Name" data-test-field="name" as |id|>
+        <Field
+          @label="Name"
+          @errors={{get this.fieldErrors "name"}}
+          data-test-field="name"
+          as |id|
+        >
           <TextInput
             id={{id}}
             @value={{this.name}}
@@ -95,7 +108,12 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
             data-test-add-member-name
           />
         </Field>
-        <Field @label="Phone or email" data-test-field="contact" as |id|>
+        <Field
+          @label="Phone or email"
+          @errors={{get this.fieldErrors "contact"}}
+          data-test-field="contact"
+          as |id|
+        >
           <TextInput
             id={{id}}
             @value={{this.contact}}
@@ -103,7 +121,12 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
             data-test-add-member-contact
           />
         </Field>
-        <Field @label="Joins on" data-test-field="joined_on" as |id|>
+        <Field
+          @label="Joins on"
+          @errors={{get this.fieldErrors "joined_on"}}
+          data-test-field="joined_on"
+          as |id|
+        >
           <DateInput
             id={{id}}
             @value={{this.joinedOn}}
