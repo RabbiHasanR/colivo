@@ -3,9 +3,23 @@ from datetime import date
 
 from pydantic import BaseModel
 
+from app.core.notifier import Channel
 from app.core.schemas import ShortText
 from app.modules.accounts.contact import ContactIn
 from app.modules.accounts.models import MembershipStatus, Role
+
+
+class CodeRequestIn(BaseModel):
+    """Ask for a one-time code for a phone or email."""
+
+    contact: ContactIn
+
+
+class CodeSentOut(BaseModel):
+    """How the code was sent and how long it works; the same for any contact."""
+
+    channel: Channel
+    expires_in_seconds: int
 
 
 class SignUpIn(BaseModel):

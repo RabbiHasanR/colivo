@@ -19,7 +19,7 @@ from app.modules.accounts.models import (
 from app.modules.accounts.schemas import SignUpIn
 from app.modules.homes import service as homes_service
 from app.modules.homes.models import Home
-from tests.conftest import MovableClock
+from tests.conftest import FakeNotifier, MovableClock
 
 PHONE_E164 = "+8801712345678"
 
@@ -194,3 +194,28 @@ def test_person_no_longer_active_anywhere_can_sign_up(
     membership = sign_up_with_new_code(session, redis_client, clock)
 
     assert membership.person_id == person.id
+
+
+@pytest.mark.parametrize(
+    "contact",
+    [
+        pytest.param(Contact(channel=Channel.SMS, value=PHONE_E164), id="phone"),
+        pytest.param(
+            Contact(channel=Channel.EMAIL, value="rabbi@example.com"), id="email"
+        ),
+    ],
+)
+def test_code_goes_by_sms_to_a_phone_and_by_email_to_an_email(
+    redis_client: Redis, notifier: FakeNotifier, clock: MovableClock, contact: Contact
+) -> None:
+    """
+    GIVEN a phone or an email
+    WHEN  a code is asked for
+    THEN  one message with a six-digit code goes to it: by SMS to the phone,
+          by email to the email address
+    """
+    service.request_code(redis_client, notifier, contact, clock())
+
+    [message] = notifier.sent
+    assert (message.channel, message.to) == (contact.channel, contact.value)
+    assert len(notifier.last_code_to(contact.value)) == 6

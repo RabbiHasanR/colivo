@@ -4,7 +4,9 @@ from redis import Redis
 from sqlmodel import Session, select
 from starlette.exceptions import HTTPException
 
+from app.core.notifier import Notifier
 from app.modules.accounts import codes
+from app.modules.accounts.constants import CODE_LIFETIME
 from app.modules.accounts.contact import Contact
 from app.modules.accounts.models import (
     Membership,
@@ -14,6 +16,7 @@ from app.modules.accounts.models import (
     Role,
 )
 from app.modules.accounts.schemas import (
+    CodeSentOut,
     MeHomeOut,
     MeMembershipOut,
     MeOut,
@@ -125,4 +128,34 @@ def get_me(session: Session, membership: Membership) -> MeOut:
         person=MePersonOut.model_validate(person, from_attributes=True),
         membership=MeMembershipOut.model_validate(membership, from_attributes=True),
         home=MeHomeOut.model_validate(home, from_attributes=True),
+    )
+
+
+def request_code(
+    redis_client: Redis, notifier: Notifier, contact: Contact, now: datetime
+) -> CodeSentOut:
+    """Send a one-time code to ``contact`` by SMS or email (FR-94).
+
+    The answer is the same whether or not anyone uses ``contact``, so nobody
+    can find out who has an account.
+
+    Args:
+        redis_client: Where codes are kept.
+        notifier: Sends the SMS or email.
+        contact: The phone or email to send it to.
+        now: The current time.
+
+    Returns:
+        How it was sent and how long it works.
+    """
+    code = codes.issue_code(redis_client, contact, now)
+    minutes = int(CODE_LIFETIME.total_seconds() // 60)
+    notifier.send(
+        contact.channel,
+        contact.value,
+        f"Your Colivo code is {code}. It works for {minutes} minutes.",
+    )
+    return CodeSentOut(
+        channel=contact.channel,
+        expires_in_seconds=int(CODE_LIFETIME.total_seconds()),
     )

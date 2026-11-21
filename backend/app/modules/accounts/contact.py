@@ -1,8 +1,13 @@
 from typing import Annotated
 
+import phonenumbers
 from pydantic import BaseModel, BeforeValidator, WithJsonSchema
 
 from app.core.notifier import Channel
+
+# Phones without a country code are read as Bangladeshi numbers.
+DEFAULT_PHONE_REGION = "BD"
+NOT_A_CONTACT = "Enter a phone number or an email."
 
 
 class Contact(BaseModel, frozen=True):
@@ -20,10 +25,21 @@ def parse_contact(raw: object) -> object:
 
     Returns:
         The ``Contact`` for a string; anything else unchanged, for Pydantic.
+
+    Raises:
+        ValueError: When the text is neither a phone number nor an email.
     """
-    if isinstance(raw, str):
-        return Contact(channel=Channel.SMS, value=raw)
-    return raw
+    if not isinstance(raw, str):
+        return raw
+    if "@" in raw:
+        return Contact(channel=Channel.EMAIL, value=raw)
+    try:
+        number = phonenumbers.parse(raw, DEFAULT_PHONE_REGION)
+    except phonenumbers.NumberParseException as error:
+        raise ValueError(NOT_A_CONTACT) from error
+    if not phonenumbers.is_valid_number(number):
+        raise ValueError(NOT_A_CONTACT)
+    return Contact(channel=Channel.SMS, value=raw)
 
 
 # A request field holding a phone or an email: a string in the API contract,

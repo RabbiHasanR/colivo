@@ -118,3 +118,37 @@ def test_sign_up_answers_422_for_a_bad_name(
     response = client.post("/api/v1/auth/sign-up", json=sign_up_body(code, **changes))
 
     assert response.status_code == 422
+
+
+def test_codes_answer_the_same_for_anyone(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN 01712 345678 owns "Our Flat", and nobody uses 01812 345678
+    WHEN  POST /api/v1/auth/codes is called for each
+    THEN  both answer 200 with the same body, so the answer tells nobody
+          whether a number has an account
+    """
+    client.post(
+        "/api/v1/auth/sign-up", json=sign_up_body(code_for_phone(redis_client, clock))
+    )
+
+    owner = client.post("/api/v1/auth/codes", json={"contact": PHONE_E164})
+    stranger = client.post("/api/v1/auth/codes", json={"contact": "+8801812345678"})
+
+    assert (owner.status_code, stranger.status_code) == (200, 200)
+    assert owner.json() == stranger.json()
+
+
+def test_codes_answer_422_for_something_that_is_not_a_phone_or_email(
+    client: TestClient,
+) -> None:
+    """
+    GIVEN the text "hello"
+    WHEN  POST /api/v1/auth/codes is called with it
+    THEN  it answers 422, naming the contact field
+    """
+    response = client.post("/api/v1/auth/codes", json={"contact": "hello"})
+
+    assert response.status_code == 422
+    assert response.json()["errors"][0].startswith("body.contact: ")
