@@ -1,5 +1,6 @@
 import re
 import secrets
+import uuid
 from collections.abc import Callable
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
@@ -7,7 +8,9 @@ from zoneinfo import ZoneInfo
 from sqlmodel import Session, select
 from starlette.exceptions import HTTPException
 
+from app.modules.homes.constants import SETUP_STEPS
 from app.modules.homes.models import Home
+from app.modules.homes.schemas import SetupOut, SetupStep
 
 
 def month_start(day: date) -> date:
@@ -120,3 +123,21 @@ def create_home(
     session.add(home)
     session.flush()
     return home
+
+
+def get_setup(session: Session, home_id: uuid.UUID) -> SetupOut:
+    """The new-home checklist of ``home_id`` (FR-95).
+
+    The home exists, so "home created" is done. Members, rooms and rent, home
+    rules and bills can't be set up yet: their screens come in groups 4 and
+    Phase 2, which mark them done.
+
+    Args:
+        session: The database session.
+        home_id: The home.
+
+    Returns:
+        The steps in order, each done or not.
+    """
+    done = {"home_created"}
+    return SetupOut(steps=[SetupStep(key=key, done=key in done) for key in SETUP_STEPS])

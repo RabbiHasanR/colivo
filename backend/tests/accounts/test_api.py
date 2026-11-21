@@ -16,10 +16,6 @@ PHONE = "01712 345678"
 PHONE_E164 = "+8801712345678"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="acceptance: an owner signs up, which creates their home, and is logged in",
-)
 def test_owner_signs_up_and_home_is_created(
     client: TestClient, notifier: FakeNotifier
 ) -> None:

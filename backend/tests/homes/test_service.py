@@ -5,6 +5,7 @@ from sqlmodel import Session
 
 from app.modules.homes import service
 from app.modules.homes.models import Home
+from app.modules.homes.schemas import SetupStep
 
 
 @pytest.mark.parametrize(
@@ -45,3 +46,25 @@ def test_home_code_is_drawn_again_when_taken(session: Session) -> None:
     )
 
     assert home.code == "OF-2222"
+
+
+def test_new_home_checklist_has_only_home_created_done(session: Session) -> None:
+    """
+    GIVEN "Our Flat", just created
+    WHEN  its setup checklist is read
+    THEN  it lists, in order, home created (done), then members, rooms and rent,
+          home rules and bills (not done)
+    """
+    home = service.create_home(
+        session, name="Our Flat", area=None, first_month=date(2026, 11, 1)
+    )
+
+    setup = service.get_setup(session, home.id)
+
+    assert setup.steps == [
+        SetupStep(key="home_created", done=True),
+        SetupStep(key="members", done=False),
+        SetupStep(key="rooms", done=False),
+        SetupStep(key="rules", done=False),
+        SetupStep(key="bills", done=False),
+    ]
