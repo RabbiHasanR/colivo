@@ -16,7 +16,7 @@ from app.modules.accounts.models import (
     Person,
     Role,
 )
-from app.modules.accounts.schemas import LogInIn, SignUpIn
+from app.modules.accounts.schemas import LogInIn, MemberIn, SignUpIn
 from app.modules.homes import service as homes_service
 from app.modules.homes.models import Home
 from tests.conftest import FakeNotifier, MovableClock
@@ -331,3 +331,48 @@ def test_log_in_with_no_active_membership_is_not_added_yet(
         )
 
     assert error.value.status_code == 404
+
+
+MARUF_E164 = "+8801812345678"
+
+
+def maruf(**changes: object) -> MemberIn:
+    """Adding Maruf (01812 345678) as a member from 21 Nov 2026, with changes."""
+    fields: dict[str, object] = {
+        "name": "Maruf",
+        "contact": Contact(channel=Channel.SMS, value=MARUF_E164),
+        "joined_on": date(2026, 11, 21),
+        "role": "member",
+    }
+    return MemberIn.model_validate(fields | changes)
+
+
+def test_owner_adds_a_member_who_gets_a_notice(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat"
+    WHEN  he adds Maruf, joining on 21 Nov 2026
+    THEN  Maruf is an active member of Our Flat added by Rabbi Hasan, staying
+          from 21 Nov, and gets one SMS saying so
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+
+    assert (
+        member.home_id,
+        member.name,
+        member.role,
+        member.status,
+        member.created_by,
+    ) == (owner.home_id, "Maruf", Role.MEMBER, MembershipStatus.ACTIVE, owner.id)
+    stays = session.exec(
+        select(MembershipPeriod).where(MembershipPeriod.membership_id == member.id)
+    ).all()
+    assert [(stay.starts_on, stay.ends_on) for stay in stays] == [
+        (date(2026, 11, 21), None)
+    ]
+    [notice] = notifier.sent
+    assert (notice.channel, notice.to) == (Channel.SMS, MARUF_E164)
+    assert "Rabbi Hasan added you to Our Flat" in notice.text

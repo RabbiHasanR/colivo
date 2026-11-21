@@ -160,9 +160,9 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 
 ### B20 — The owner or a manager adds a member, who gets a notice
 
-- [x] T20.1 unit — `test_owner_adds_a_member_who_gets_a_notice`: an active member, added by the owner, staying from the join date; one SMS to their phone naming the home
+- [x] T20.1 unit — `test_owner_adds_a_member_who_gets_a_notice` ✅: an active member, added by the owner, staying from the join date; one SMS to their phone naming the home
 - [ ] T20.2 integration — `POST /api/v1/members` answers 201 with `MemberOut` _(skipped: the backend acceptance test adds a member through it)_
-- [x] T20.3 integration — `test_add_member_answers_422_for_a_bad_name_or_contact` (parametrised)
+- [x] T20.3 integration — `test_add_member_answers_422_for_a_bad_name_or_contact` ✅ (parametrised)
 - [x] T20.4 web integration — add-member form: sends the name, phone or email, join date and role, then tells the page
 - [x] T20.5 web integration — member list: shows each member's name, role, status and join date
 

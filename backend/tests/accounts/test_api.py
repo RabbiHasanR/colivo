@@ -400,3 +400,46 @@ def test_owner_adds_member_who_then_logs_in(
     assert (me["membership"]["name"], me["membership"]["role"]) == ("Maruf", "member")
     assert me["home"]["name"] == "Our Flat"
     assert me["membership"]["added_by_name"] == "Rabbi Hasan"
+
+
+def maruf_body(**changes: Any) -> dict[str, Any]:
+    """Adding Maruf (01812 345678) as a member from 21 Nov 2026, with changes."""
+    return {
+        "name": "Maruf",
+        "contact": MARUF_PHONE,
+        "joined_on": "2026-11-21",
+        "role": "member",
+    } | changes
+
+
+def sign_up_owner(client: TestClient, redis_client: Redis, clock: MovableClock) -> None:
+    """Sign Rabbi Hasan up as the owner of "Our Flat"; the client is logged in."""
+    client.post(
+        "/api/v1/auth/sign-up", json=sign_up_body(code_for_phone(redis_client, clock))
+    )
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        pytest.param({"name": "  "}, id="blank name"),
+        pytest.param({"contact": "hello"}, id="not a phone or email"),
+    ],
+)
+def test_add_member_answers_422_for_a_bad_name_or_contact(
+    client: TestClient,
+    redis_client: Redis,
+    clock: MovableClock,
+    changes: dict[str, Any],
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" is logged in
+    WHEN  POST /api/v1/members is sent with a blank name or a contact that is
+          neither a phone nor an email
+    THEN  it answers 422
+    """
+    sign_up_owner(client, redis_client, clock)
+
+    response = client.post("/api/v1/members", json=maruf_body(**changes))
+
+    assert response.status_code == 422

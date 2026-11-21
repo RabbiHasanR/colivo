@@ -62,6 +62,8 @@ class Membership(TableBase, table=True):
         default=MembershipStatus.ACTIVE,
         sa_type=Text,  # pyright: ignore[reportArgumentType]
     )
+    # Who added them ("Added by Rabbi Hasan"); None for the owner.
+    created_by: uuid.UUID | None = Field(default=None, foreign_key="membership.id")
 
 
 class MembershipPeriod(TableBase, table=True):

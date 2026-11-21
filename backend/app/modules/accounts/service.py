@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import date, datetime
 
 from redis import Redis
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 from starlette.exceptions import HTTPException
 
 from app.core.notifier import Channel, Notifier
@@ -19,6 +19,8 @@ from app.modules.accounts.schemas import (
     CodeSentOut,
     LogInIn,
     MeHomeOut,
+    MemberIn,
+    MemberOut,
     MeMembershipOut,
     MeOut,
     MePersonOut,
@@ -220,3 +222,93 @@ def log_in(
         # Only after the right code, so nobody learns who has an account.
         raise HTTPException(404, NOT_ADDED)
     return membership
+
+
+def add_member(
+    session: Session,
+    notifier: Notifier,
+    adder: Membership,
+    data: MemberIn,
+    now: datetime,
+) -> Membership:
+    """Add a member to the adder's home, and tell them so (FR-79).
+
+    The notice goes out only after the member is saved, so nobody is told
+    they were added when they weren't.
+
+    Args:
+        session: The database session.
+        notifier: Sends the SMS or email.
+        adder: The owner or manager adding them.
+        data: The new member's name, phone or email, join date and role.
+        now: The current time.
+
+    Returns:
+        The new membership.
+    """
+    person = find_person(session, data.contact) or new_person(data.contact)
+    session.add(person)
+    session.flush()
+    member = Membership(
+        home_id=adder.home_id,
+        person_id=person.id,
+        name=data.name,
+        role=data.role,
+        created_by=adder.id,
+    )
+    session.add(member)
+    session.flush()
+    session.add(
+        MembershipPeriod(
+            home_id=adder.home_id, membership_id=member.id, starts_on=data.joined_on
+        )
+    )
+    session.commit()
+    session.refresh(member)
+    home = session.get_one(Home, adder.home_id)
+    notifier.send(
+        data.contact.channel,
+        data.contact.value,
+        f"{adder.name} added you to {home.name} on Colivo. "
+        "Log in with this phone or email and a one-time code.",
+    )
+    return member
+
+
+def joined_on(session: Session, membership: Membership) -> date | None:
+    """The member's join date: the start of their first stay; None for none.
+
+    Args:
+        session: The database session.
+        membership: The member.
+
+    Returns:
+        The date, or None for an owner who doesn't live in the home.
+    """
+    return session.exec(
+        select(func.min(MembershipPeriod.starts_on)).where(
+            MembershipPeriod.membership_id == membership.id
+        )
+    ).one()
+
+
+def member_out(session: Session, membership: Membership) -> MemberOut:
+    """Describe a member for the members list.
+
+    Args:
+        session: The database session.
+        membership: The member.
+
+    Returns:
+        Their name, phone or email, role, status and join date.
+    """
+    person = session.get_one(Person, membership.person_id)
+    return MemberOut(
+        id=membership.id,
+        name=membership.name,
+        phone=person.phone,
+        email=person.email,
+        role=membership.role,
+        status=membership.status,
+        joined_on=joined_on(session, membership),
+    )

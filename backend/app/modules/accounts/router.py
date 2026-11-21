@@ -1,6 +1,6 @@
 from fastapi import Request, Response
 
-from app.api.deps import CurrentMemberDep
+from app.api.deps import CurrentMemberDep, OwnerOrManagerDep
 from app.core.clock import ClockDep
 from app.core.config import settings
 from app.core.database import SessionDep
@@ -16,6 +16,8 @@ from app.modules.accounts.schemas import (
     CodeRequestIn,
     CodeSentOut,
     LogInIn,
+    MemberIn,
+    MemberOut,
     MeOut,
     SignUpIn,
 )
@@ -128,3 +130,20 @@ def get_me(
     set_response_message(request, "Logged in")
     response.status_code = 200
     return service.get_me(session, membership)
+
+
+@router.post("/members", status_code=201)
+def add_member(
+    request: Request,
+    response: Response,
+    data: MemberIn,
+    adder: OwnerOrManagerDep,
+    session: SessionDep,
+    notifier: NotifierDep,
+    clock: ClockDep,
+) -> MemberOut:
+    """Add a member to the home; they get an SMS or email to log in."""
+    member = service.add_member(session, notifier, adder, data, clock())
+    set_response_message(request, "Member added")
+    response.status_code = 201
+    return service.member_out(session, member)

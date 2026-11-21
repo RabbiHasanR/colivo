@@ -1,6 +1,7 @@
 import uuid
 from datetime import date
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -59,6 +60,27 @@ class SignUpIn(BaseModel):
     area: ShortText | None = None
     first_month: date
     lives_here: bool
+
+
+class MemberIn(BaseModel):
+    """Add a member: who, how to reach them, from when, and their role."""
+
+    name: ShortText
+    contact: ContactIn
+    joined_on: date
+    role: Literal[Role.MEMBER, Role.MANAGER] = Role.MEMBER
+
+
+class MemberOut(BaseModel):
+    """A member of the home, for the owner and managers' members list."""
+
+    id: uuid.UUID
+    name: str
+    phone: str | None
+    email: str | None
+    role: Role
+    status: MembershipStatus
+    joined_on: date | None
 
 
 class MePersonOut(BaseModel):
