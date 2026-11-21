@@ -1,7 +1,7 @@
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
-from pydantic import BeforeValidator
+from pydantic import BeforeValidator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # The repo-root .env (shared with compose.yaml). Missing inside the container,
@@ -53,6 +53,26 @@ class Settings(BaseSettings):
     # How SMS and email reach people. Only "log" exists until a provider is
     # chosen (specs/tech-stack.md → Deferred decisions).
     notifier: Literal["log"] = "log"
+
+    @model_validator(mode="after")
+    def refuse_the_log_notifier_in_production(self) -> Self:
+        """Never run production with the development notifier.
+
+        It logs every one-time code in plain text, so anyone who can read the
+        logs could log in as anyone (security review, 21 Nov 2026).
+
+        Returns:
+            The settings, unchanged.
+
+        Raises:
+            ValueError: In production with ``NOTIFIER=log``.
+        """
+        if self.environment == "production" and self.notifier == "log":
+            raise ValueError(
+                "NOTIFIER=log logs one-time codes in plain text; "
+                "production needs a real SMS and email notifier."
+            )
+        return self
 
 
 settings = Settings()  # pyright: ignore[reportCallIssue]  (values come from the environment)

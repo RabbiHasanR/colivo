@@ -301,4 +301,4 @@ From the `/security-review` of the branch (21 Nov 2026), agreed with the user.
 
 ### B40 — Production refuses the development notifier
 
-- [x] T40.1 unit — `test_production_refuses_the_development_notifier` (`backend/tests/core/test_config.py`)
+- [x] T40.1 unit — `test_production_refuses_the_development_notifier` ✅ (`backend/tests/core/test_config.py`)
