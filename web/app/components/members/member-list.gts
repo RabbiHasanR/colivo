@@ -55,11 +55,14 @@ export default class MemberList extends Component<MemberListSignature> {
               <td>{{formatDate member.joined_on}}</td>
               <td>
                 {{#if @onRoleChanged}}
+                  {{! The owner's own role never changes (FR-63). }}
                   {{#if this.session.isOwner}}
-                    <RoleEditor
-                      @member={{member}}
-                      @onChanged={{@onRoleChanged}}
-                    />
+                    {{#unless (eq member.role "owner")}}
+                      <RoleEditor
+                        @member={{member}}
+                        @onChanged={{@onRoleChanged}}
+                      />
+                    {{/unless}}
                   {{/if}}
                 {{/if}}
                 {{#if @onEdit}}

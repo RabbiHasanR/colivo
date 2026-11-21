@@ -115,4 +115,22 @@ module('Integration | Component | members/member-list', function (hooks) {
     );
     assert.strictEqual(findAll('[data-test-role-change]').length, 0);
   });
+
+  test("the owner's row has no role button", async function (assert) {
+    // GIVEN the owner of "Our Flat" is looking at the list
+    // WHEN  the list shows the owner and Maruf
+    // THEN  Maruf's row has a role button; the owner's row has none
+    this.owner.lookup('service:session').me = me('owner');
+    const members = [owner, member()];
+    const onRoleChanged = () => {};
+
+    await render(
+      <template>
+        <MemberList @members={{members}} @onRoleChanged={{onRoleChanged}} />
+      </template>,
+    );
+
+    assert.dom('[data-test-role-change="Maruf"]').exists();
+    assert.dom('[data-test-role-change="Rabbi Hasan"]').doesNotExist();
+  });
 });

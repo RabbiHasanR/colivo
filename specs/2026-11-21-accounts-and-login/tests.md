@@ -245,7 +245,7 @@ End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who
 
 - [x] T32.1 unit — `test_owners_own_role_cannot_change` ✅: 400
 - [x] T32.2 unit (database rule) — `test_home_has_at_most_one_owner` ✅
-- [x] T32.3 web integration — member list: the owner's row has no role button
+- [x] T32.3 web integration — `the owner's row has no role button` ✅: member list: the owner's row has no role button
 
 ### B33 — Deactivating, from a date, logs the member out at once
 
