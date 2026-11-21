@@ -174,7 +174,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 ### B22 — Members can't see or change the members list
 
 - [x] T22.1 integration — `test_members_answer_403_for_a_member` ✅ (parametrised over `GET` and `POST /api/v1/members`)
-- [x] T22.2 web acceptance — a member has no Members link and opening `/members` sends them home (`members-test.ts`)
+- [x] T22.2 web acceptance — `a member has no Members link, and opening Members sends them home` ✅: a member has no Members link and opening `/members` sends them home (`members-test.ts`)
 
 ### B23 — Active in another home can't be added
 

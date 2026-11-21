@@ -4,6 +4,7 @@ import { action } from '@ember/object';
 import { on } from '@ember/modifier';
 import { guidFor } from '@ember/object/internals';
 import { service } from '@ember/service';
+import { LinkTo } from '@ember/routing';
 import type RouterService from '@ember/routing/router-service';
 import type SessionService from '../../services/session';
 import { roleLabel } from '../../utils/roles';
@@ -67,6 +68,20 @@ export default class AppShell extends Component<AppShellSignature> {
           class="hidden font-display text-lg font-semibold text-primary lg:block"
         >Colivo</span>
         {{#if this.session.me}}
+          <ul class="mt-4 flex flex-col gap-1">
+            <li><LinkTo
+                @route="authenticated.index"
+                class="flex min-h-touch items-center rounded-xl px-3 text-ink hover:bg-page"
+                data-test-nav-home
+              >Home</LinkTo></li>
+            {{#if this.session.isOwnerOrManager}}
+              <li><LinkTo
+                  @route="authenticated.members"
+                  class="flex min-h-touch items-center rounded-xl px-3 text-ink hover:bg-page"
+                  data-test-nav-members
+                >Members</LinkTo></li>
+            {{/if}}
+          </ul>
           <div class="mt-4 flex flex-col gap-2">
             <p class="text-sm text-muted" data-test-shell-person>
               {{this.session.me.membership.name}}

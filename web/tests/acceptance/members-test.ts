@@ -1,5 +1,5 @@
 import { module, test } from 'qunit';
-import { click, fillIn, visit } from '@ember/test-helpers';
+import { click, currentURL, fillIn, visit } from '@ember/test-helpers';
 import { setupApplicationTest } from 'colivo-web/tests/helpers';
 import { setupMsw, worker } from 'colivo-web/tests/helpers/msw';
 import { loggedInAs, newHomeSetup } from 'colivo-web/tests/helpers/accounts';
@@ -23,5 +23,18 @@ module('Acceptance | members', function (hooks) {
 
     assert.dom('[data-test-member-row]').exists({ count: 2 });
     assert.dom('[data-test-member-row="Maruf"]').exists();
+  });
+
+  test('a member has no Members link, and opening Members sends them home', async function (assert) {
+    // GIVEN Maruf, a member (not the owner or a manager), is logged in
+    // WHEN  he looks at the shell, and opens /members
+    // THEN  there is no Members link, and he is sent to his home
+    worker.use(loggedInAs('member'), ...membersApi());
+
+    await visit('/');
+    assert.dom('[data-test-nav-members]').doesNotExist();
+    await visit('/members');
+
+    assert.strictEqual(currentURL(), '/');
   });
 });
