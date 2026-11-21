@@ -232,7 +232,7 @@ End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who
 
 ### B28 — The new endpoints never reach another home's member
 
-- [x] T28.3 integration — `test_status_and_role_changes_answer_404_for_another_homes_member` (parametrised over role, deactivate, reactivate)
+- [x] T28.3 integration — `test_status_and_role_changes_answer_404_for_another_homes_member` ✅ (parametrised over role, deactivate, reactivate) _(`get_member` already scoped them; seen failing without its home check)_
 
 ### B31 — The owner gives and takes away the Manager role
 
@@ -282,5 +282,5 @@ End-to-end: `web/e2e/accounts.spec.ts` › the owner signs up, adds a member who
 
 ### B37 — Current and past members on separate tabs
 
-- [x] T37.1 integration — `test_members_list_includes_deactivated_members_with_their_status`
+- [x] T37.1 integration — `test_members_list_includes_deactivated_members_with_their_status` ✅ _(the list already had everyone; seen failing with the list limited to active members)_
 - [x] T37.2 web integration — member tabs: Current lists the active members with Deactivate; Past lists the deactivated ones with Reactivate

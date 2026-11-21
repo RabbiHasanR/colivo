@@ -759,3 +759,54 @@ def test_reactivate_answers_422_without_a_date(
     response = client.post(f"/api/v1/members/{member_id}/reactivate", json={})
 
     assert response.status_code == 422
+
+
+def test_members_list_includes_deactivated_members_with_their_status(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf and deactivated him
+    WHEN  they ask for the members list
+    THEN  Maruf is in it, as inactive, for the Past tab
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    client.post(f"/api/v1/members/{member_id}/deactivate", json={"on": "2026-11-21"})
+
+    response = client.get("/api/v1/members")
+
+    statuses = {m["name"]: m["status"] for m in response.json()["data"]}
+    assert statuses == {"Maruf": "inactive", "Rabbi Hasan": "active"}
+
+
+@pytest.mark.parametrize(
+    ("method", "action", "body"),
+    [
+        pytest.param("PUT", "role", {"role": "manager"}, id="role"),
+        pytest.param("POST", "deactivate", {"on": "2026-11-21"}, id="deactivate"),
+        pytest.param("POST", "reactivate", {"on": "2026-12-01"}, id="reactivate"),
+    ],
+)
+def test_status_and_role_changes_answer_404_for_another_homes_member(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    clock: MovableClock,
+    method: str,
+    action: str,
+    body: dict[str, Any],
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" is logged in, and Karim is in "Old Fort"
+    WHEN  they change Karim's role, deactivate him or reactivate him
+    THEN  each answers 404, and Karim stays as he was
+    """
+    sign_up_owner(client, redis_client, clock)
+    karim = member_of_old_fort(session)
+
+    response = client.request(method, f"/api/v1/members/{karim.id}/{action}", json=body)
+
+    assert response.status_code == 404
+    assert "Karim" not in response.text
+    session.refresh(karim)
+    assert (karim.role, karim.status) == ("member", "active")
