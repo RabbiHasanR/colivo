@@ -13,14 +13,14 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 ### Phase 0 fixes
 
 - [x] T0.1 integration — `test_invalid_input_answers_422_in_the_envelope` ✅: `success: false`, `message: "Validation Error"`, `errors: ["body.<field>: <msg>"]` (`backend/tests/core/test_api.py`)
-- [x] T0.2 unit — `test_every_check_matches_its_enum`: each `CHECK (col IN …)` in the test database equals its `StrEnum` (`backend/tests/core/test_models.py`)
+- [x] T0.2 unit — `test_every_check_matches_its_enum` ✅: each `CHECK (col IN …)` in the test database equals its `StrEnum` (`backend/tests/core/test_models.py`)
 
 ### B1 — Owner signs up and the home is created
 
-- [x] T1.1 unit — `test_sign_up_creates_the_home_and_its_owner`: home name, area, first month; an active `owner` membership with the given name
-- [x] T1.2 integration — `POST /api/v1/auth/sign-up` answers 201 with `MeOut` and sets the session cookie
-- [x] T1.3 integration — `POST /api/v1/auth/sign-up` answers 422 for a missing name or home name
-- [x] T1.4 unit (database rule) — `test_home_checks_reject_bad_rows`: empty or 81-character name, 81-character area, first month not on the 1st, badly formed code
+- [x] T1.1 unit — `test_sign_up_creates_the_home_and_its_owner` ✅: home name, area, first month; an active `owner` membership with the given name
+- [x] T1.2 integration — `POST /api/v1/auth/sign-up` answers 201 with `MeOut` and sets the session cookie ✅
+- [x] T1.3 integration — `POST /api/v1/auth/sign-up` answers 422 for a missing, blank or over-80-character name or home name ✅
+- [x] T1.4 unit (database rule) — `test_home_and_member_checks_reject_bad_rows`: blank or 81-character home or member name, 81-character area, first month not on the 1st; a badly formed Home ID is added with `home.code` in B4 ✅
 - [x] T1.5 web integration — sign-up form: "Send code and create home" asks for a code, then shows the code step ("Sent to …"), then sends every field with the code
 - [x] T1.6 web integration — sign-up form shows 422 messages under their fields
 

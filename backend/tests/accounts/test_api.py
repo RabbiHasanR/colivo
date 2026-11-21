@@ -1,9 +1,15 @@
 import re
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from redis import Redis
 
-from tests.conftest import FakeNotifier
+from app.core.notifier import Channel
+from app.modules.accounts import codes
+from app.modules.accounts.constants import SESSION_COOKIE
+from app.modules.accounts.contact import Contact
+from tests.conftest import FakeNotifier, MovableClock
 
 PHONE = "01712 345678"
 PHONE_E164 = "+8801712345678"
@@ -47,3 +53,68 @@ def test_owner_signs_up_and_home_is_created(
     assert me["home"]["name"] == "Our Flat"
     assert re.fullmatch(r"OF-\d{4}", me["home"]["code"])
     assert {"key": "home_created", "done": True} in setup["steps"]
+
+
+def sign_up_body(code: str, **changes: Any) -> dict[str, Any]:
+    """The sign-up request for "Our Flat" by 01712 345678, with any field changed."""
+    return {
+        "contact": PHONE_E164,
+        "code": code,
+        "name": "Rabbi Hasan",
+        "home_name": "Our Flat",
+        "area": "Mirpur",
+        "first_month": "2026-11-01",
+        "lives_here": True,
+    } | changes
+
+
+def code_for_phone(redis_client: Redis, clock: MovableClock) -> str:
+    """Issue a code for 01712 345678 straight from the code store."""
+    contact = Contact(channel=Channel.SMS, value=PHONE_E164)
+    return codes.issue_code(redis_client, contact, clock())
+
+
+def test_sign_up_answers_201_with_the_new_home_and_a_session_cookie(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN a valid code for 01712 345678
+    WHEN  POST /api/v1/auth/sign-up creates "Our Flat"
+    THEN  it answers 201 with the owner and the home, and sets the session cookie
+    """
+    code = code_for_phone(redis_client, clock)
+
+    response = client.post("/api/v1/auth/sign-up", json=sign_up_body(code))
+
+    assert response.status_code == 201
+    data = response.json()["data"]
+    assert data["membership"]["role"] == "owner"
+    assert data["home"]["name"] == "Our Flat"
+    assert SESSION_COOKIE in response.cookies
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        pytest.param({"name": None}, id="no name"),
+        pytest.param({"name": "   "}, id="blank name"),
+        pytest.param({"home_name": "x" * 81}, id="home name over 80"),
+        pytest.param({"area": "x" * 81}, id="area over 80"),
+    ],
+)
+def test_sign_up_answers_422_for_a_bad_name(
+    client: TestClient,
+    redis_client: Redis,
+    clock: MovableClock,
+    changes: dict[str, Any],
+) -> None:
+    """
+    GIVEN a valid code
+    WHEN  sign-up is sent with a missing, blank or too long name, home name or area
+    THEN  it answers 422
+    """
+    code = code_for_phone(redis_client, clock)
+
+    response = client.post("/api/v1/auth/sign-up", json=sign_up_body(code, **changes))
+
+    assert response.status_code == 422
