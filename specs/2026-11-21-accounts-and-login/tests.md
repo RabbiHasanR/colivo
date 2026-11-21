@@ -70,9 +70,9 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 ### B14 — A log-in lasts 30 days from the last use; log-out ends it
 
-- [x] T14.1 unit — `test_session_ends_30_days_after_its_last_use`: used on day 29 → still valid on day 58; unused for 31 days → gone
-- [x] T14.2 integration — `POST /api/v1/auth/log-out` ends the session (then `GET /me` is 401) and clears the cookie
-- [x] T14.3 integration — `GET /api/v1/me` sends the cookie again with a 30-day `Max-Age`
+- [x] T14.1 unit — `test_session_ends_30_days_after_its_last_use` ✅: used on day 29 → still valid on day 58; unused for 31 days → gone
+- [x] T14.2 integration — `test_log_out_ends_the_session_and_clears_the_cookie` ✅: `POST /api/v1/auth/log-out` ends the session (then `GET /me` is 401) and clears the cookie
+- [x] T14.3 integration — `test_me_sends_the_cookie_again_for_30_days` ✅: `GET /api/v1/me` sends the cookie again with a 30-day `Max-Age`
 - [x] T14.4 web acceptance — owner logs out from the shell and is back on log-in (`web/tests/acceptance/log-out-test.ts`)
 
 ### B15 — The cookie is out of page scripts' reach, and only the web app may send it

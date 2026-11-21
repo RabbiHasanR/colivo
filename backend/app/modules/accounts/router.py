@@ -8,7 +8,7 @@ from app.core.redis import RedisDep
 from app.core.router import CoreRouter
 from app.core.utils import set_response_message
 from app.modules.accounts import service, sessions
-from app.modules.accounts.constants import SESSION_COOKIE
+from app.modules.accounts.constants import SESSION_COOKIE, SESSION_LIFETIME
 from app.modules.accounts.schemas import (
     CodeRequestIn,
     CodeSentOut,
@@ -17,6 +17,20 @@ from app.modules.accounts.schemas import (
 )
 
 router = CoreRouter()
+
+
+def set_session_cookie(response: Response, token: str) -> None:
+    """Send the session cookie, valid as long as the session (30 days).
+
+    Args:
+        response: The response to set it on.
+        token: The session token.
+    """
+    response.set_cookie(
+        SESSION_COOKIE,
+        token,
+        max_age=int(SESSION_LIFETIME.total_seconds()),
+    )
 
 
 @router.post("/auth/codes")
@@ -47,15 +61,22 @@ def sign_up(
     """Create a home; the person signing up becomes its owner and is logged in."""
     membership = service.sign_up(session, redis_client, data, clock())
     token = sessions.create_session(redis_client, membership.person_id, clock())
-    response.set_cookie(SESSION_COOKIE, token)
+    set_session_cookie(response, token)
     set_response_message(request, "Home created")
     response.status_code = 201
     return service.get_me(session, membership)
 
 
 @router.post("/auth/log-out")
-def log_out(request: Request, response: Response, membership: CurrentMemberDep) -> None:
+def log_out(
+    request: Request,
+    response: Response,
+    membership: CurrentMemberDep,
+    redis_client: RedisDep,
+) -> None:
     """End the session and clear its cookie."""
+    service.log_out(redis_client, request.cookies[SESSION_COOKIE])
+    response.delete_cookie(SESSION_COOKIE)
     set_response_message(request, "Logged out")
     response.status_code = 200
 
@@ -67,7 +88,8 @@ def get_me(
     membership: CurrentMemberDep,
     session: SessionDep,
 ) -> MeOut:
-    """Who is logged in, and in which home."""
+    """Who is logged in, and in which home; renews the cookie for 30 days."""
+    set_session_cookie(response, request.cookies[SESSION_COOKIE])
     set_response_message(request, "Logged in")
     response.status_code = 200
     return service.get_me(session, membership)

@@ -1,4 +1,5 @@
 import hashlib
+import json
 import secrets
 import uuid
 from datetime import datetime
@@ -13,6 +14,21 @@ def session_key(token: str) -> str:
     return f"session:{hashlib.sha256(token.encode()).hexdigest()}"
 
 
+def save_session(
+    redis_client: Redis, token: str, person_id: uuid.UUID, now: datetime
+) -> None:
+    """Keep a session alive until ``SESSION_LIFETIME`` after ``now``.
+
+    The end time is compared with the app's clock; the Redis expiry only
+    clears old keys away.
+    """
+    value = {
+        "person_id": str(person_id),
+        "expires_at": (now + SESSION_LIFETIME).isoformat(),
+    }
+    redis_client.set(session_key(token), json.dumps(value), ex=SESSION_LIFETIME)
+
+
 def create_session(redis_client: Redis, person_id: uuid.UUID, now: datetime) -> str:
     """Start a log-in session for ``person_id``.
 
@@ -25,12 +41,12 @@ def create_session(redis_client: Redis, person_id: uuid.UUID, now: datetime) -> 
         The session token, for the session cookie.
     """
     token = secrets.token_urlsafe(32)
-    redis_client.set(session_key(token), str(person_id), ex=SESSION_LIFETIME)
+    save_session(redis_client, token, person_id, now)
     return token
 
 
 def read_session(redis_client: Redis, token: str, now: datetime) -> uuid.UUID | None:
-    """Return who a session token belongs to, if it is a live session.
+    """Return who a live session belongs to, and keep it alive 30 more days.
 
     Args:
         redis_client: Where sessions are kept.
@@ -38,9 +54,25 @@ def read_session(redis_client: Redis, token: str, now: datetime) -> uuid.UUID | 
         now: The current time.
 
     Returns:
-        The person's id, or None for no such session.
+        The person's id, or None when there is no such session or it ended.
     """
     stored = redis_client.get(session_key(token))
     if not isinstance(stored, bytes):
         return None
-    return uuid.UUID(stored.decode())
+    value = json.loads(stored)
+    if now >= datetime.fromisoformat(value["expires_at"]):
+        redis_client.delete(session_key(token))
+        return None
+    person_id = uuid.UUID(value["person_id"])
+    save_session(redis_client, token, person_id, now)
+    return person_id
+
+
+def end_session(redis_client: Redis, token: str) -> None:
+    """End a session at once (log-out).
+
+    Args:
+        redis_client: Where sessions are kept.
+        token: The token from the session cookie.
+    """
+    redis_client.delete(session_key(token))

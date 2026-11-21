@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 from starlette.exceptions import HTTPException
 
 from app.core.notifier import Channel, Notifier
-from app.modules.accounts import codes
+from app.modules.accounts import codes, sessions
 from app.modules.accounts.constants import CODE_LIFETIME
 from app.modules.accounts.contact import Contact
 from app.modules.accounts.models import (
@@ -177,3 +177,13 @@ def request_code(
         channel=contact.channel,
         expires_in_seconds=int(CODE_LIFETIME.total_seconds()),
     )
+
+
+def log_out(redis_client: Redis, token: str) -> None:
+    """End the session behind ``token``.
+
+    Args:
+        redis_client: Where sessions are kept.
+        token: The session cookie's token.
+    """
+    sessions.end_session(redis_client, token)

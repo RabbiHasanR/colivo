@@ -182,3 +182,45 @@ def test_endpoints_need_a_log_in(
     response = client.request(method, path, headers=headers)
 
     assert response.status_code == 401
+
+
+def test_log_out_ends_the_session_and_clears_the_cookie(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN an owner who just signed up and is logged in
+    WHEN  they log out
+    THEN  the cookie is cleared, and their old token no longer logs anyone in
+    """
+    signed_up = client.post(
+        "/api/v1/auth/sign-up", json=sign_up_body(code_for_phone(redis_client, clock))
+    )
+    token = signed_up.cookies[SESSION_COOKIE]
+
+    response = client.post("/api/v1/auth/log-out")
+
+    assert response.status_code == 200
+    assert "Max-Age=0" in response.headers["set-cookie"]
+    old_token = client.get(
+        "/api/v1/me", headers={"Cookie": f"{SESSION_COOKIE}={token}"}
+    )
+    assert old_token.status_code == 401
+
+
+def test_me_sends_the_cookie_again_for_30_days(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN an owner who is logged in
+    WHEN  the app asks who is logged in (it does on every start)
+    THEN  the session cookie comes back with 30 more days, so the browser
+          keeps it as long as the server does
+    """
+    client.post(
+        "/api/v1/auth/sign-up", json=sign_up_body(code_for_phone(redis_client, clock))
+    )
+
+    response = client.get("/api/v1/me")
+
+    assert f"{SESSION_COOKIE}=" in response.headers["set-cookie"]
+    assert "Max-Age=2592000" in response.headers["set-cookie"]
