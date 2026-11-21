@@ -5,10 +5,12 @@ import { on } from '@ember/modifier';
 import { service } from '@ember/service';
 import type MembersService from '../../services/members';
 import type SessionService from '../../services/session';
+import { ApiError } from '../../utils/api-error';
 import type { Member } from '../../services/members';
 import Button from '../ui/button';
 import DateInput from '../ui/date-input';
 import Field from '../ui/field';
+import FormError from '../ui/form-error';
 import Select from '../ui/select';
 import Stack from '../ui/stack';
 import TextInput from '../ui/text-input';
@@ -43,6 +45,8 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
   @tracked contact = '';
   @tracked joinedOn = '';
   @tracked role: NewRole = 'member';
+  /** Why the API refused the member, when it isn't about one field. */
+  @tracked error: string | null = null;
 
   @action setName(value: string): void {
     this.name = value;
@@ -63,12 +67,20 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
   @action
   async submit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    const added = await this.members.add({
-      name: this.name,
-      contact: this.contact,
-      joined_on: this.joinedOn,
-      role: this.role,
-    });
+    this.error = null;
+    let added: Member;
+    try {
+      added = await this.members.add({
+        name: this.name,
+        contact: this.contact,
+        joined_on: this.joinedOn,
+        role: this.role,
+      });
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status === null) throw error;
+      this.error = error.message;
+      return;
+    }
     this.args.onAdded(added);
   }
 
@@ -108,6 +120,9 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
             data-test-add-member-role
           />
         </Field>
+        {{#if this.error}}
+          <FormError data-test-add-member-error>{{this.error}}</FormError>
+        {{/if}}
         <Button type="submit" data-test-add-member-submit>Add member</Button>
       </Stack>
     </form>

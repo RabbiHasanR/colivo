@@ -71,4 +71,28 @@ module('Integration | Component | members/add-member-form', function (hooks) {
       ['manager', false],
     ]);
   });
+
+  test('shows why the API refused the member', async function (assert) {
+    // GIVEN Maruf's phone is already active in another home
+    // WHEN  the owner tries to add him
+    // THEN  the form shows the API's 409 message, and the page isn't told
+    const refusal = 'This phone or email is already in a home.';
+    worker.use(
+      http.post('*/api/v1/members', () =>
+        HttpResponse.json(
+          { success: false, message: refusal, errors: [refusal] },
+          { status: 409 },
+        ),
+      ),
+    );
+    let added = false;
+    const onAdded = () => (added = true);
+    await render(<template><AddMemberForm @onAdded={{onAdded}} /></template>);
+
+    await fillInMaruf();
+    await click('[data-test-add-member-submit]');
+
+    assert.dom('[data-test-add-member-error]').hasText(refusal);
+    assert.false(added);
+  });
 });
