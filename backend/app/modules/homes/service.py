@@ -5,9 +5,10 @@ from collections.abc import Callable
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 from starlette.exceptions import HTTPException
 
+from app.modules.accounts.models import Membership, MembershipStatus, Role
 from app.modules.homes.constants import SETUP_STEPS
 from app.modules.homes.models import Home
 from app.modules.homes.schemas import SetupOut, SetupStep
@@ -128,9 +129,9 @@ def create_home(
 def get_setup(session: Session, home_id: uuid.UUID) -> SetupOut:
     """The new-home checklist of ``home_id`` (FR-95).
 
-    The home exists, so "home created" is done. Members, rooms and rent, home
-    rules and bills can't be set up yet: their screens come in groups 4 and
-    Phase 2, which mark them done.
+    The home exists, so "home created" is done; "members" is done once anyone
+    besides the owner is active. Rooms and rent, home rules and bills come in
+    Phase 2, which marks them done.
 
     Args:
         session: The database session.
@@ -140,4 +141,27 @@ def get_setup(session: Session, home_id: uuid.UUID) -> SetupOut:
         The steps in order, each done or not.
     """
     done = {"home_created"}
+    if other_active_members(session, home_id) > 0:
+        done.add("members")
     return SetupOut(steps=[SetupStep(key=key, done=key in done) for key in SETUP_STEPS])
+
+
+def other_active_members(session: Session, home_id: uuid.UUID) -> int:
+    """How many active members the home has besides its owner.
+
+    Args:
+        session: The database session.
+        home_id: The home.
+
+    Returns:
+        The count.
+    """
+    return session.exec(
+        select(func.count())
+        .select_from(Membership)
+        .where(
+            Membership.home_id == home_id,
+            Membership.status == MembershipStatus.ACTIVE,
+            Membership.role != Role.OWNER,
+        )
+    ).one()

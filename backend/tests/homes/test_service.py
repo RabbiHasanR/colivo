@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 from sqlmodel import Session
 
+from app.modules.accounts.models import Membership, Person, Role
 from app.modules.homes import service
 from app.modules.homes.models import Home
 from app.modules.homes.schemas import SetupStep
@@ -68,3 +69,31 @@ def test_new_home_checklist_has_only_home_created_done(session: Session) -> None
         SetupStep(key="rules", done=False),
         SetupStep(key="bills", done=False),
     ]
+
+
+def test_members_step_is_done_once_another_member_is_active(session: Session) -> None:
+    """
+    GIVEN "Our Flat" with its owner and one active member, Maruf
+    WHEN  its setup checklist is read
+    THEN  "Add members" is done
+    """
+
+    home = service.create_home(
+        session, name="Our Flat", area=None, first_month=date(2026, 11, 1)
+    )
+    people = [Person(phone="+8801712345678"), Person(phone="+8801812345678")]
+    session.add_all(people)
+    session.flush()
+    session.add_all(
+        [
+            Membership(
+                home_id=home.id, person_id=people[0].id, name="Rabbi", role=Role.OWNER
+            ),
+            Membership(home_id=home.id, person_id=people[1].id, name="Maruf"),
+        ]
+    )
+    session.flush()
+
+    setup = service.get_setup(session, home.id)
+
+    assert SetupStep(key="members", done=True) in setup.steps

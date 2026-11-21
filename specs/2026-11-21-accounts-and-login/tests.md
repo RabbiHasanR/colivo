@@ -156,7 +156,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 
 ### B17 — The setup checklist's "Add members" step
 
-- [x] T17.2 unit — `test_members_step_is_done_once_another_member_is_active` _(moved here from group 2)_
+- [x] T17.2 unit — `test_members_step_is_done_once_another_member_is_active` ✅ _(moved here from group 2)_
 
 ### B20 — The owner or a manager adds a member, who gets a notice
 
