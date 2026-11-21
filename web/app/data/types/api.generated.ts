@@ -24,10 +24,147 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Code
+         * @description Send a one-time code by SMS or email; the same answer for any contact.
+         */
+        post: operations["request_code_api_v1_auth_codes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/sign-up": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign Up
+         * @description Create a home; the person signing up becomes its owner and is logged in.
+         */
+        post: operations["sign_up_api_v1_auth_sign_up_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/log-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log Out
+         * @description End the session and clear its cookie.
+         */
+        post: operations["log_out_api_v1_auth_log_out_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Me
+         * @description Who is logged in, and in which home; renews the cookie for 30 days.
+         */
+        get: operations["get_me_api_v1_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/home/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Setup
+         * @description The setup checklist of the logged-in owner's or manager's home.
+         */
+        get: operations["get_setup_api_v1_home_setup_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Channel
+         * @description How a message reaches a person.
+         * @enum {string}
+         */
+        Channel: "sms" | "email";
+        /**
+         * CodeRequestIn
+         * @description Ask for a one-time code for a phone or email.
+         */
+        CodeRequestIn: {
+            /** @description A phone number or an email */
+            contact: string;
+        };
+        /**
+         * CodeSentOut
+         * @description How the code was sent and how long it works; the same for any contact.
+         */
+        CodeSentOut: {
+            channel: components["schemas"]["Channel"];
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+        };
+        /**
+         * Contact
+         * @description A phone (E.164) or an email address (lower case), and how to reach it.
+         */
+        Contact: {
+            channel: components["schemas"]["Channel"];
+            /** Value */
+            value: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
         /**
          * HealthOut
          * @description The status of each dependency the backend needs.
@@ -37,11 +174,128 @@ export interface components {
             redis: components["schemas"]["ServiceStatus"];
         };
         /**
+         * MeHomeOut
+         * @description The logged-in person's home.
+         */
+        MeHomeOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Area */
+            area: string | null;
+            /**
+             * First Month
+             * Format: date
+             */
+            first_month: string;
+        };
+        /**
+         * MeMembershipOut
+         * @description The logged-in person's membership of their home.
+         */
+        MeMembershipOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            role: components["schemas"]["Role"];
+            status: components["schemas"]["MembershipStatus"];
+        };
+        /**
+         * MeOut
+         * @description Who is logged in, and in which home.
+         */
+        MeOut: {
+            person: components["schemas"]["MePersonOut"];
+            membership: components["schemas"]["MeMembershipOut"];
+            home: components["schemas"]["MeHomeOut"];
+        };
+        /**
+         * MePersonOut
+         * @description The logged-in person's log-in identity.
+         */
+        MePersonOut: {
+            /** Phone */
+            phone: string | null;
+        };
+        /**
+         * MembershipStatus
+         * @description Whether a member may log in now.
+         * @enum {string}
+         */
+        MembershipStatus: "active" | "inactive";
+        /**
+         * Role
+         * @description A member's role in their home (specs/data-model.md → Roles).
+         * @enum {string}
+         */
+        Role: "owner" | "manager" | "member";
+        /**
          * ServiceStatus
          * @description Whether a dependency of the backend answered.
          * @enum {string}
          */
         ServiceStatus: "ok" | "down";
+        /**
+         * SetupOut
+         * @description The new-home checklist, in order.
+         */
+        SetupOut: {
+            /** Steps */
+            steps: components["schemas"]["SetupStep"][];
+        };
+        /**
+         * SetupStep
+         * @description One step of the new-home checklist (FR-95).
+         */
+        SetupStep: {
+            /** Key */
+            key: string;
+            /** Done */
+            done: boolean;
+        };
+        /**
+         * SignUpIn
+         * @description The owner's sign-up: who they are, their code and their new home.
+         */
+        SignUpIn: {
+            /** @description A phone number or an email */
+            contact: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Home Name */
+            home_name: string;
+            /** Area */
+            area?: string | null;
+            /**
+             * First Month
+             * Format: date
+             */
+            first_month: string;
+            /** Lives Here */
+            lives_here: boolean;
+        };
+        /** StandardResponse[CodeSentOut] */
+        StandardResponse_CodeSentOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["CodeSentOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
         /** StandardResponse[HealthOut] */
         StandardResponse_HealthOut_: {
             /** Success */
@@ -51,6 +305,39 @@ export interface components {
             data?: components["schemas"]["HealthOut"] | null;
             /** Errors */
             errors?: string[] | null;
+        };
+        /** StandardResponse[MeOut] */
+        StandardResponse_MeOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["MeOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** StandardResponse[SetupOut] */
+        StandardResponse_SetupOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["SetupOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -86,6 +373,132 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StandardResponse_HealthOut_"];
+                };
+            };
+        };
+    };
+    request_code_api_v1_auth_codes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeSentOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sign_up_api_v1_auth_sign_up_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignUpIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MeOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    log_out_api_v1_auth_log_out_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_me_api_v1_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MeOut_"];
+                };
+            };
+        };
+    };
+    get_setup_api_v1_home_setup_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_SetupOut_"];
                 };
             };
         };

@@ -37,10 +37,230 @@
           }
         }
       }
+    },
+    "/api/v1/auth/codes": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Request Code",
+        "description": "Send a one-time code by SMS or email; the same answer for any contact.",
+        "operationId": "request_code_api_v1_auth_codes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeSentOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/sign-up": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Sign Up",
+        "description": "Create a home; the person signing up becomes its owner and is logged in.",
+        "operationId": "sign_up_api_v1_auth_sign_up_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignUpIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_MeOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/log-out": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Log Out",
+        "description": "End the session and clear its cookie.",
+        "operationId": "log_out_api_v1_auth_log_out_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Get Me",
+        "description": "Who is logged in, and in which home; renews the cookie for 30 days.",
+        "operationId": "get_me_api_v1_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_MeOut_"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/home/setup": {
+      "get": {
+        "tags": [
+          "Homes"
+        ],
+        "summary": "Get Setup",
+        "description": "The setup checklist of the logged-in owner's or manager's home.",
+        "operationId": "get_setup_api_v1_home_setup_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_SetupOut_"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "Channel": {
+        "type": "string",
+        "enum": [
+          "sms",
+          "email"
+        ],
+        "title": "Channel",
+        "description": "How a message reaches a person."
+      },
+      "CodeRequestIn": {
+        "properties": {
+          "contact": {
+            "type": "string",
+            "description": "A phone number or an email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contact"
+        ],
+        "title": "CodeRequestIn",
+        "description": "Ask for a one-time code for a phone or email."
+      },
+      "CodeSentOut": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/Channel"
+          },
+          "expires_in_seconds": {
+            "type": "integer",
+            "title": "Expires In Seconds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "expires_in_seconds"
+        ],
+        "title": "CodeSentOut",
+        "description": "How the code was sent and how long it works; the same for any contact."
+      },
+      "Contact": {
+        "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/Channel"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "value"
+        ],
+        "title": "Contact",
+        "description": "A phone (E.164) or an email address (lower case), and how to reach it."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
       "HealthOut": {
         "properties": {
           "database": {
@@ -58,6 +278,138 @@
         "title": "HealthOut",
         "description": "The status of each dependency the backend needs."
       },
+      "MeHomeOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area"
+          },
+          "first_month": {
+            "type": "string",
+            "format": "date",
+            "title": "First Month"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "name",
+          "area",
+          "first_month"
+        ],
+        "title": "MeHomeOut",
+        "description": "The logged-in person's home."
+      },
+      "MeMembershipOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MembershipStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "role",
+          "status"
+        ],
+        "title": "MeMembershipOut",
+        "description": "The logged-in person's membership of their home."
+      },
+      "MeOut": {
+        "properties": {
+          "person": {
+            "$ref": "#/components/schemas/MePersonOut"
+          },
+          "membership": {
+            "$ref": "#/components/schemas/MeMembershipOut"
+          },
+          "home": {
+            "$ref": "#/components/schemas/MeHomeOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "person",
+          "membership",
+          "home"
+        ],
+        "title": "MeOut",
+        "description": "Who is logged in, and in which home."
+      },
+      "MePersonOut": {
+        "properties": {
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phone"
+        ],
+        "title": "MePersonOut",
+        "description": "The logged-in person's log-in identity."
+      },
+      "MembershipStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "inactive"
+        ],
+        "title": "MembershipStatus",
+        "description": "Whether a member may log in now."
+      },
+      "Role": {
+        "type": "string",
+        "enum": [
+          "owner",
+          "manager",
+          "member"
+        ],
+        "title": "Role",
+        "description": "A member's role in their home (specs/data-model.md → Roles)."
+      },
       "ServiceStatus": {
         "type": "string",
         "enum": [
@@ -66,6 +418,141 @@
         ],
         "title": "ServiceStatus",
         "description": "Whether a dependency of the backend answered."
+      },
+      "SetupOut": {
+        "properties": {
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/SetupStep"
+            },
+            "type": "array",
+            "title": "Steps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "steps"
+        ],
+        "title": "SetupOut",
+        "description": "The new-home checklist, in order."
+      },
+      "SetupStep": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "done": {
+            "type": "boolean",
+            "title": "Done"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "done"
+        ],
+        "title": "SetupStep",
+        "description": "One step of the new-home checklist (FR-95)."
+      },
+      "SignUpIn": {
+        "properties": {
+          "contact": {
+            "type": "string",
+            "description": "A phone number or an email"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "home_name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Home Name"
+          },
+          "area": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area"
+          },
+          "first_month": {
+            "type": "string",
+            "format": "date",
+            "title": "First Month"
+          },
+          "lives_here": {
+            "type": "boolean",
+            "title": "Lives Here"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contact",
+          "code",
+          "name",
+          "home_name",
+          "first_month",
+          "lives_here"
+        ],
+        "title": "SignUpIn",
+        "description": "The owner's sign-up: who they are, their code and their new home."
+      },
+      "StandardResponse_CodeSentOut_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CodeSentOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StandardResponse[CodeSentOut]"
       },
       "StandardResponse_HealthOut_": {
         "properties": {
@@ -108,6 +595,130 @@
           "message"
         ],
         "title": "StandardResponse[HealthOut]"
+      },
+      "StandardResponse_MeOut_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StandardResponse[MeOut]"
+      },
+      "StandardResponse_SetupOut_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SetupOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StandardResponse[SetupOut]"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }
