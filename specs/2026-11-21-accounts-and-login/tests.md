@@ -102,5 +102,5 @@ page is gone); the bearer-token case of `handlers-test.ts` becomes T15.3;
 
 ### B19 — Empty lists explain themselves
 
-- [x] T19.1 web integration — the empty state shows its reason and, when given, its one action
+- [x] T19.1 web integration — `says what will appear, and offers its one action only when given` ✅: the empty state shows its reason and, when given, its one action
 - [ ] T19.2 web acceptance — the new home shows the "Today's meals" and "All caught up" empty states _(skipped: the web acceptance test checks them)_
