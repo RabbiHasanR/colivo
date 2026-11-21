@@ -24,6 +24,11 @@ export default class SessionService extends Service {
 
   @tracked me: Me | null = null;
 
+  /** Whether the logged-in person is the home's owner. */
+  get isOwner(): boolean {
+    return this.me?.membership.role === 'owner';
+  }
+
   /** Whether the logged-in person runs the home: the owner or a manager. */
   get isOwnerOrManager(): boolean {
     const role = this.me?.membership.role;

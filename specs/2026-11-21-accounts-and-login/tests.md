@@ -169,7 +169,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 ### B21 — Only the owner can add a manager
 
 - [x] T21.1 integration — `test_only_the_owner_can_add_a_manager` ✅ (parametrised): the owner → 201; a manager → 403, nothing added
-- [x] T21.2 web integration — add-member form: the "Manager" choice is there for the owner, not for a manager
+- [x] T21.2 web integration — `offers the Manager role to the owner only` ✅: add-member form: the "Manager" choice is there for the owner, not for a manager
 
 ### B22 — Members can't see or change the members list
 

@@ -4,6 +4,7 @@ import { action } from '@ember/object';
 import { on } from '@ember/modifier';
 import { service } from '@ember/service';
 import type MembersService from '../../services/members';
+import type SessionService from '../../services/session';
 import type { Member } from '../../services/members';
 import Button from '../ui/button';
 import DateInput from '../ui/date-input';
@@ -29,8 +30,14 @@ const ROLE_CHOICES: Array<{ value: NewRole; label: string }> = [
  */
 export default class AddMemberForm extends Component<AddMemberFormSignature> {
   @service declare members: MembersService;
+  @service declare session: SessionService;
 
-  readonly roleChoices = ROLE_CHOICES;
+  /** Only the owner makes managers (FR-64); a manager adds members only. */
+  get roleChoices(): typeof ROLE_CHOICES {
+    return this.session.isOwner
+      ? ROLE_CHOICES
+      : ROLE_CHOICES.filter((choice) => choice.value === 'member');
+  }
 
   @tracked name = '';
   @tracked contact = '';

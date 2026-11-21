@@ -1,9 +1,10 @@
 import { module, test } from 'qunit';
-import { click, fillIn, render } from '@ember/test-helpers';
+import { click, fillIn, find, render } from '@ember/test-helpers';
 import { http, HttpResponse } from 'msw';
 import { setupRenderingTest } from 'colivo-web/tests/helpers';
 import { setupMsw, worker } from 'colivo-web/tests/helpers/msw';
 import { member, type Member } from 'colivo-web/tests/helpers/members';
+import { me, type Role } from 'colivo-web/tests/helpers/accounts';
 import AddMemberForm from 'colivo-web/components/members/add-member-form';
 
 /** Fill in Maruf: 01812 345678, joining 21 Nov 2026. */
@@ -48,5 +49,26 @@ module('Integration | Component | members/add-member-form', function (hooks) {
       },
     ]);
     assert.strictEqual((added as Member | null)?.name, 'Maruf');
+  });
+
+  test('offers the Manager role to the owner only', async function (assert) {
+    // GIVEN the owner, and then a manager, is logged in
+    // WHEN  the add-member form is rendered for each
+    // THEN  the owner can choose "Manager"; a manager can't (FR-64)
+    const session = this.owner.lookup('service:session');
+    const onAdded = () => {};
+    const managerChoice = '[data-test-add-member-role] option[value="manager"]';
+    const offered: Array<[Role, boolean]> = [];
+
+    for (const role of ['owner', 'manager'] as const) {
+      session.me = me(role);
+      await render(<template><AddMemberForm @onAdded={{onAdded}} /></template>);
+      offered.push([role, find(managerChoice) !== null]);
+    }
+
+    assert.deepEqual(offered, [
+      ['owner', true],
+      ['manager', false],
+    ]);
   });
 });
