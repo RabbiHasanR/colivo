@@ -779,7 +779,8 @@ def reactivate(
 
     Raises:
         HTTPException: 404 for another home's member; 409 when already
-            active; 400 for a date not after their last stay ended.
+            active, active in another home, or an active member has their
+            name; 400 for a date not after their last stay ended.
     """
     member = get_member(session, editor.home_id, member_id, lock=True)
     if member.status == MembershipStatus.ACTIVE:
@@ -787,6 +788,11 @@ def reactivate(
     last_end = last_stay_end(session, member)
     if last_end is not None and data.on <= last_end:
         raise HTTPException(400, REACTIVATE_TOO_EARLY)
+    person = session.get_one(Person, member.person_id)
+    if active_membership(session, person):
+        # FR-85: they joined another home meanwhile.
+        raise HTTPException(409, ALREADY_IN_A_HOME)
+    check_name_free(session, member.home_id, member.name, except_id=member.id)
     session.add(
         MembershipPeriod(
             home_id=member.home_id, membership_id=member.id, starts_on=data.on

@@ -965,3 +965,50 @@ def test_active_member_cannot_be_reactivated(
         )
 
     assert error.value.status_code == 409
+
+
+def test_reactivating_someone_active_in_another_home_is_refused(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf left "Our Flat" and is now an active member of "Old Fort"
+    WHEN  Our Flat's owner reactivates him
+    THEN  it is refused with 409: one active home per person (FR-85)
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = maruf_who_left(session, notifier, owner, clock)
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area=None, first_month=date(2026, 11, 1)
+    )
+    session.add(
+        Membership(home_id=old_fort.id, person_id=member.person_id, name="Maruf")
+    )
+    session.flush()
+
+    with pytest.raises(HTTPException) as error:
+        service.reactivate(
+            session, owner, member.id, ReactivateIn(on=date(2026, 12, 1)), clock()
+        )
+
+    assert error.value.status_code == 409
+
+
+def test_reactivating_into_a_taken_name_is_refused(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf left "Our Flat", and since then another Maruf joined
+    WHEN  the first Maruf is reactivated
+    THEN  it is refused with 409: an active member already has the name
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = maruf_who_left(session, notifier, owner, clock)
+    newcomer = Contact(channel=Channel.SMS, value=OTHER_PHONE)
+    service.add_member(session, notifier, owner, maruf(contact=newcomer), clock())
+
+    with pytest.raises(HTTPException) as error:
+        service.reactivate(
+            session, owner, member.id, ReactivateIn(on=date(2026, 12, 1)), clock()
+        )
+
+    assert error.value.status_code == 409
