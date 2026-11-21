@@ -46,8 +46,10 @@ backend-lint: ## Ruff check + pyright
 backend-format-check: ## Ruff format check
 	$(call backend,uv run ruff format --check .)
 
+# alembic check compares the models with a database at head; it doesn't
+# migrate, so a fresh database (CI's) is brought to head first.
 backend-migrations-check: ## alembic check: no model change without a migration (needs the database)
-	$(call backend,uv run alembic check)
+	$(call backend,uv run alembic upgrade head && uv run alembic check)
 
 # ── Web ─────────────────────────────────────────────────────────────────
 
