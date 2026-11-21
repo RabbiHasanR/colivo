@@ -222,4 +222,4 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds a member
 ### B30 — Every change to a member is kept in the history
 
 - [x] T30.1 unit — `test_record_change_keeps_who_when_and_old_and_new_values` ✅ (`backend/tests/history/test_service.py`)
-- [x] T30.2 unit — `test_adding_and_changing_members_is_recorded` (parametrised): added (create, new values); name or join date changed (update, old and new values); own name fixed (update, by the member)
+- [x] T30.2 unit — `test_adding_and_changing_members_is_recorded` ✅ (parametrised): added (create, new values); name or join date changed (update, old and new values); own name fixed (update, by the member)

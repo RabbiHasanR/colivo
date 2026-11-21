@@ -24,6 +24,7 @@ from app.modules.accounts.schemas import (
     MeUpdateIn,
     SignUpIn,
 )
+from app.modules.history.models import ChangeLog
 from app.modules.homes import service as homes_service
 from app.modules.homes.models import Home
 from tests.conftest import FakeNotifier, MovableClock
@@ -626,3 +627,80 @@ def test_member_fixes_their_name_and_checks_their_details(
     )
 
     assert (changed.name, changed.details_checked_at) == ("Maruf Hossain", clock())
+
+
+def history_of(session: Session, member: Membership) -> list[ChangeLog]:
+    """The change log rows about a member, oldest first."""
+    return list(
+        session.exec(
+            select(ChangeLog)
+            .where(ChangeLog.entity_id == member.id)
+            .order_by(col(ChangeLog.created_at), col(ChangeLog.id))
+        ).all()
+    )
+
+
+@pytest.mark.parametrize("change", ["added", "changed by the owner", "own name fixed"])
+def test_adding_and_changing_members_is_recorded(
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    change: str,
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf, joining 21 Nov 2026
+    WHEN  nothing else happens; or the owner renames him and moves his join
+          date; or Maruf fixes his own name
+    THEN  the history keeps each change: who made it, how, and the old and
+          new values
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+    if change == "changed by the owner":
+        service.update_member(
+            session,
+            owner,
+            member.id,
+            MemberUpdateIn(name="Maruf Hossain", joined_on=date(2026, 11, 1)),
+            clock(),
+        )
+    if change == "own name fixed":
+        service.update_me(session, member, MeUpdateIn(name="Maruf H."), clock())
+
+    rows = [
+        (row.entity, row.action, row.changed_by, row.old_values, row.new_values)
+        for row in history_of(session, member)
+    ]
+
+    added = (
+        "membership",
+        "create",
+        owner.id,
+        None,
+        {"name": "Maruf", "role": "member", "joined_on": "2026-11-21"},
+    )
+    expected = {
+        "added": [added],
+        "changed by the owner": [
+            added,
+            (
+                "membership",
+                "update",
+                owner.id,
+                {"name": "Maruf", "joined_on": "2026-11-21"},
+                {"name": "Maruf Hossain", "joined_on": "2026-11-01"},
+            ),
+        ],
+        "own name fixed": [
+            added,
+            (
+                "membership",
+                "update",
+                member.id,
+                {"name": "Maruf"},
+                {"name": "Maruf H."},
+            ),
+        ],
+    }
+    assert rows == expected[change]

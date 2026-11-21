@@ -1,5 +1,6 @@
 import uuid
 from datetime import date, datetime
+from typing import Any
 
 from redis import Redis
 from sqlmodel import Session, col, func, select
@@ -29,6 +30,8 @@ from app.modules.accounts.schemas import (
     MeUpdateIn,
     SignUpIn,
 )
+from app.modules.history import service as history
+from app.modules.history.models import ChangeAction, ChangeEntity
 from app.modules.homes import service as homes_service
 from app.modules.homes.constants import DEFAULT_TIME_ZONE
 from app.modules.homes.models import Home
@@ -348,6 +351,17 @@ def add_member(
             home_id=adder.home_id, membership_id=member.id, starts_on=data.joined_on
         )
     )
+    record_member_change(
+        session,
+        member,
+        changed_by=adder,
+        action=ChangeAction.CREATE,
+        new_values={
+            "name": member.name,
+            "role": member.role,
+            "joined_on": data.joined_on.isoformat(),
+        },
+    )
     session.commit()
     session.refresh(member)
     home = session.get_one(Home, adder.home_id)
@@ -443,11 +457,27 @@ def update_member(
             they can't have; 409 for a name an active member already has.
     """
     member = get_member(session, editor.home_id, member_id)
-    if data.name is not None:
+    old_values: dict[str, Any] = {}
+    new_values: dict[str, Any] = {}
+    if data.name is not None and data.name != member.name:
         check_name_free(session, member.home_id, data.name, except_id=member.id)
+        old_values["name"], new_values["name"] = member.name, data.name
         member.name = data.name
     if data.joined_on is not None:
+        before = joined_on(session, member)
         move_join_date(session, member, data.joined_on)
+        if before != data.joined_on:
+            old_values["joined_on"] = before.isoformat() if before else None
+            new_values["joined_on"] = data.joined_on.isoformat()
+    if new_values:
+        record_member_change(
+            session,
+            member,
+            changed_by=editor,
+            action=ChangeAction.UPDATE,
+            old_values=old_values,
+            new_values=new_values,
+        )
     session.commit()
     session.refresh(member)
     return member
@@ -528,8 +558,48 @@ def update_me(
         HTTPException: 409 for a name another active member has.
     """
     check_name_free(session, membership.home_id, data.name, except_id=membership.id)
+    if data.name != membership.name:
+        record_member_change(
+            session,
+            membership,
+            changed_by=membership,
+            action=ChangeAction.UPDATE,
+            old_values={"name": membership.name},
+            new_values={"name": data.name},
+        )
     membership.name = data.name
     membership.details_checked_at = now
     session.commit()
     session.refresh(membership)
     return membership
+
+
+def record_member_change(
+    session: Session,
+    member: Membership,
+    *,
+    changed_by: Membership,
+    action: ChangeAction,
+    old_values: dict[str, Any] | None = None,
+    new_values: dict[str, Any] | None = None,
+) -> None:
+    """Keep a change to ``member`` in the history (FR-27), not yet committed.
+
+    Args:
+        session: The database session the change is made in.
+        member: The member changed.
+        changed_by: Who changed it.
+        action: Created or updated.
+        old_values: The changed fields before.
+        new_values: The changed fields after.
+    """
+    history.record_change(
+        session,
+        home_id=member.home_id,
+        changed_by=changed_by.id,
+        entity=ChangeEntity.MEMBERSHIP,
+        entity_id=member.id,
+        action=action,
+        old_values=old_values,
+        new_values=new_values,
+    )
