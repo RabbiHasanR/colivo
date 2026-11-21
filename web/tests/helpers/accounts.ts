@@ -10,8 +10,16 @@ export type MeBody = Schemas['StandardResponse_MeOut_'];
 export type Me = Schemas['MeOut'];
 export type Role = Me['membership']['role'];
 
-/** Who is logged in: Rabbi Hasan, owner of "Our Flat" (OF-4827). */
-export function me(role: Role = 'owner'): Me {
+type MeMembership = Me['membership'];
+
+/**
+ * Who is logged in: Rabbi Hasan, owner of "Our Flat" (OF-4827), or Maruf
+ * for a member. Details are checked unless `membership` says otherwise.
+ */
+export function me(
+  role: Role = 'owner',
+  membership: Partial<MeMembership> = {},
+): Me {
   return {
     person: { phone: '+8801712345678' },
     membership: {
@@ -19,6 +27,10 @@ export function me(role: Role = 'owner'): Me {
       name: role === 'member' ? 'Maruf' : 'Rabbi Hasan',
       role,
       status: 'active',
+      joined_on: role === 'member' ? '2026-09-01' : '2026-11-01',
+      added_by_name: role === 'owner' ? null : 'Rabbi Hasan',
+      details_checked: true,
+      ...membership,
     },
     home: {
       id: '01a1fd00-0000-7000-8000-000000000001',
@@ -30,8 +42,11 @@ export function me(role: Role = 'owner'): Me {
   };
 }
 
-export function meBody(role: Role = 'owner'): MeBody {
-  return { success: true, message: 'Logged in', data: me(role) };
+export function meBody(
+  role: Role = 'owner',
+  membership: Partial<MeMembership> = {},
+): MeBody {
+  return { success: true, message: 'Logged in', data: me(role, membership) };
 }
 
 export const notLoggedInBody: MeBody = {
@@ -66,8 +81,13 @@ export const notLoggedIn = http.get('*/api/v1/me', () =>
 );
 
 /** `GET /me` answers with someone logged in, as `role`. */
-export function loggedInAs(role: Role = 'owner') {
-  return http.get('*/api/v1/me', () => HttpResponse.json(meBody(role)));
+export function loggedInAs(
+  role: Role = 'owner',
+  membership: Partial<MeMembership> = {},
+) {
+  return http.get('*/api/v1/me', () =>
+    HttpResponse.json(meBody(role, membership)),
+  );
 }
 
 /** The new home's checklist, for the owner and managers. */

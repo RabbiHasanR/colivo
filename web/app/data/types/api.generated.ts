@@ -121,7 +121,55 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /**
+         * Update Me
+         * @description Fix your own name; this also finishes the first log-in check.
+         */
+        patch: operations["update_me_api_v1_me_patch"];
+        trace?: never;
+    };
+    "/api/v1/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Members
+         * @description Everyone in the home, for the owner and managers.
+         */
+        get: operations["list_members_api_v1_members_get"];
+        put?: never;
+        /**
+         * Add Member
+         * @description Add a member to the home; they get an SMS or email to log in.
+         */
+        post: operations["add_member_api_v1_members_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/{member_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Member
+         * @description Change a member's name or join date.
+         */
+        patch: operations["update_member_api_v1_members__member_id__patch"];
         trace?: never;
     };
     "/api/v1/home/setup": {
@@ -258,6 +306,15 @@ export interface components {
             name: string;
             role: components["schemas"]["Role"];
             status: components["schemas"]["MembershipStatus"];
+            /** Joined On */
+            joined_on?: string | null;
+            /** Added By Name */
+            added_by_name?: string | null;
+            /**
+             * Details Checked
+             * @default false
+             */
+            details_checked: boolean;
         };
         /**
          * MeOut
@@ -275,6 +332,66 @@ export interface components {
         MePersonOut: {
             /** Phone */
             phone: string | null;
+        };
+        /**
+         * MeUpdateIn
+         * @description Fix your own name; sending it also finishes the first log-in check.
+         */
+        MeUpdateIn: {
+            /** Name */
+            name: string;
+        };
+        /**
+         * MemberIn
+         * @description Add a member: who, how to reach them, from when, and their role.
+         */
+        MemberIn: {
+            /** Name */
+            name: string;
+            /** @description A phone number or an email */
+            contact: string;
+            /**
+             * Joined On
+             * Format: date
+             */
+            joined_on: string;
+            /**
+             * Role
+             * @default member
+             * @enum {string}
+             */
+            role: "member" | "manager";
+        };
+        /**
+         * MemberOut
+         * @description A member of the home, for the owner and managers' members list.
+         */
+        MemberOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone: string | null;
+            /** Email */
+            email: string | null;
+            role: components["schemas"]["Role"];
+            status: components["schemas"]["MembershipStatus"];
+            /** Joined On */
+            joined_on: string | null;
+        };
+        /**
+         * MemberUpdateIn
+         * @description Change a member's name or join date; leave out what stays the same.
+         */
+        MemberUpdateIn: {
+            /** Name */
+            name?: string | null;
+            /** Joined On */
+            joined_on?: string | null;
         };
         /**
          * MembershipStatus
@@ -375,6 +492,16 @@ export interface components {
             /** Errors */
             errors?: string[] | null;
         };
+        /** StandardResponse[MemberOut] */
+        StandardResponse_MemberOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["MemberOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
         /** StandardResponse[SetupOut] */
         StandardResponse_SetupOut_: {
             /** Success */
@@ -382,6 +509,17 @@ export interface components {
             /** Message */
             message: string;
             data?: components["schemas"]["SetupOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** StandardResponse[list[MemberOut]] */
+        StandardResponse_list_MemberOut__: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["MemberOut"][] | null;
             /** Errors */
             errors?: string[] | null;
         };
@@ -625,6 +763,127 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StandardResponse_MeOut_"];
+                };
+            };
+        };
+    };
+    update_me_api_v1_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MeOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_members_api_v1_members_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_list_MemberOut__"];
+                };
+            };
+        };
+    };
+    add_member_api_v1_members_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_member_api_v1_members__member_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
