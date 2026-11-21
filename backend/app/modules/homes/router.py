@@ -1,6 +1,6 @@
 from fastapi import Request, Response
 
-from app.api.deps import CurrentMemberDep
+from app.api.deps import OwnerOrManagerDep
 from app.core.database import SessionDep
 from app.core.router import CoreRouter
 from app.core.utils import set_response_message
@@ -14,10 +14,10 @@ router = CoreRouter()
 def get_setup(
     request: Request,
     response: Response,
-    membership: CurrentMemberDep,
+    membership: OwnerOrManagerDep,
     session: SessionDep,
 ) -> SetupOut:
-    """The setup checklist of the logged-in member's home."""
+    """The setup checklist of the logged-in owner's or manager's home."""
     set_response_message(request, "Setup checklist")
     response.status_code = 200
     return service.get_setup(session, membership.home_id)
