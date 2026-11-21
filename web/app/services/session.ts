@@ -6,7 +6,8 @@ import {
   type CodeSent,
   type SignUpFields,
 } from '../data/builders/auth';
-import type { Me } from '../data/builders/me';
+import { getMe, type Me } from '../data/builders/me';
+import { ApiError } from '../utils/api-error';
 
 // For components, which don't import the data layer.
 export type { Me, Role } from '../data/builders/me';
@@ -20,6 +21,30 @@ export default class SessionService extends Service {
   @service declare store: Store;
 
   @tracked me: Me | null = null;
+
+  /** Whether the logged-in person runs the home: the owner or a manager. */
+  get isOwnerOrManager(): boolean {
+    const role = this.me?.membership.role;
+    return role === 'owner' || role === 'manager';
+  }
+
+  /**
+   * Who is logged in: asks `GET /me` once, then remembers. Null when nobody
+   * is (401).
+   */
+  async load(): Promise<Me | null> {
+    if (this.me) return this.me;
+    try {
+      const { content } = await this.store.request<Me>(getMe());
+      this.me = content;
+    } catch (error) {
+      if (error instanceof ApiError && error.kind === 'unauthorized') {
+        return null;
+      }
+      throw error;
+    }
+    return this.me;
+  }
 
   async requestCode(contact: string): Promise<CodeSent> {
     const { content } = await this.store.request<CodeSent>(
