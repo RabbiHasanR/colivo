@@ -1,31 +1,7 @@
 import type { Handler, NextFn, RequestContext } from './types';
+import { ApiError, type ApiErrorKind } from '../../utils/api-error';
 
-export type ApiErrorKind =
-  | 'rule' // 400: the request breaks a business rule
-  | 'unauthorized' // 401
-  | 'forbidden' // 403
-  | 'not-found' // 404
-  | 'conflict' // 409
-  | 'validation' // 422
-  | 'server' // 5xx
-  | 'network' // no response at all
-  | 'unknown';
-
-/** The one error type the rest of the app has to know about. */
-export class ApiError extends Error {
-  constructor(
-    message: string,
-    readonly status: number | null,
-    readonly kind: ApiErrorKind,
-    /** Field name -> messages, filled for 422 responses. */
-    readonly fieldErrors: Record<string, string[]> = {},
-    /** The envelope's `data`, when an error response carries some (health: 503). */
-    readonly data: unknown = undefined,
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
+export { ApiError, type ApiErrorKind };
 
 const KIND_BY_STATUS: Record<number, ApiErrorKind> = {
   400: 'rule',
@@ -34,6 +10,7 @@ const KIND_BY_STATUS: Record<number, ApiErrorKind> = {
   404: 'not-found',
   409: 'conflict',
   422: 'validation',
+  429: 'too-many',
 };
 
 export function kindForStatus(status: number | null): ApiErrorKind {

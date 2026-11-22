@@ -109,29 +109,46 @@ module('Unit | Data | handlers', function () {
     assert.strictEqual(error.status, null);
   });
 
-  test('auth handler sends the token only when the session has one', async function (assert) {
-    // GIVEN a session with a token, and one without
-    // WHEN  a request passes through the auth handler
-    // THEN  it carries "Bearer <token>" only when there is a token
-    const cases: Array<[string | null, string | null]> = [
-      ['abc', 'Bearer abc'],
-      [null, null],
-    ];
+  test('auth handler sends cookies and no Authorization header', async function (assert) {
+    // GIVEN a request to the API, even one that still carries an old bearer token
+    // WHEN  it passes through the auth handler
+    // THEN  it goes with the session cookie (credentials: include) and no
+    //       Authorization header: the log-in lives in an httpOnly cookie
+    let sent: AppRequest | undefined;
 
-    for (const [token, expected] of cases) {
-      let sent: AppRequest | undefined;
-      const handler = createAuthHandler(() => token);
-
-      await handler.request(
-        { request: { url: '/api/v1/health' } },
-        (request) => {
-          sent = request;
-          return Promise.resolve({ content: null });
+    await createAuthHandler().request(
+      {
+        request: {
+          url: '/api/v1/me',
+          headers: new Headers({ Authorization: 'Bearer stale' }),
         },
-      );
+      },
+      (request) => {
+        sent = request;
+        return Promise.resolve({ content: null });
+      },
+    );
 
-      const authorization = sent?.headers?.get('Authorization') ?? null;
-      assert.strictEqual(authorization, expected, `token ${String(token)}`);
-    }
+    assert.strictEqual(sent?.credentials, 'include');
+    assert.false(
+      sent?.headers?.has('Authorization'),
+      'no Authorization header',
+    );
+  });
+
+  test('error handler maps 429 to too-many and keeps its data', async function (assert) {
+    // GIVEN the API refuses a new code: asked again too soon
+    // WHEN  the request fails with that 429
+    // THEN  an ApiError of kind "too-many" carries the reason and the wait
+    const error = (await errorFrom(
+      failWith(429, {
+        success: false,
+        message: 'A new code can be sent once a minute.',
+        data: { reason: 'too_soon', retry_in_seconds: 42 },
+      }),
+    )) as ApiError;
+
+    assert.strictEqual(error.kind, 'too-many');
+    assert.deepEqual(error.data, { reason: 'too_soon', retry_in_seconds: 42 });
   });
 });

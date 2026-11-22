@@ -1,0 +1,61 @@
+"""member status
+
+Revision ID: 2b0784c0023a
+Revises: d0fcb4a7b7ad
+Create Date: 2026-11-21 22:15:31.222610
+
+"""
+
+from collections.abc import Sequence
+
+import sqlalchemy as sa
+import sqlmodel  # noqa: F401  (autogenerate writes sqlmodel.sql.sqltypes.AutoString)
+from alembic import op
+
+# revision identifiers, used by Alembic.
+revision: str = "2b0784c0023a"
+down_revision: str | Sequence[str] | None = "d0fcb4a7b7ad"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
+
+
+def upgrade() -> None:
+    """Upgrade schema."""
+    # Exactly one owner per home (FR-63).
+    op.create_index(
+        "uq_membership_one_owner",
+        "membership",
+        ["home_id"],
+        unique=True,
+        postgresql_where=sa.text("role = 'owner'"),
+    )
+    # The owner is always active (FR-63).
+    op.create_check_constraint(
+        op.f("ck_membership_owner_active"),
+        "membership",
+        "role <> 'owner' OR status = 'active'",
+    )
+    # At most one open stay per member.
+    op.create_index(
+        "uq_membership_period_open",
+        "membership_period",
+        ["membership_id"],
+        unique=True,
+        postgresql_where=sa.text("ends_on IS NULL"),
+    )
+    # A stay never ends before it starts.
+    op.create_check_constraint(
+        op.f("ck_membership_period_ends_on"),
+        "membership_period",
+        "ends_on IS NULL OR ends_on >= starts_on",
+    )
+
+
+def downgrade() -> None:
+    """Downgrade schema."""
+    op.drop_constraint(
+        op.f("ck_membership_period_ends_on"), "membership_period", type_="check"
+    )
+    op.drop_index("uq_membership_period_open", table_name="membership_period")
+    op.drop_constraint(op.f("ck_membership_owner_active"), "membership", type_="check")
+    op.drop_index("uq_membership_one_owner", table_name="membership")

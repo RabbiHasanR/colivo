@@ -2,6 +2,44 @@
 
 All notable changes to Colivo, grouped by date (newest first).
 
+## 2026-11-22
+
+- On the web, restyled every Phase 1 screen to match colivo-design: form controls, buttons and cards; the sidebar with icons, the current page in teal and a profile card with initials; the home page with its header, four stat cards (empty until their phases) and the setup checklist with a progress bar; Members & roles with role and status pills; and log-in with its brand panel, card forms and styled code errors.
+- On the web, the home page's header names the current month in the home's time zone; "Start ›" on "Add members" and an "Add members" button on the empty meals card open Members for the owner and managers.
+- On the web, log-in and sign-up became two tabs; "Send code" sits beside the code box and "Log in" waits until a code is sent; a wrong or expired code marks the box invalid.
+- On the web, drew the taka sign with Noto Sans Bengali, which Inter and Space Grotesk lack.
+- In the roadmap, planned Phase 1c: changing a member's phone or email.
+- On the web, Members has one add-or-edit card: Edit opens an "Edit <name>" tab with Cancel, and you can switch back to adding; editing another member now starts from their own details instead of what was typed for the last one.
+- In the requirements, removing the Manager role is blocked while that person holds fund cash or has money waiting for their confirmation (FR-104, built in Phase 4).
+- On the web, a manager who lost the role is sent home on their next action, and the Members link disappears.
+- In the specs, log-in codes are read from the development outbox in Redis; ID documents and profile photos are planned as Phase 2's last group, the ID optional when adding (FR-60) and the photo settable by the owner or a manager too (FR-86).
+- In the project rules, every phase follows colivo-design for web and mobile, with each difference agreed and listed in the phase's Screens table; recorded Phase 1's agreed differences.
+- Added `make web-screens`, which saves every page at 390px and 1440px with sample data to compare with the design; it found and fixed the members table widening the page on phones.
+
+## 2026-11-21
+
+- In the specs, added the Phase 1 spec (accounts and log-in) and its data model: people, homes, memberships with their stays, and a change log.
+- In the API, answered invalid input with a 422 in the standard envelope, naming each field.
+- Added owner sign-up: it creates the home with a unique Home ID and makes the person signing up its owner, paying from the first month (this month or next, in the home's time zone) when they live there too; someone already in a home is told to log in instead.
+- Added one-time codes by SMS or email, with the same answer for any phone or email; a phone in any form, or an email in any letter case, is one person.
+- Added log-in sessions: a random token in an httpOnly cookie that other sites can't send, kept hashed in Redis for 30 days from its last use; everything but sign-up, codes and the health check needs a log-in, and log-out ends the session at once.
+- Added the new-home setup checklist for the owner and managers, and empty lists that explain what will appear.
+- On the web, added sign-up and the new home: the sign-up form and its errors, a greeting with the Home ID, the checklist, and log-out in the shell; log-in replaced the start page, and the web sends the session cookie instead of a bearer token.
+- Added log-in with a one-time code, "Not added yet" for anyone active in no home, and code limits: a code works once for 5 minutes, five wrong codes lock the phone or email for 15 minutes, and a new code can be sent once a minute and five times an hour.
+- On the web, added the log-in form with its code messages (tries left, expired, locked with a countdown, resend) and "Not added yet", which offers to create a home.
+- Added a history of who changed what, kept for every change to a member.
+- Added members: the owner or a manager adds a member by phone or email, who gets a notice; only the owner adds managers; names are unique among a home's active members; someone active in another home can't be added, and a past member is reactivated instead.
+- Added changing a member's name and join date, and a first log-in check that shows a member where they were added and lets them fix their name.
+- Fixed home scoping: another home's members are never found or changed.
+- On the web, added the Members page for the owner and managers: the member list, adding and editing members, and the first log-in check.
+- In CI, migrated the database before checking for missing migrations.
+- Added roles and member status: the owner gives and takes away the Manager role (the owner's own role never changes; a home has one owner), and the owner or a manager deactivates a member from a date, logging them out at once, and reactivates them from the date charges start again.
+- On the web, added current and past member tabs, the deactivate and reactivate dialogs, the owner's role editor, and sending a page whose session ended to log-in.
+- Added an end-to-end test of the whole journey in two browsers: sign-up, adding a member who logs in, then deactivating them.
+- After a security review, made reactivating a manager and changing the owner's details the owner's call only, and made production refuse to start with the development notifier, which logs one-time codes.
+- In the specs, recorded Phase 1 as built (data model, tech stack, README), moved fund keepers to Phase 4, and planned Phase 1b, a person in several homes.
+- Completed Phase 1 — Accounts and log-in.
+
 ## 2026-11-20
 
 - In the API, answered unknown paths with a 404 and unexpected errors with a generic 500, both in the standard envelope, and never with internal details.

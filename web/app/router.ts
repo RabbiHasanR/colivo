@@ -7,5 +7,10 @@ export default class Router extends EmberRouter {
 }
 
 Router.map(function () {
-  // Add route declarations here
+  this.route('log-in');
+  // Everything behind log-in; its index is the home page at "/".
+  this.route('authenticated', { path: '' }, function () {
+    this.route('members');
+    this.route('welcome');
+  });
 });

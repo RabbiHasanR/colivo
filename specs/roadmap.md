@@ -39,7 +39,7 @@ Screen designs: `colivo-design/web/` and `colivo-design/mobile/` (index in
 - The mobile skeleton comes later, once its structure is decided
   ([tech-stack.md → Deferred decisions](tech-stack.md#deferred-decisions)).
 
-## Phase 1 — Accounts and log-in ⏳ Not started
+## Phase 1 — Accounts and log-in ✅ Complete
 
 `[backend] [web]`
 
@@ -57,11 +57,49 @@ added to it can log in.
 
 - Owner or manager adds a **member** by phone or email; they get an SMS or
   email.
-- Roles: owner, manager, fund keeper, member; owner gives and removes roles.
-  Any number of managers and fund keepers; a fund keeper is chosen per fund
-  (grocery fund, home fund or both).
+- Roles: owner, manager, member; owner gives and removes the Manager role.
+  Any number of managers. Fund keepers moved to Phase 4, where funds hold
+  cash (decided in the Phase 1 spec).
 - Deactivate and reactivate a member.
 - New home shows the setup checklist and empty states.
+
+## Phase 1b — A person in several homes ⏳ Not started
+
+`[backend] [web]`
+
+After this phase, one person can be an active member of several homes at
+once, and chooses which home to use after logging in (decided 21 Nov 2026,
+after Phase 1's security review; replaces the MVP's one-active-home rule,
+FR-85).
+
+- Adding a phone or email that is already in **this** home is refused (409);
+  one active in another home can be added.
+- Sign-up and reactivation no longer refuse someone active in another home.
+- Log-in with several active homes asks which home; a person in one home
+  goes straight there, as now.
+- The session knows the current home; switch homes from the shell.
+- Run `/security-review`, including Phase 1's deferred 22 Nov web changes
+  (the 403 role re-check above all).
+- Data model at the phase's Gate 0: drop "one active membership per person",
+  and how a session keeps its current home
+  ([data-model.md → Open questions](data-model.md#open-questions)).
+
+## Phase 1c — Change a member's phone or email ⏳ Not started
+
+`[backend] [web]`
+
+After this phase, the owner or a manager can change the phone or email a
+member logs in with (asked for on 22 Nov 2026, while checking Phase 1's
+Members page; Phase 1 edits only the name and join date, FR-86). After
+Phase 1b, because a phone belongs to the person, not one home: changing it
+changes how they log in to every home they are in.
+
+- To decide at the phase's Gate 0: whether the new phone or email must be
+  confirmed with a code first (a typo would lock the member out), and
+  whether the member's open sessions end.
+- Refused if the new phone or email already belongs to someone else.
+- The change is kept in `change_log` (FR-27), and the member is told on
+  both the old and the new phone or email.
 
 ## Phase 2 — Home setup ⏳ Not started
 
@@ -99,6 +137,21 @@ After this phase, the owner can describe the home the app will calculate for.
 - **Starting balances** imported once from the old spreadsheet: member
   balances, home fund and grocery fund cash **per holder**, money with
   shoppers and unpaid bills.
+
+### ID documents and profile photos (last group)
+
+Decided 22 Nov 2026, while checking Phase 1's Members page; builds on the
+`attachment` model above.
+
+- **ID document** (FR-60, FR-61): type, number, front and back images. Added
+  on "Add a member" or later from the member's Edit tab; optional when
+  adding, and the members list shows "ID missing" until there is one
+  (Phase 1 members start missing). Replacing one keeps the old in history.
+- Only the owner and managers see ID images, through short-lived links; a
+  member sees only their own (profile page). Encrypted, kept after leaving.
+- **Profile photo** (FR-86): the member sets their own at the first log-in
+  check or on their profile; the owner or a manager can also set it from
+  the Edit tab. Shown instead of initials.
 
 ## Phase 3 — Meals and cost per meal ⏳ Not started
 
@@ -146,11 +199,18 @@ After this phase, groceries are recorded with who paid and from where.
 
 - **Funds** as rows (grocery fund and home fund) and **cash per holder**
   ([data-model.md → Funds and holders](data-model.md#funds-and-holders-agreed-17-nov-2026)).
+- **Fund keepers**, chosen per fund (grocery fund, home fund or both); any
+  number per fund (moved here from Phase 1).
 - **Grocery fund** balance and top-ups; a top-up names the holder who
   received it, and that holder confirms it.
 - A holder gives grocery money to a shopper; nobody gives out more than they
   hold; spending is capped at what was given; leftover is handed back.
 - **Handover** of cash between holders, confirmed by the receiver.
+- **Removing a holder** (taking away the Manager or fund keeper role, or
+  deactivating) is blocked while they hold cash or given money, or have a
+  top-up or handover waiting for their confirmation; they hand over first
+  (FR-104, decided 22 Nov 2026 for the Manager role). Phase 5 adds payments
+  waiting for them to the same check.
 
 ## Phase 5 — Bills, payments and confirmation ⏳ Not started
 
@@ -280,7 +340,7 @@ After this phase, members use a phone app on the same API.
 
 ## Later (out of v1 scope)
 
-A person in more than one home, short-notice waiver voting, whole-home
+Short-notice waiver voting, whole-home
 move-out with landlord deposit settlement, PDF/Excel export and WhatsApp
 sharing, meal cut-off times and default meal patterns, reminders, grocery
 shopping roster, Bangla and other languages, currencies other than ৳ (BDT),

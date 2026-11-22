@@ -140,6 +140,13 @@ is tagged with: no Flutter tasks for a `[backend] [web]` phase.
   than one. Each lists its business rules from
   `colivo-design/requirements.md` and who may do it (owner, fund keeper,
   member).
+- `## Screens`: a `| Screen | Design file | Differences |` table, one row
+  per screen the phase builds or changes, naming its
+  `colivo-design/web/` (and, for a `[mobile]` phase, `colivo-design/mobile/`)
+  file. Every screen follows its design; **Differences** lists each place it
+  won't (a field from a later phase, a changed word) with the reason, or
+  "none". Ask the user about each difference before writing it; the table
+  is approved at Gate 1 with the rest of the spec.
 - `## API`: a `| Method | Path | Role | Request | Response |` table for the
   new or changed endpoints under `/api/v1/`, with error codes. Responses
   use the `StandardResponse` envelope

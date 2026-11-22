@@ -69,6 +69,9 @@ Present in chat, write nothing:
   (method, path, role, request, response, error codes), tables and the
   group's one migration, all matching `data-model.md`.
 - **Web:** routes, components, builders/handlers, `utils/` functions.
+- **Screens:** each screen's design file in `colivo-design/` and any
+  difference from it, from `requirements.md → Screens`. A difference not
+  listed there is asked about now, never decided while building.
 - What is reused from earlier groups, and what is new.
 - Choices you made, numbered, so the user can push back.
 
@@ -134,7 +137,7 @@ acceptance`.
 
 4. Export `api/openapi.json` with the project's export command (Phase 0
    creates it; see `README.md`), run `make api-types`, commit
-   `chore(api): update contract for <group>`. Skip 4–7 for a group or phase
+   `chore(api): update contract for <group>`. Skip 4–8 for a group or phase
    with no `[web]` tag.
 
 ### Web half
@@ -145,7 +148,12 @@ acceptance`.
    `test(web): add <group> acceptance test`. **STOP.**
 6. **Per behaviour**, its selected web tests, exactly as in 6.2. Commit
    `feat(web): <behaviour>` → **STOP** for review.
-7. **Close.** Remove `test.todo`, run `make web-test-fast`, commit
+7. **Match the design.** Style each of the group's screens from its
+   `colivo-design/web/` file (shared pieces in `components/ui/`, tokens in
+   `app.css`). Check each with a screenshot at 390px and 1440px against the
+   design; fix what differs, ask about anything that can't match. Commit
+   `style(web): match <screen> to colivo-design`.
+8. **Close.** Remove `test.todo`, run `make web-test-fast`, commit
    `test(web): pass <group> acceptance`. Tell the user the group is done and
    which group is next.
 

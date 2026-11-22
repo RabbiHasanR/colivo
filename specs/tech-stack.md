@@ -48,27 +48,27 @@ Why Flutter for mobile:
 
 ## Stack summary
 
-| Layer             | Choice                                                                                                               |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Language          | Python 3.14 (backend), TypeScript (web), Dart (mobile)                                                               |
-| Framework         | FastAPI (backend), Ember.js Octane (web), Flutter (mobile)                                                           |
-| UI (web)          | Ember `.gts` components + Tailwind CSS v4; `ember-scaffold` layout                                                   |
-| UI (mobile)       | Flutter Material 3 widgets                                                                                           |
-| Backend           | REST API under `/api/v1/`, JSON, OpenAPI from FastAPI                                                                |
-| Validation        | Pydantic v2                                                                                                          |
-| Data access       | SQLModel (on SQLAlchemy 2.0) + Alembic; `fastapi-orm-scaffold` layout                                                |
-| Database          | PostgreSQL 16                                                                                                        |
-| Background jobs   | Celery + Redis for OTP, notifications, month close _(to confirm)_                                                    |
-| File storage      | Private S3 bucket; MinIO locally _(to confirm)_                                                                      |
-| Auth              | Phone/email one-time code; JWT access + refresh _(to confirm)_                                                       |
-| Web data layer    | WarpDrive (EmberData) request builders + handlers; types generated from `api/openapi.json` with `openapi-typescript` |
-| Mobile data layer | Dart client from OpenAPI _(to confirm)_                                                                              |
-| Python tooling    | uv (`pyproject.toml` + `uv.lock`), Ruff (lint + format), pyright (types)                                             |
-| Web tooling       | pnpm, Vite; ESLint (+ `eslint-plugin-boundaries`), ember-template-lint, Prettier (+ Tailwind plugin), Glint (types)  |
-| Mobile lint       | `flutter analyze`, `dart format`                                                                                     |
-| Tests             | pytest + `TestClient` (backend); QUnit + MSW (web); Playwright (end-to-end); `flutter test`                          |
-| CI                | GitHub Actions: one `ci.yml`, change detection, a `CI OK` gate                                                       |
-| Local run         | Docker Compose                                                                                                       |
+| Layer             | Choice                                                                                                                  |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Language          | Python 3.14 (backend), TypeScript (web), Dart (mobile)                                                                  |
+| Framework         | FastAPI (backend), Ember.js Octane (web), Flutter (mobile)                                                              |
+| UI (web)          | Ember `.gts` components + Tailwind CSS v4; `ember-scaffold` layout                                                      |
+| UI (mobile)       | Flutter Material 3 widgets                                                                                              |
+| Backend           | REST API under `/api/v1/`, JSON, OpenAPI from FastAPI                                                                   |
+| Validation        | Pydantic v2                                                                                                             |
+| Data access       | SQLModel (on SQLAlchemy 2.0) + Alembic; `fastapi-orm-scaffold` layout                                                   |
+| Database          | PostgreSQL 16                                                                                                           |
+| Background jobs   | Celery + Redis for OTP, notifications, month close _(to confirm)_                                                       |
+| File storage      | Private S3 bucket, uploads by presigned POST and reads by presigned GET; MinIO locally (decided Phase 1, built Phase 2) |
+| Auth              | Phone/email one-time code; server session: random token in an httpOnly cookie, its hash in Redis (decided Phase 1)      |
+| Web data layer    | WarpDrive (EmberData) request builders + handlers; types generated from `api/openapi.json` with `openapi-typescript`    |
+| Mobile data layer | Dart client from OpenAPI _(to confirm)_                                                                                 |
+| Python tooling    | uv (`pyproject.toml` + `uv.lock`), Ruff (lint + format), pyright (types)                                                |
+| Web tooling       | pnpm, Vite; ESLint (+ `eslint-plugin-boundaries`), ember-template-lint, Prettier (+ Tailwind plugin), Glint (types)     |
+| Mobile lint       | `flutter analyze`, `dart format`                                                                                        |
+| Tests             | pytest + `TestClient` (backend); QUnit + MSW (web); Playwright (end-to-end); `flutter test`                             |
+| CI                | GitHub Actions: one `ci.yml`, change detection, a `CI OK` gate                                                          |
+| Local run         | Docker Compose                                                                                                          |
 
 ## Decided in Phase 0
 
@@ -174,38 +174,80 @@ _Filled in as Phase 0 is planned and built. Record each decision as:_
   `ctx7`) for every library and language version it uses for the first time,
   at the installed version; the installed package wins when they disagree.
 
+## Decided in Phase 1
+
+- **Sessions:** a random token (`secrets.token_urlsafe(32)`) in an httpOnly,
+  `SameSite=Lax` cookie, `Secure` outside development; Redis keeps only its
+  SHA-256 hash and the person, 30 days from the last use. Every request reads
+  the active membership from PostgreSQL, so deactivation logs out at once.
+  Chosen over JWTs (no instant revocation) and a `localStorage` token (XSS).
+  Mobile will send the same token as a bearer header (Phase 10).
+- **CSRF:** `SameSite=Lax`, JSON-only bodies and the CORS allow-list with
+  credentials (explicit methods and headers, never `*`).
+- **One-time codes:** 6 digits from `secrets`, stored hashed with their end
+  time; 5 minutes, 5 wrong tries then a 15-minute lock (an atomic `INCR`),
+  one a minute and 5 an hour (a Redis sorted set), a replaced code answers
+  "expired". Times are checked against an injectable clock
+  (`app/core/clock.py`), so tests move time.
+- **Account enumeration:** asking for a code answers the same for anyone;
+  "Not added yet" and "already in a home" only after the right code.
+- **Notifier:** `app/core/notifier.py`, a `Notifier` protocol. Only the
+  development `LogNotifier` exists (log line plus the Redis list
+  `dev:outbox`, read by the end-to-end test); production refuses to start
+  with it (B40).
+- **Errors with data:** `AppError` puts a `data` model in the error envelope
+  (a refused code's reason, tries left, seconds to wait); 429 is "too many
+  tries".
+- **Contacts:** phones in E.164 with `phonenumbers` (Bangladesh by
+  default), emails checked with `email-validator` and stored lower case.
+- **History:** `app/modules/history/` and one `record_change` call, in the
+  same transaction as the change.
+- **Roles in code:** `require_role(...)`, `OwnerDep` and `OwnerOrManagerDep`
+  in `app/api/deps.py` decide who may call an endpoint; rules that depend on
+  the target (a manager and another manager, the owner's row) are in the
+  service.
+- **Web data:** no WarpDrive models yet; every request is plain data with
+  `SkipCache`, lists are read again after a change. `ApiError` lives in
+  `utils/` so components can check it; services re-export API types for
+  components; a `session-end` request handler sends a page whose session
+  ended to log-in.
+- **Dates on the web:** `formatDate` uses fixed month names (newer Chrome
+  writes "Sept" in `en-GB`); the home's "today" comes from its time zone.
+- **Dialogs:** the native `<dialog>` with `showModal()` (focus trap,
+  Escape, focus return) through an `ember-modifier` function modifier.
+
 ## Project conventions
 
 Every phase follows this layout. Update this section when a convention changes.
 
-| Directory                                   | Holds                                                                                                                                                                                    |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend/app/main.py`                       | FastAPI app, middleware, exception handlers; `api_router` mounted at `/api/v1`                                                                                                           |
-| `backend/app/api/api_v1.py`                 | Registers every module router; `deps.py` (auth dependencies) joins it when auth arrives                                                                                                  |
-| `backend/app/core/`                         | `config.py` (settings from env vars), `database.py` (engine, `get_session`), `router.py` (`CoreRouter`), `schemas.py` (`StandardResponse`), `exceptions.py` (error handlers), `utils.py` |
-| `backend/app/modules/<module>/`             | `models.py`, `schemas.py`, `service.py`, `router.py` per module: `accounts`, `homes`, `meals`, `groceries`, `payments`, `bills`, `statements`, `deposits`, `inbox`, `messaging`          |
-| `backend/app/utils/`                        | Shared helpers used by several modules                                                                                                                                                   |
-| `backend/alembic/`, `backend/alembic.ini`   | Alembic migrations (`alembic/versions/`) and config                                                                                                                                      |
-| `backend/tests/<module>/`                   | That module's tests                                                                                                                                                                      |
-| `backend/pyproject.toml`, `backend/uv.lock` | Python dependencies (uv)                                                                                                                                                                 |
-| `web/app/data/`                             | The whole web data layer: `config.ts`, `handlers/` (errors, auth, envelope), `builders/<resource>.ts`, `lifetimes.ts`, `types/api.generated.ts` (never edited by hand)                   |
-| `web/app/models/`                           | WarpDrive Model classes, one per resource                                                                                                                                                |
-| `web/app/services/`                         | Store, session, current home                                                                                                                                                             |
-| `web/app/routes/`, `web/app/templates/`     | Thin: load data, guard access, compose components; everything behind login under `authenticated/`                                                                                        |
-| `web/app/components/ui/`                    | Domain-free design system (button, field, card, modal); the only place with Tailwind class lists                                                                                         |
-| `web/app/components/layout/`                | Page shell, sidebar, navbar                                                                                                                                                              |
-| `web/app/components/<feature>/`             | One folder per feature (`meals`, `groceries`, `payments`, …)                                                                                                                             |
-| `web/app/utils/`                            | Pure functions, no Ember imports (money formatting, dates)                                                                                                                               |
-| `web/app/styles/app.css`                    | Tailwind import and `@theme` tokens from `colivo-design/README.md`                                                                                                                       |
-| `web/tests/`                                | `unit/`, `integration/components/`, `acceptance/` (MSW), `helpers/` (`msw.ts`, `login.ts`, factories)                                                                                    |
-| `web/e2e/`                                  | Playwright end-to-end journeys against the real backend                                                                                                                                  |
-| `mobile/lib/features/<feature>/`            | Flutter screens, state and widgets per feature                                                                                                                                           |
-| `mobile/lib/core/`                          | API client, auth, theme                                                                                                                                                                  |
-| `mobile/test/`                              | Flutter tests                                                                                                                                                                            |
-| `api/openapi.json`                          | Exported API contract — never edited by hand                                                                                                                                             |
-| `infra/`                                    | Dockerfiles (`backend.Dockerfile`: `dev` and `prod` targets), the Postgres init script, deploy scripts; `compose.yaml` is at the repo root                                               |
-| `colivo-design/`                            | Screen designs and `requirements.md`                                                                                                                                                     |
-| `specs/`                                    | Mission, roadmap, tech stack, testing, data model (`data-model.md`, the living schema) and one folder per phase                                                                          |
+| Directory                                   | Holds                                                                                                                                                                                      |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `backend/app/main.py`                       | FastAPI app, middleware, exception handlers; `api_router` mounted at `/api/v1`                                                                                                             |
+| `backend/app/api/api_v1.py`                 | Registers every module router; `deps.py` holds the log-in and role dependencies (`current_membership`, `require_role`, `OwnerDep`, `OwnerOrManagerDep`)                                    |
+| `backend/app/core/`                         | `config.py` (settings from env vars), `database.py` (engine, `get_session`), `router.py` (`CoreRouter`), `schemas.py` (`StandardResponse`), `exceptions.py` (error handlers), `utils.py`   |
+| `backend/app/modules/<module>/`             | `models.py`, `schemas.py`, `service.py`, `router.py` per module: `accounts`, `homes`, `history`, `meals`, `groceries`, `payments`, `bills`, `statements`, `deposits`, `inbox`, `messaging` |
+| `backend/app/utils/`                        | Shared helpers used by several modules                                                                                                                                                     |
+| `backend/alembic/`, `backend/alembic.ini`   | Alembic migrations (`alembic/versions/`) and config                                                                                                                                        |
+| `backend/tests/<module>/`                   | That module's tests                                                                                                                                                                        |
+| `backend/pyproject.toml`, `backend/uv.lock` | Python dependencies (uv)                                                                                                                                                                   |
+| `web/app/data/`                             | The whole web data layer: `config.ts`, `handlers/` (errors, auth, envelope), `builders/<resource>.ts`, `lifetimes.ts`, `types/api.generated.ts` (never edited by hand)                     |
+| `web/app/models/`                           | WarpDrive Model classes, one per resource                                                                                                                                                  |
+| `web/app/services/`                         | Store, session, current home                                                                                                                                                               |
+| `web/app/routes/`, `web/app/templates/`     | Thin: load data, guard access, compose components; everything behind login under `authenticated/`                                                                                          |
+| `web/app/components/ui/`                    | Domain-free design system (button, field, card, modal); the only place with Tailwind class lists                                                                                           |
+| `web/app/components/layout/`                | Page shell, sidebar, navbar                                                                                                                                                                |
+| `web/app/components/<feature>/`             | One folder per feature (`meals`, `groceries`, `payments`, …)                                                                                                                               |
+| `web/app/utils/`                            | Pure functions, no Ember imports (money formatting, dates)                                                                                                                                 |
+| `web/app/styles/app.css`                    | Tailwind import and `@theme` tokens from `colivo-design/README.md`                                                                                                                         |
+| `web/tests/`                                | `unit/`, `integration/components/`, `acceptance/` (MSW), `helpers/` (`msw.ts`, `login.ts`, factories)                                                                                      |
+| `web/e2e/`                                  | Playwright end-to-end journeys against the real backend                                                                                                                                    |
+| `mobile/lib/features/<feature>/`            | Flutter screens, state and widgets per feature                                                                                                                                             |
+| `mobile/lib/core/`                          | API client, auth, theme                                                                                                                                                                    |
+| `mobile/test/`                              | Flutter tests                                                                                                                                                                              |
+| `api/openapi.json`                          | Exported API contract — never edited by hand                                                                                                                                               |
+| `infra/`                                    | Dockerfiles (`backend.Dockerfile`: `dev` and `prod` targets), the Postgres init script, deploy scripts; `compose.yaml` is at the repo root                                                 |
+| `colivo-design/`                            | Screen designs and `requirements.md`                                                                                                                                                       |
+| `specs/`                                    | Mission, roadmap, tech stack, testing, data model (`data-model.md`, the living schema) and one folder per phase                                                                            |
 
 Rules:
 
@@ -267,17 +309,18 @@ envelope:
 - `message` is set with `set_response_message`; error details go in `errors`
   as a list of strings; empty fields are left out.
 
-| Code | When                                    |
-| ---- | --------------------------------------- |
-| 200  | GET, update or delete succeeded         |
-| 201  | Create succeeded                        |
-| 400  | Request breaks a business rule          |
-| 401  | Not logged in                           |
-| 403  | Logged in, but the role may not do this |
-| 404  | Not found, or belongs to another home   |
-| 409  | Duplicate or conflicting change         |
-| 422  | Input fails validation                  |
-| 500  | Unexpected error                        |
+| Code | When                                         |
+| ---- | -------------------------------------------- |
+| 200  | GET, update or delete succeeded              |
+| 201  | Create succeeded                             |
+| 400  | Request breaks a business rule               |
+| 401  | Not logged in                                |
+| 403  | Logged in, but the role may not do this      |
+| 404  | Not found, or belongs to another home        |
+| 409  | Duplicate or conflicting change              |
+| 422  | Input fails validation                       |
+| 429  | Too many tries; `data` says how long to wait |
+| 500  | Unexpected error                             |
 
 ## Validation
 
@@ -338,6 +381,19 @@ Add each one as it's discovered: **<Area>:** <limitation>.
   Chromium (Fedora isn't officially supported); fine for local runs.
 - **Shell styling:** the app shell's Tailwind classes live in
   `components/layout/`, not only `components/ui/`.
+- **No real SMS or email provider:** only the development notifier, so
+  production can't start yet (B40); a provider is chosen by Phase 9.
+- **Sessions in Redis:** flushing Redis logs everyone out (no data is lost).
+- **Same site in production:** `SameSite=Lax` cookies need the web app and
+  the API on one site (e.g. `app.` and `api.` of one domain), Phase 9.
+- **No ID documents yet:** members are added without one until Phase 2's
+  `attachment` (FR-60).
+- **Account check through "add member":** an owner learns whether a phone or
+  email is active in some home from the 409; accepted (security review,
+  21 Nov 2026), and gone with Phase 1b.
+- **One active home per person** until Phase 1b.
+- **Not test-driven, checked by hand:** countdowns ticking, layout at each
+  width, focus after "Create my own home", the dialog's keyboard behaviour.
 
 ## Deferred decisions
 
@@ -345,15 +401,9 @@ Add each one as it's discovered: **<Area>:** <limitation>.
   `mobile/`) — decide before the first phase tagged `[mobile]`.
 - **Background jobs:** Celery + Redis recommended; FastAPI background tasks or
   ARQ are lighter alternatives.
-- **Auth tokens:** JWT access + refresh for both clients, or httpOnly session
-  cookies for web plus tokens for mobile — decide in Phase 1. A bearer token
-  in `localStorage` (the scaffold's default) can be stolen by an XSS bug;
-  Phase 0's session holds no token at all. Only
-  `web/app/data/handlers/auth.ts` and `web/app/services/session.ts` change.
 - **Flutter state management** (Riverpod, Bloc, or other) — decide before
   Phase 10.
 - **SMS provider** for one-time codes in Bangladesh, and the email provider.
-- **File storage:** AWS S3 or another S3-compatible store.
 - **Deployment target:** AWS (EC2 + RDS + S3) or another host — decide by
   Phase 9.
 - **Error tracking and monitoring** — decide by Phase 9.

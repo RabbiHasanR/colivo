@@ -6,6 +6,8 @@ from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 
 API_PREFIX = "/api/v1"
+CORS_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+CORS_HEADERS = ["Accept", "Content-Type"]
 
 
 def create_app() -> FastAPI:
@@ -23,13 +25,15 @@ def create_app() -> FastAPI:
         redoc_url=None,
     )
     register_exception_handlers(app)
-    # Only the listed origins (the web app) may call the API from a browser.
-    # No credentials: the web sends its token in the Authorization header.
+    # Only the listed origins (the web app) may call the API from a browser,
+    # with its session cookie. With credentials, methods and headers are
+    # listed, never "*" (FastAPI docs → CORS).
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.backend_cors_origins,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_credentials=True,
+        allow_methods=CORS_METHODS,
+        allow_headers=CORS_HEADERS,
     )
     app.include_router(api_router, prefix=API_PREFIX)
     return app

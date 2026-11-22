@@ -2,6 +2,7 @@ import json
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 
 from app.core.config import settings
 from app.main import create_app
@@ -47,6 +48,42 @@ def test_unexpected_error_answers_500_without_internals() -> None:
         "errors": ["An unexpected error occurred."],
     }
     assert "hunter2" not in response.text
+
+
+class PetIn(BaseModel):
+    """A throwaway request body for the 422 test."""
+
+    name: str
+    age: int
+
+
+def test_invalid_input_answers_422_in_the_envelope() -> None:
+    """
+    GIVEN an endpoint whose body needs a name and an age
+    WHEN  it is called with no name and an age that isn't a number
+    THEN  it answers 422 in the envelope, one "<location>: <message>" string
+          per problem
+    """
+    app = create_app()
+
+    @app.post("/api/v1/pets")
+    def add_pet(pet: PetIn) -> None:
+        """Accept a pet."""
+
+    client = TestClient(app)
+
+    response = client.post("/api/v1/pets", json={"age": "old"})
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "success": False,
+        "message": "Validation Error",
+        "errors": [
+            "body.name: Field required",
+            "body.age: Input should be a valid integer, "
+            "unable to parse string as an integer",
+        ],
+    }
 
 
 def test_openapi_describes_health_inside_the_envelope(client: TestClient) -> None:
@@ -100,3 +137,50 @@ def test_only_the_web_origin_gets_cors_permission(
 
     expected = origin if allowed else None
     assert response.headers.get("access-control-allow-origin") == expected
+
+
+@pytest.mark.parametrize(
+    ("origin", "expected"),
+    [
+        pytest.param(
+            WEB_ORIGIN,
+            {
+                "status": 200,
+                "access-control-allow-origin": WEB_ORIGIN,
+                "access-control-allow-credentials": "true",
+            },
+            id="web origin",
+        ),
+        pytest.param(
+            "https://other.example",
+            {"status": 400, "access-control-allow-origin": None},
+            id="other origin",
+        ),
+    ],
+)
+def test_only_the_web_origin_may_send_credentials(
+    origin: str, expected: dict[str, object], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """
+    GIVEN BACKEND_CORS_ORIGINS lists only the web app's origin
+    WHEN  a browser asks (pre-flight) whether a page on `origin` may POST with
+          its cookies and a JSON body
+    THEN  the web origin may, with credentials; another origin is refused
+          (400, no allowed origin), so the browser never sends its request
+    """
+    monkeypatch.setattr(settings, "backend_cors_origins", [WEB_ORIGIN])
+    client = TestClient(create_app())
+
+    response = client.options(
+        "/api/v1/auth/log-out",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    actual = {"status": response.status_code} | {
+        name: response.headers.get(name) for name in expected if name != "status"
+    }
+    assert actual == expected

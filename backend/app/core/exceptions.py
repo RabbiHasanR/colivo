@@ -1,7 +1,9 @@
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.schemas import StandardResponse
@@ -10,20 +12,45 @@ logger = logging.getLogger(__name__)
 
 # What a client sees for an unexpected error. The details go to the server log.
 UNEXPECTED_ERROR_MESSAGE = "An unexpected error occurred."
+VALIDATION_ERROR_MESSAGE = "Validation Error"
 
 
-def error_response(status_code: int, message: str, errors: list[str]) -> JSONResponse:
+class AppError(StarletteHTTPException):
+    """An HTTP error whose envelope also carries ``data``.
+
+    For refusals the client can act on, e.g. a wrong one-time code with the
+    tries left: ``AppError(400, "That code isn't right.", CodeErrorOut(…))``.
+    """
+
+    def __init__(self, status_code: int, detail: str, data: BaseModel) -> None:
+        super().__init__(status_code, detail)
+        self.data = data
+
+
+def error_response(
+    status_code: int,
+    message: str,
+    errors: list[str],
+    data: BaseModel | None = None,
+) -> JSONResponse:
     """Build an error response inside the ``StandardResponse`` envelope.
 
     Args:
         status_code: The HTTP status code.
         message: A short, user-facing message.
         errors: Error details, one string each.
+        data: What the client can act on, for an ``AppError``.
 
     Returns:
         The JSON response.
     """
-    body = StandardResponse[None](success=False, message=message, errors=errors)
+    # Dumped first: typed as plain BaseModel, Pydantic would keep no fields.
+    body = StandardResponse[dict[str, object]](
+        success=False,
+        message=message,
+        errors=errors,
+        data=data.model_dump(mode="json", exclude_none=True) if data else None,
+    )
     return JSONResponse(
         status_code=status_code, content=body.model_dump(exclude_none=True)
     )
@@ -42,7 +69,31 @@ async def http_exception_handler(
         The error response.
     """
     detail = exc.detail if isinstance(exc.detail, str) else "Request failed"
-    return error_response(exc.status_code, detail, [detail])
+    data = exc.data if isinstance(exc, AppError) else None
+    return error_response(exc.status_code, detail, [detail], data)
+
+
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    """Answer invalid input with 422 in the envelope.
+
+    Each problem becomes one ``"<location>: <message>"`` string, e.g.
+    ``"body.name: Field required"``; the web's ``errors.ts`` reads them back
+    into field errors.
+
+    Args:
+        request: The current request.
+        exc: The validation error.
+
+    Returns:
+        The error response.
+    """
+    errors = [
+        f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}"
+        for error in exc.errors()
+    ]
+    return error_response(422, VALIDATION_ERROR_MESSAGE, errors)
 
 
 async def unexpected_exception_handler(
@@ -80,5 +131,9 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(
         StarletteHTTPException,
         http_exception_handler,  # pyright: ignore[reportArgumentType]
+    )
+    app.add_exception_handler(
+        RequestValidationError,
+        validation_exception_handler,  # pyright: ignore[reportArgumentType]
     )
     app.add_exception_handler(Exception, unexpected_exception_handler)

@@ -6,8 +6,10 @@ from sqlmodel import SQLModel
 
 from app.core.config import settings
 
-# Import every module's models here so autogenerate sees them, e.g.:
-# from app.modules.accounts import models as accounts_models
+# Import every module's models here so autogenerate sees them.
+from app.modules.accounts import models as accounts_models  # noqa: F401
+from app.modules.history import models as history_models  # noqa: F401
+from app.modules.homes import models as homes_models  # noqa: F401
 
 config = context.config
 

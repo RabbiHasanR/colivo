@@ -7,7 +7,7 @@
 backend = $(if $(wildcard backend/pyproject.toml),cd backend && $(1),@echo "skip $@: backend/ is not scaffolded yet")
 web = $(if $(wildcard web/package.json),cd web && $(1),@echo "skip $@: web/ is not scaffolded yet")
 
-.PHONY: help test-fast test lint format-check api-export api-types \
+.PHONY: help web-screens test-fast test lint format-check api-export api-types \
 	backend-test-fast backend-test backend-lint backend-format-check backend-migrations-check \
 	web-test-fast web-e2e web-test web-lint web-format-check
 
@@ -46,8 +46,10 @@ backend-lint: ## Ruff check + pyright
 backend-format-check: ## Ruff format check
 	$(call backend,uv run ruff format --check .)
 
+# alembic check compares the models with a database at head; it doesn't
+# migrate, so a fresh database (CI's) is brought to head first.
 backend-migrations-check: ## alembic check: no model change without a migration (needs the database)
-	$(call backend,uv run alembic check)
+	$(call backend,uv run alembic upgrade head && uv run alembic check)
 
 # ── Web ─────────────────────────────────────────────────────────────────
 
@@ -61,6 +63,9 @@ web-test: web-test-fast web-e2e ## Every web test
 
 web-lint: ## ESLint, ember-template-lint, Glint
 	$(call web,pnpm lint)
+
+web-screens: ## Screenshots of every page at 390px and 1440px (no backend), to compare with colivo-design
+	$(call web,node scripts/screens.mjs)
 
 web-format-check: ## Prettier check
 	$(call web,pnpm exec prettier --check .)

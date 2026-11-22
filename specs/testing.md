@@ -88,9 +88,13 @@ and fails as soon as it passes, which forces the mark's removal.
 - **Keeping mocks honest:** `make api-types` regenerates the API types from
   `api/openapi.json`; every MSW response is typed with them, so a changed
   contract fails `make lint`. The end-to-end test uses no mocks.
-- **Layout is not test-driven.** Build each screen by eye from
-  `colivo-design/web/`; test what the user can do on it. Widths and colours
-  are checked by hand in `validation.md → Manual checks`.
+- **Layout is not test-driven, but it is not optional.** Build each screen
+  from its design (`colivo-design/web/`, `colivo-design/mobile/` for
+  Flutter); test what the user can do on it. A group's web (or mobile) half
+  is not done until each of its screens matches its design, checked with a
+  screenshot at a phone width and a desktop width, with every difference
+  agreed with the user (`requirements.md → Screens`). Widths and colours are
+  checked again by hand in `validation.md → Manual checks`.
 
 ## Core rules
 

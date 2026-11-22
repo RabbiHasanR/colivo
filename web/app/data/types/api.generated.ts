@@ -24,10 +24,307 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Code
+         * @description Send a one-time code by SMS or email; the same answer for any contact.
+         */
+        post: operations["request_code_api_v1_auth_codes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/sign-up": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign Up
+         * @description Create a home; the person signing up becomes its owner and is logged in.
+         */
+        post: operations["sign_up_api_v1_auth_sign_up_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/log-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log In
+         * @description Log in with a phone or email and its one-time code.
+         */
+        post: operations["log_in_api_v1_auth_log_in_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/log-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log Out
+         * @description End the session and clear its cookie.
+         */
+        post: operations["log_out_api_v1_auth_log_out_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Me
+         * @description Who is logged in, and in which home; renews the cookie for 30 days.
+         */
+        get: operations["get_me_api_v1_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Me
+         * @description Fix your own name; this also finishes the first log-in check.
+         */
+        patch: operations["update_me_api_v1_me_patch"];
+        trace?: never;
+    };
+    "/api/v1/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Members
+         * @description Everyone in the home, for the owner and managers.
+         */
+        get: operations["list_members_api_v1_members_get"];
+        put?: never;
+        /**
+         * Add Member
+         * @description Add a member to the home; they get an SMS or email to log in.
+         */
+        post: operations["add_member_api_v1_members_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/{member_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Member
+         * @description Change a member's name or join date.
+         */
+        patch: operations["update_member_api_v1_members__member_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/members/{member_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Role
+         * @description Give or take away the Manager role; the owner only.
+         */
+        put: operations["change_role_api_v1_members__member_id__role_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/{member_id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deactivate
+         * @description Deactivate a member from a date; they can't log in from then on.
+         */
+        post: operations["deactivate_api_v1_members__member_id__deactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/members/{member_id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reactivate
+         * @description Reactivate a member from the date charges start again.
+         */
+        post: operations["reactivate_api_v1_members__member_id__reactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/home/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Setup
+         * @description The setup checklist of the logged-in owner's or manager's home.
+         */
+        get: operations["get_setup_api_v1_home_setup_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Channel
+         * @description How a message reaches a person.
+         * @enum {string}
+         */
+        Channel: "sms" | "email";
+        /**
+         * CodeErrorOut
+         * @description The ``data`` of a refused code: why, and what the person can do next.
+         */
+        CodeErrorOut: {
+            reason: components["schemas"]["CodeErrorReason"];
+            /** Tries Left */
+            tries_left?: number | null;
+            /** Retry In Seconds */
+            retry_in_seconds?: number | null;
+        };
+        /**
+         * CodeErrorReason
+         * @description Why a one-time code, or a new one, was refused (FR-94).
+         * @enum {string}
+         */
+        CodeErrorReason: "wrong" | "expired" | "locked" | "too_soon" | "hourly_limit";
+        /**
+         * CodeRequestIn
+         * @description Ask for a one-time code for a phone or email.
+         */
+        CodeRequestIn: {
+            /** @description A phone number or an email */
+            contact: string;
+        };
+        /**
+         * CodeSentOut
+         * @description How the code was sent and how long it works; the same for any contact.
+         */
+        CodeSentOut: {
+            channel: components["schemas"]["Channel"];
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            /** Resend In Seconds */
+            resend_in_seconds: number;
+        };
+        /**
+         * Contact
+         * @description A phone (E.164) or an email address (lower case), and how to reach it.
+         */
+        Contact: {
+            channel: components["schemas"]["Channel"];
+            /** Value */
+            value: string;
+        };
+        /**
+         * DeactivateIn
+         * @description Deactivate a member from a date: today or earlier (FR-92).
+         */
+        DeactivateIn: {
+            /**
+             * On
+             * Format: date
+             */
+            on: string;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
         /**
          * HealthOut
          * @description The status of each dependency the backend needs.
@@ -37,11 +334,239 @@ export interface components {
             redis: components["schemas"]["ServiceStatus"];
         };
         /**
+         * LogInIn
+         * @description Log in with a phone or email and the code sent to it.
+         */
+        LogInIn: {
+            /** @description A phone number or an email */
+            contact: string;
+            /** Code */
+            code: string;
+        };
+        /**
+         * MeHomeOut
+         * @description The logged-in person's home.
+         */
+        MeHomeOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Area */
+            area: string | null;
+            /**
+             * First Month
+             * Format: date
+             */
+            first_month: string;
+        };
+        /**
+         * MeMembershipOut
+         * @description The logged-in person's membership of their home.
+         */
+        MeMembershipOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            role: components["schemas"]["Role"];
+            status: components["schemas"]["MembershipStatus"];
+            /** Joined On */
+            joined_on?: string | null;
+            /** Added By Name */
+            added_by_name?: string | null;
+            /**
+             * Details Checked
+             * @default false
+             */
+            details_checked: boolean;
+        };
+        /**
+         * MeOut
+         * @description Who is logged in, and in which home.
+         */
+        MeOut: {
+            person: components["schemas"]["MePersonOut"];
+            membership: components["schemas"]["MeMembershipOut"];
+            home: components["schemas"]["MeHomeOut"];
+        };
+        /**
+         * MePersonOut
+         * @description The logged-in person's log-in identity.
+         */
+        MePersonOut: {
+            /** Phone */
+            phone: string | null;
+        };
+        /**
+         * MeUpdateIn
+         * @description Fix your own name; sending it also finishes the first log-in check.
+         */
+        MeUpdateIn: {
+            /** Name */
+            name: string;
+        };
+        /**
+         * MemberIn
+         * @description Add a member: who, how to reach them, from when, and their role.
+         */
+        MemberIn: {
+            /** Name */
+            name: string;
+            /** @description A phone number or an email */
+            contact: string;
+            /**
+             * Joined On
+             * Format: date
+             */
+            joined_on: string;
+            /**
+             * Role
+             * @default member
+             * @enum {string}
+             */
+            role: "member" | "manager";
+        };
+        /**
+         * MemberOut
+         * @description A member of the home, for the owner and managers' members list.
+         */
+        MemberOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone: string | null;
+            /** Email */
+            email: string | null;
+            role: components["schemas"]["Role"];
+            status: components["schemas"]["MembershipStatus"];
+            /** Joined On */
+            joined_on: string | null;
+        };
+        /**
+         * MemberUpdateIn
+         * @description Change a member's name or join date; leave out what stays the same.
+         */
+        MemberUpdateIn: {
+            /** Name */
+            name?: string | null;
+            /** Joined On */
+            joined_on?: string | null;
+        };
+        /**
+         * MembershipStatus
+         * @description Whether a member may log in now.
+         * @enum {string}
+         */
+        MembershipStatus: "active" | "inactive";
+        /**
+         * ReactivateIn
+         * @description Reactivate a member from the date charges start again (FR-92).
+         */
+        ReactivateIn: {
+            /**
+             * On
+             * Format: date
+             */
+            on: string;
+        };
+        /**
+         * Role
+         * @description A member's role in their home (specs/data-model.md → Roles).
+         * @enum {string}
+         */
+        Role: "owner" | "manager" | "member";
+        /**
+         * RoleIn
+         * @description Give or take away the Manager role; the owner's role never changes.
+         */
+        RoleIn: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "member" | "manager";
+        };
+        /**
          * ServiceStatus
          * @description Whether a dependency of the backend answered.
          * @enum {string}
          */
         ServiceStatus: "ok" | "down";
+        /**
+         * SetupOut
+         * @description The new-home checklist, in order.
+         */
+        SetupOut: {
+            /** Steps */
+            steps: components["schemas"]["SetupStep"][];
+        };
+        /**
+         * SetupStep
+         * @description One step of the new-home checklist (FR-95).
+         */
+        SetupStep: {
+            /** Key */
+            key: string;
+            /** Done */
+            done: boolean;
+        };
+        /**
+         * SignUpIn
+         * @description The owner's sign-up: who they are, their code and their new home.
+         */
+        SignUpIn: {
+            /** @description A phone number or an email */
+            contact: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Home Name */
+            home_name: string;
+            /** Area */
+            area?: string | null;
+            /**
+             * First Month
+             * Format: date
+             */
+            first_month: string;
+            /** Lives Here */
+            lives_here: boolean;
+        };
+        /** StandardResponse[CodeErrorOut] */
+        StandardResponse_CodeErrorOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["CodeErrorOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** StandardResponse[CodeSentOut] */
+        StandardResponse_CodeSentOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["CodeSentOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
         /** StandardResponse[HealthOut] */
         StandardResponse_HealthOut_: {
             /** Success */
@@ -51,6 +576,60 @@ export interface components {
             data?: components["schemas"]["HealthOut"] | null;
             /** Errors */
             errors?: string[] | null;
+        };
+        /** StandardResponse[MeOut] */
+        StandardResponse_MeOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["MeOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** StandardResponse[MemberOut] */
+        StandardResponse_MemberOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["MemberOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** StandardResponse[SetupOut] */
+        StandardResponse_SetupOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["SetupOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** StandardResponse[list[MemberOut]] */
+        StandardResponse_list_MemberOut__: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["MemberOut"][] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -86,6 +665,445 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StandardResponse_HealthOut_"];
+                };
+            };
+        };
+    };
+    request_code_api_v1_auth_codes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeSentOut_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+        };
+    };
+    sign_up_api_v1_auth_sign_up_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignUpIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MeOut_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+        };
+    };
+    log_in_api_v1_auth_log_in_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogInIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MeOut_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+        };
+    };
+    log_out_api_v1_auth_log_out_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_me_api_v1_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MeOut_"];
+                };
+            };
+        };
+    };
+    update_me_api_v1_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MeOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_members_api_v1_members_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_list_MemberOut__"];
+                };
+            };
+        };
+    };
+    add_member_api_v1_members_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_member_api_v1_members__member_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberUpdateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_role_api_v1_members__member_id__role_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deactivate_api_v1_members__member_id__deactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeactivateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reactivate_api_v1_members__member_id__reactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                member_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactivateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_setup_api_v1_home_setup_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_SetupOut_"];
                 };
             };
         };

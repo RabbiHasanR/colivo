@@ -6,6 +6,7 @@
 /node_modules/
 
 # misc
+/screens/
 *.local
 /.pnp*
 /.eslintcache
