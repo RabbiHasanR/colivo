@@ -9,6 +9,8 @@ interface CodeFieldSignature {
     value: string;
     onInput: (value: string) => void;
     errors?: string[];
+    /** The code was refused: marked invalid, so the border turns brown. */
+    invalid?: boolean;
   };
 }
 
@@ -25,6 +27,7 @@ const CodeField: TOC<CodeFieldSignature> = <template>
         autocomplete="one-time-code"
         maxlength="6"
         placeholder="••••••"
+        aria-invalid={{if @invalid "true"}}
         @code={{true}}
         @value={{@value}}
         @onInput={{@onInput}}

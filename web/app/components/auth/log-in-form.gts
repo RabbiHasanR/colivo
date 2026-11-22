@@ -43,6 +43,12 @@ export default class LogInForm extends Component<LogInFormSignature> {
   /** Shown after "Resend": where the new code went. */
   @tracked resentTo: string | null = null;
 
+  /** The typed code was refused: wrong or expired (not a send refused). */
+  get codeRefused(): boolean {
+    const reason = this.codeError?.reason;
+    return reason === 'wrong' || reason === 'expired';
+  }
+
   @action setContact(value: string): void {
     this.contact = value;
   }
@@ -155,7 +161,11 @@ export default class LogInForm extends Component<LogInFormSignature> {
             <p class="text-sm text-muted" data-test-code-sent-to>Sent to
               {{this.sentTo}}</p>
           {{/if}}
-          <CodeField @value={{this.code}} @onInput={{this.setCode}}>
+          <CodeField
+            @value={{this.code}}
+            @onInput={{this.setCode}}
+            @invalid={{this.codeRefused}}
+          >
             {{#unless this.sentTo}}
               <Button
                 @variant="outline"

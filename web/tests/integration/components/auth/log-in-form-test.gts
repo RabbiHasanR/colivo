@@ -63,6 +63,65 @@ module('Integration | Component | auth/log-in-form', function (hooks) {
     assert.dom('[data-test-log-in-submit]').isEnabled();
   });
 
+  test('a refused code marks the code box as invalid', async function (assert) {
+    // GIVEN the API refuses the code: once as wrong, once as expired
+    // WHEN  someone sends a code, types it and logs in
+    // THEN  the code box is marked invalid (brown border, read out as invalid)
+    for (const reason of ['wrong', 'expired']) {
+      worker.use(
+        http.post('*/api/v1/auth/codes', () => HttpResponse.json(codeSentBody)),
+        http.post('*/api/v1/auth/log-in', () =>
+          HttpResponse.json(
+            {
+              success: false,
+              message: 'That code was refused.',
+              errors: ['That code was refused.'],
+              data: { reason, tries_left: 3 },
+            },
+            { status: 400 },
+          ),
+        ),
+      );
+      const onLoggedIn = () => {};
+      await render(
+        <template><LogInForm @onLoggedIn={{onLoggedIn}} /></template>,
+      );
+      assert.dom('[data-test-code-field]').doesNotHaveAria('invalid', reason);
+
+      await sendCodeAndType('111111');
+      await click('[data-test-log-in-submit]');
+
+      assert.dom('[data-test-code-field]').hasAria('invalid', 'true', reason);
+    }
+  });
+
+  test('asking for codes too often does not mark the code box invalid', async function (assert) {
+    // GIVEN the API refuses to send a code: asked again too soon
+    // WHEN  someone enters their phone and presses "Send code"
+    // THEN  the reason shows, but the code box is not marked invalid
+    worker.use(
+      http.post('*/api/v1/auth/codes', () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: 'Wait a little before asking for another code.',
+            errors: ['Wait a little before asking for another code.'],
+            data: { reason: 'too_soon', retry_in_seconds: 42 },
+          },
+          { status: 429 },
+        ),
+      ),
+    );
+    const onLoggedIn = () => {};
+    await render(<template><LogInForm @onLoggedIn={{onLoggedIn}} /></template>);
+
+    await fillIn('[data-test-log-in-contact]', '01712 345678');
+    await click('[data-test-log-in-send-code]');
+
+    assert.dom('[data-test-code-error]').exists();
+    assert.dom('[data-test-code-field]').doesNotHaveAria('invalid');
+  });
+
   test('an expired code says so and offers a new one', async function (assert) {
     // GIVEN the API says the typed code expired
     // WHEN  someone tries to log in with it, then presses "Send a new code"
