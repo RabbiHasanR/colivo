@@ -92,45 +92,49 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
   <template>
     <form data-test-add-member-form {{on "submit" this.submit}}>
       <Stack>
-        <Field
-          @label="Name"
-          @errors={{get this.fieldErrors "name"}}
-          data-test-field="name"
-          as |id|
+        <div
+          class="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2.5"
         >
-          <TextInput
-            id={{id}}
-            @value={{this.name}}
-            @onInput={{this.setName}}
-            data-test-add-member-name
-          />
-        </Field>
-        <Field
-          @label="Phone or email"
-          @errors={{get this.fieldErrors "contact"}}
-          data-test-field="contact"
-          as |id|
-        >
-          <TextInput
-            id={{id}}
-            @value={{this.contact}}
-            @onInput={{this.setContact}}
-            data-test-add-member-contact
-          />
-        </Field>
-        <Field
-          @label="Joins on"
-          @errors={{get this.fieldErrors "joined_on"}}
-          data-test-field="joined_on"
-          as |id|
-        >
-          <DateInput
-            id={{id}}
-            @value={{this.joinedOn}}
-            @onInput={{this.setJoinedOn}}
-            data-test-add-member-joined-on
-          />
-        </Field>
+          <Field
+            @label="Name"
+            @errors={{get this.fieldErrors "name"}}
+            data-test-field="name"
+            as |id|
+          >
+            <TextInput
+              id={{id}}
+              @value={{this.name}}
+              @onInput={{this.setName}}
+              data-test-add-member-name
+            />
+          </Field>
+          <Field
+            @label="Phone or email"
+            @errors={{get this.fieldErrors "contact"}}
+            data-test-field="contact"
+            as |id|
+          >
+            <TextInput
+              id={{id}}
+              @value={{this.contact}}
+              @onInput={{this.setContact}}
+              data-test-add-member-contact
+            />
+          </Field>
+          <Field
+            @label="Joins on"
+            @errors={{get this.fieldErrors "joined_on"}}
+            data-test-field="joined_on"
+            as |id|
+          >
+            <DateInput
+              id={{id}}
+              @value={{this.joinedOn}}
+              @onInput={{this.setJoinedOn}}
+              data-test-add-member-joined-on
+            />
+          </Field>
+        </div>
         <Field @label="Role" as |id|>
           <Select
             id={{id}}
@@ -145,7 +149,7 @@ export default class AddMemberForm extends Component<AddMemberFormSignature> {
             {{this.refusal.message}}
           </FormError>
         {{/if}}
-        <Button type="submit" data-test-add-member-submit>Add member</Button>
+        <Button type="submit" @size="lg" data-test-add-member-submit>Add member</Button>
       </Stack>
     </form>
   </template>

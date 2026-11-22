@@ -55,7 +55,8 @@ export default class ReactivateDialog extends Component<ReactivateDialogSignatur
     >
       <form {{on "submit" this.confirm}}>
         <Stack>
-          <p>They can log in again. Their charges start again from:</p>
+          <p class="text-sm leading-normal text-muted">They can log in again.
+            Their charges start again from:</p>
           <Field @label="Charges start again on" as |id|>
             <DateInput
               id={{id}}
@@ -70,12 +71,17 @@ export default class ReactivateDialog extends Component<ReactivateDialogSignatur
               {{this.refusal.message}}
             </FormError>
           {{/if}}
-          <Button type="submit" data-test-reactivate-confirm>Reactivate</Button>
-          <Button
-            @variant="secondary"
-            data-test-reactivate-cancel
-            {{on "click" @onCancel}}
-          >Cancel</Button>
+          <div class="flex flex-wrap justify-end gap-2">
+            <Button
+              @variant="secondary"
+              data-test-reactivate-cancel
+              {{on "click" @onCancel}}
+            >Cancel</Button>
+            <Button
+              type="submit"
+              data-test-reactivate-confirm
+            >Reactivate</Button>
+          </div>
         </Stack>
       </form>
     </Dialog>

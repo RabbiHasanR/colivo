@@ -29,7 +29,7 @@ export default class RoleEditor extends Component<RoleEditorSignature> {
 
   <template>
     <Button
-      @variant="secondary"
+      @variant="link"
       data-test-role-change={{@member.name}}
       {{on "click" this.toggle}}
     >{{if this.isManager "Remove manager" "Make manager"}}</Button>

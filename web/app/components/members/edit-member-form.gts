@@ -99,7 +99,11 @@ export default class EditMemberForm extends Component<EditMemberFormSignature> {
             {{this.refusal.message}}
           </FormError>
         {{/if}}
-        <Button type="submit" data-test-edit-member-submit>Save</Button>
+        <Button
+          type="submit"
+          @size="lg"
+          data-test-edit-member-submit
+        >Save</Button>
       </Stack>
     </form>
   </template>

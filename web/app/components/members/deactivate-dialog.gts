@@ -68,8 +68,8 @@ export default class DeactivateDialog extends Component<DeactivateDialogSignatur
     >
       <form {{on "submit" this.confirm}}>
         <Stack>
-          <p>They can't log in from this date. You can reactivate them at any
-            time.</p>
+          <p class="text-sm leading-normal text-muted">They can't log in from
+            this date. You can reactivate them at any time.</p>
           <Field @label="From" as |id|>
             <DateInput
               id={{id}}
@@ -81,12 +81,17 @@ export default class DeactivateDialog extends Component<DeactivateDialogSignatur
           {{#if this.refusal.message}}
             <FormError>{{this.refusal.message}}</FormError>
           {{/if}}
-          <Button type="submit" data-test-deactivate-confirm>Deactivate</Button>
-          <Button
-            @variant="secondary"
-            data-test-deactivate-cancel
-            {{on "click" @onCancel}}
-          >Cancel</Button>
+          <div class="flex flex-wrap justify-end gap-2">
+            <Button
+              @variant="secondary"
+              data-test-deactivate-cancel
+              {{on "click" @onCancel}}
+            >Cancel</Button>
+            <Button
+              type="submit"
+              data-test-deactivate-confirm
+            >Deactivate</Button>
+          </div>
         </Stack>
       </form>
     </Dialog>

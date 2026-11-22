@@ -5,7 +5,8 @@ import { fn } from '@ember/helper';
 import { on } from '@ember/modifier';
 import type { Member } from '../../services/members';
 import { eq } from '../../utils/template';
-import Button from '../ui/button';
+import Card from '../ui/card';
+import { SEGMENT_TRACK, segmentClasses } from '../ui/segment-classes';
 import MemberList from './member-list';
 
 type Tab = 'current' | 'past';
@@ -44,28 +45,35 @@ export default class MemberTabs extends Component<MemberTabsSignature> {
   }
 
   <template>
-    <section data-test-member-tabs>
-      <div role="group" aria-label="Which members">
-        <Button
-          @variant={{if (eq this.tab "current") "primary" "secondary"}}
+    <section class="flex flex-col gap-4" data-test-member-tabs>
+      <div role="group" aria-label="Which members" class={{SEGMENT_TRACK}}>
+        <button
+          type="button"
+          class={{segmentClasses (eq this.tab "current")}}
           aria-pressed={{if (eq this.tab "current") "true" "false"}}
           data-test-tab="current"
           {{on "click" (fn this.show "current")}}
-        >Current ({{this.currentCount}})</Button>
-        <Button
-          @variant={{if (eq this.tab "past") "primary" "secondary"}}
+        >Current ({{this.currentCount}})</button>
+        <button
+          type="button"
+          class={{segmentClasses (eq this.tab "past")}}
           aria-pressed={{if (eq this.tab "past") "true" "false"}}
           data-test-tab="past"
           {{on "click" (fn this.show "past")}}
-        >Past ({{this.pastCount}})</Button>
+        >Past ({{this.pastCount}})</button>
       </div>
-      <MemberList
-        @members={{this.shown}}
-        @onEdit={{@onEdit}}
-        @onDeactivate={{@onDeactivate}}
-        @onReactivate={{@onReactivate}}
-        @onRoleChanged={{@onRoleChanged}}
-      />
+      <Card class="flex min-w-0 flex-col">
+        <h2 class="px-4 pt-3.5 pb-1.5 font-sans text-base font-semibold">
+          {{if (eq this.tab "current") "Current members" "Past members"}}
+        </h2>
+        <MemberList
+          @members={{this.shown}}
+          @onEdit={{@onEdit}}
+          @onDeactivate={{@onDeactivate}}
+          @onReactivate={{@onReactivate}}
+          @onRoleChanged={{@onRoleChanged}}
+        />
+      </Card>
     </section>
   </template>
 }

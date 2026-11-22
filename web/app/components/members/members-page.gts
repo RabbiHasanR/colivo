@@ -3,7 +3,9 @@ import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
 import type MembersService from '../../services/members';
+import type SessionService from '../../services/session';
 import type { Member } from '../../services/members';
+import Card from '../ui/card';
 import AddMemberForm from './add-member-form';
 import DeactivateDialog from './deactivate-dialog';
 import EditMemberForm from './edit-member-form';
@@ -17,6 +19,7 @@ interface MembersPageSignature {
 /** Members & roles (colivo-design/web/WebMembers.html). */
 export default class MembersPage extends Component<MembersPageSignature> {
   @service declare members: MembersService;
+  @service declare session: SessionService;
 
   /** The list read again after a change; until then, the route's. */
   @tracked reloaded: Member[] | null = null;
@@ -61,14 +64,49 @@ export default class MembersPage extends Component<MembersPageSignature> {
   }
 
   <template>
-    <h1>Members &amp; roles</h1>
-    <MemberTabs
-      @members={{this.shown}}
-      @onEdit={{this.edit}}
-      @onDeactivate={{this.askToDeactivate}}
-      @onReactivate={{this.askToReactivate}}
-      @onRoleChanged={{this.reload}}
-    />
+    <header class="flex flex-col gap-1">
+      <p class="text-[13px] text-muted">{{if
+          this.session.isOwner
+          "You're the owner"
+          "You're a manager"
+        }}</p>
+      <h1 class="text-3xl font-semibold">Members &amp; roles</h1>
+    </header>
+    <div class="flex flex-wrap items-start gap-4">
+      <div class="flex min-w-0 flex-[999_1_640px] flex-col gap-4">
+        <MemberTabs
+          @members={{this.shown}}
+          @onEdit={{this.edit}}
+          @onDeactivate={{this.askToDeactivate}}
+          @onReactivate={{this.askToReactivate}}
+          @onRoleChanged={{this.reload}}
+        />
+      </div>
+      <div class="flex min-w-0 flex-[1_1_340px] flex-col gap-4">
+        {{#if this.editing}}
+          <Card
+            class="flex flex-col gap-3 p-4"
+            aria-labelledby="edit-member-title"
+          >
+            <h2
+              id="edit-member-title"
+              class="font-sans text-base font-semibold"
+            >Change {{this.editing.name}}</h2>
+            <EditMemberForm @member={{this.editing}} @onSaved={{this.reload}} />
+          </Card>
+        {{/if}}
+        <Card
+          class="flex flex-col gap-3 p-4"
+          aria-labelledby="add-member-title"
+        >
+          <h2
+            id="add-member-title"
+            class="font-sans text-base font-semibold"
+          >Add a member</h2>
+          <AddMemberForm @onAdded={{this.reload}} />
+        </Card>
+      </div>
+    </div>
     {{#if this.deactivating}}
       <DeactivateDialog
         @member={{this.deactivating}}
@@ -83,15 +121,5 @@ export default class MembersPage extends Component<MembersPageSignature> {
         @onCancel={{this.closeDialogs}}
       />
     {{/if}}
-    {{#if this.editing}}
-      <section aria-labelledby="edit-member-title">
-        <h2 id="edit-member-title">Change {{this.editing.name}}</h2>
-        <EditMemberForm @member={{this.editing}} @onSaved={{this.reload}} />
-      </section>
-    {{/if}}
-    <section aria-labelledby="add-member-title">
-      <h2 id="add-member-title">Add a member</h2>
-      <AddMemberForm @onAdded={{this.reload}} />
-    </section>
   </template>
 }

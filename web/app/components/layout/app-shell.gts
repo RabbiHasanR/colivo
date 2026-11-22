@@ -7,8 +7,8 @@ import { service } from '@ember/service';
 import { LinkTo } from '@ember/routing';
 import type RouterService from '@ember/routing/router-service';
 import type SessionService from '../../services/session';
-import { initials } from '../../utils/names';
 import { roleLabel } from '../../utils/roles';
+import Avatar from '../ui/avatar';
 import Button from '../ui/button';
 
 // A sidebar link; the current page's is teal (LinkTo adds `active`).
@@ -120,10 +120,7 @@ export default class AppShell extends Component<AppShellSignature> {
           </ul>
           <div class="mt-auto flex flex-col gap-1">
             <div class="flex items-center gap-2.5 rounded-xl bg-page p-2.5">
-              <span
-                aria-hidden="true"
-                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-tag-prepaid text-[13px] font-semibold text-tag-prepaid-ink"
-              >{{initials this.session.me.membership.name}}</span>
+              <Avatar @name={{this.session.me.membership.name}} @size="md" />
               {{! One text for screen readers: "Rabbi Hasan · Owner". }}
               <span class="flex min-w-0 flex-col" data-test-shell-person>
                 <span
