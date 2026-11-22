@@ -49,7 +49,7 @@ export default class MemberTabs extends Component<MemberTabsSignature> {
       <div
         role="group"
         aria-label="Which members"
-        class="{{SEGMENT_TRACK}} self-start"
+        class="{{SEGMENT_TRACK}} inline-flex self-start"
       >
         <button
           type="button"

@@ -30,6 +30,29 @@ module('Integration | Component | auth/log-in-page', function (hooks) {
     ),
   );
 
+  test('switches between logging in and creating a home', async function (assert) {
+    // GIVEN the log-in page
+    // WHEN  it opens, then "Create a home" is picked, then "Log in" again
+    // THEN  it shows only the log-in form, then only the sign-up form, then
+    //       only the log-in form, with the picked tab marked as selected
+    await render(<template><LogInPage /></template>);
+
+    assert.dom('[data-test-auth-tab="log-in"]').hasAria('selected', 'true');
+    assert.dom('[data-test-log-in-form]').exists();
+    assert.dom('[data-test-sign-up-form]').doesNotExist();
+
+    await click('[data-test-auth-tab="create-home"]');
+    assert
+      .dom('[data-test-auth-tab="create-home"]')
+      .hasAria('selected', 'true');
+    assert.dom('[data-test-sign-up-form]').exists();
+    assert.dom('[data-test-log-in-form]').doesNotExist();
+
+    await click('[data-test-auth-tab="log-in"]');
+    assert.dom('[data-test-log-in-form]').exists();
+    assert.dom('[data-test-sign-up-form]').doesNotExist();
+  });
+
   test('not added yet: ask the home, or create a home, or try another', async function (assert) {
     // GIVEN no home uses 01712 345678
     // WHEN  they log in with the right code, then pick "Create my own home",
@@ -49,6 +72,7 @@ module('Integration | Component | auth/log-in-page', function (hooks) {
     await click('[data-test-create-own-home]');
     assert.dom('[data-test-sign-up-contact]').hasValue('01712 345678');
 
+    await click('[data-test-auth-tab="log-in"]');
     await logInAsSomeoneNotAdded();
     await click('[data-test-try-another]');
     assert.dom('[data-test-log-in-contact]').hasValue('');

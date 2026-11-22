@@ -29,6 +29,7 @@ module('Acceptance | sign up', function (hooks) {
     );
 
     await visit('/log-in');
+    await click('[data-test-auth-tab="create-home"]');
     await fillIn('[data-test-sign-up-name]', 'Rabbi Hasan');
     await fillIn('[data-test-sign-up-contact]', '01712 345678');
     await fillIn('[data-test-sign-up-home-name]', 'Our Flat');

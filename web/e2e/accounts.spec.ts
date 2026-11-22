@@ -65,6 +65,7 @@ async function codeSentTo(to: string): Promise<string> {
 async function signUp(page: Page, phone: { local: string; e164: string }) {
   await page.goto('/');
   await expect(page).toHaveURL(/\/log-in$/);
+  await page.locator('[data-test-auth-tab="create-home"]').click();
   const form = page.locator('[data-test-sign-up-form]');
   await form.locator('[data-test-sign-up-name]').fill('Rabbi Hasan');
   await form.locator('[data-test-sign-up-contact]').fill(phone.local);
