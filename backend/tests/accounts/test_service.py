@@ -1121,3 +1121,58 @@ def test_manager_cannot_change_the_owners_details(
     session.refresh(owner)
     assert owner.name == "Rabbi Hasan"
     assert stays_of(session, owner) == [(date(2026, 11, 1), None)]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        pytest.param(MemberUpdateIn(name="Maruf Hossain"), id="rename"),
+        pytest.param(DeactivateIn(on=date(2026, 11, 21)), id="deactivate"),
+    ],
+)
+def test_changing_a_person_in_one_home_leaves_the_other_home_unchanged(
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    change: MemberUpdateIn | DeactivateIn,
+) -> None:
+    """
+    GIVEN Maruf is an active member of "Old Flat" with an open stay, and of
+          "Our Flat"
+    WHEN  Our Flat's owner renames or deactivates him
+    THEN  his Old Flat membership keeps its name, its active status and its
+          open stay
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    person = add_maruf_to(session, "Old Flat", MembershipStatus.ACTIVE)
+    in_old_flat = session.exec(
+        select(Membership).where(Membership.person_id == person.id)
+    ).one()
+    session.add(
+        MembershipPeriod(
+            home_id=in_old_flat.home_id,
+            membership_id=in_old_flat.id,
+            starts_on=date(2026, 1, 1),
+        )
+    )
+    session.flush()
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+
+    if isinstance(change, MemberUpdateIn):
+        service.update_member(session, owner, member.id, change, clock())
+    else:
+        service.deactivate(session, owner, member.id, change, clock())
+
+    session.refresh(in_old_flat)
+    assert (in_old_flat.name, in_old_flat.status) == (
+        "Maruf",
+        MembershipStatus.ACTIVE,
+    )
+    open_stays = session.exec(
+        select(MembershipPeriod).where(
+            MembershipPeriod.membership_id == in_old_flat.id,
+            col(MembershipPeriod.ends_on).is_(None),
+        )
+    ).all()
+    assert len(open_stays) == 1

@@ -38,5 +38,5 @@ test; T3.3 deletes one, and T1.2 replaces one (deleted).
 
 ### B6 — Changing a person in one home leaves their other homes alone
 
-- [x] T6.1 unit — `test_changing_a_person_in_one_home_leaves_the_other_home_unchanged`, parametrised over rename and deactivate: Maruf is in Our Flat and Old Fort; Our Flat renames or deactivates him; his Old Fort membership keeps its name, its active status and its open stay
+- [x] T6.1 unit — `test_changing_a_person_in_one_home_leaves_the_other_home_unchanged` ✅ _(passed on its first run: every Phase 1 change targets one membership row; seen failing by making `deactivate` touch the person's other memberships)_, parametrised over rename and deactivate: Maruf is in Our Flat and Old Fort; Our Flat renames or deactivates him; his Old Fort membership keeps its name, its active status and its open stay
 - [ ] T6.2 reactivate case — _(skipped: reactivate finds the member with the same home-scoped `get_member` as rename and deactivate, so a third case tests no new code)_
