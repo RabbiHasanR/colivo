@@ -41,6 +41,7 @@ from app.modules.homes.constants import DEFAULT_TIME_ZONE
 from app.modules.homes.models import Home
 
 ALREADY_IN_A_HOME = "This phone or email is already in a home."
+ALREADY_IN_THIS_HOME = "Already a member of this home."
 PAST_MEMBER = "This person was a member of this home. Reactivate them instead."
 NAME_TAKEN = "Someone in this home already has that name."
 NO_STAY = "Only someone who lives in the home has a join date."
@@ -337,13 +338,18 @@ def add_member(
         The new membership.
 
     Raises:
-        HTTPException: 409 when the person is already active in a home, was
-            a member of this one (they are reactivated instead), or an active
-            member already has the name.
+        HTTPException: 409 when the person is already an active member of
+            this home, was one (they are reactivated instead), or an active
+            member already has the name. Being active in another home is
+            fine (Phase 1b).
     """
     person = find_person(session, data.contact)
-    if person and membership_in(session, person, adder.home_id):
-        raise HTTPException(409, PAST_MEMBER)
+    existing = person and membership_in(session, person, adder.home_id)
+    if existing:
+        # One membership per person per home: an active one is a duplicate,
+        # an inactive one is reactivated instead.
+        active = existing.status == MembershipStatus.ACTIVE
+        raise HTTPException(409, ALREADY_IN_THIS_HOME if active else PAST_MEMBER)
     check_name_free(session, adder.home_id, data.name)
     person = person or new_person(data.contact)
     session.add(person)

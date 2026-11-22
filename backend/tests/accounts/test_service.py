@@ -473,6 +473,32 @@ def test_deactivated_member_of_this_home_is_not_added_again(
     assert maruf_memberships(session, person) == 1
 
 
+def test_active_member_of_this_home_cannot_be_added_again(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf is an active member of "Our Flat"
+    WHEN  the owner adds his phone again, under another name
+    THEN  it is refused with 409 "Already a member of this home.", with no
+          second membership and no notice
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+    notifier.sent.clear()
+
+    with pytest.raises(HTTPException) as error:
+        service.add_member(
+            session, notifier, owner, maruf().model_copy(update={"name": "M"}), clock()
+        )
+
+    assert (error.value.status_code, error.value.detail) == (
+        409,
+        "Already a member of this home.",
+    )
+    person = session.get_one(Person, member.person_id)
+    assert (maruf_memberships(session, person), notifier.sent) == (1, [])
+
+
 OTHER_PHONE = "+8801912345678"
 
 

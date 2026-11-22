@@ -17,7 +17,7 @@ test; T3.3 deletes one, and T1.2 replaces one (deleted).
 
 ### B2 — An active member of this home can't be added again
 
-- [x] T2.1 unit — `test_active_member_of_this_home_cannot_be_added_again`: 409 "Already a member of this home."; no second membership, no notice
+- [x] T2.1 unit — `test_active_member_of_this_home_cannot_be_added_again` ✅: 409 "Already a member of this home."; no second membership, no notice
 - [x] T2.2 web integration — `add-member-form-test.gts` › shows why the API refused the member _(changed: its GIVEN and refusal text become "Already a member of this home."; the behaviour it checks, showing the API's 409, is the same)_
 - [ ] T2.3 integration — _(skipped: the router only passes the service's 409 on; T2.1 covers the rule, and the 409 envelope is pinned by Phase 1's tests)_
 
