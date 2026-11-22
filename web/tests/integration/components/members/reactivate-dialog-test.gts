@@ -55,10 +55,10 @@ module('Integration | Component | members/reactivate-dialog', function (hooks) {
   });
 
   test("shows the API's 409 message", async function (assert) {
-    // GIVEN Karim joined another home after he was deactivated here
+    // GIVEN another active member has Karim's name since he was deactivated
     // WHEN  the owner tries to reactivate him
     // THEN  the dialog shows why, and the page isn't told he's back
-    const refusal = 'This phone or email is already in a home.';
+    const refusal = 'Someone in this home already has that name.';
     worker.use(
       http.post('*/api/v1/members/:id/reactivate', () =>
         HttpResponse.json(
