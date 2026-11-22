@@ -46,7 +46,11 @@ export default class MemberTabs extends Component<MemberTabsSignature> {
 
   <template>
     <section class="flex flex-col gap-4" data-test-member-tabs>
-      <div role="group" aria-label="Which members" class={{SEGMENT_TRACK}}>
+      <div
+        role="group"
+        aria-label="Which members"
+        class="{{SEGMENT_TRACK}} self-start"
+      >
         <button
           type="button"
           class={{segmentClasses (eq this.tab "current")}}
