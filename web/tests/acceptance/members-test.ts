@@ -26,6 +26,32 @@ module('Acceptance | members', function (hooks) {
     assert.dom('[data-test-member-row="Maruf"]').exists();
   });
 
+  test('adding someone already in this home shows "Already a member of this home"', async function (assert) {
+    // GIVEN the owner of "Our Flat" is logged in, and Maruf is already a member
+    // WHEN  they add Maruf's phone again
+    // THEN  the form says he's already a member, and the list doesn't change
+    const refusal = 'Already a member of this home.';
+    worker.use(
+      loggedInAs('owner'),
+      http.post('*/api/v1/members', () =>
+        HttpResponse.json(
+          { success: false, message: refusal, errors: [refusal] },
+          { status: 409 },
+        ),
+      ),
+      ...membersApi([owner, member({ name: 'Maruf' })]),
+    );
+
+    await visit('/members');
+    await fillIn('[data-test-add-member-name]', 'Maruf');
+    await fillIn('[data-test-add-member-contact]', '01812 345678');
+    await fillIn('[data-test-add-member-joined-on]', '2026-11-21');
+    await click('[data-test-add-member-submit]');
+
+    assert.dom('[data-test-add-member-error]').hasText(refusal);
+    assert.dom('[data-test-member-row]').exists({ count: 2 });
+  });
+
   test('owner opens Edit for a member, then cancels without saving', async function (assert) {
     // GIVEN the owner and Maruf; the API would save any change
     // WHEN  the owner presses Edit on Maruf, changes his name, then Cancel
