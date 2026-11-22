@@ -7,12 +7,12 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › adding someone alread
 
 Phase 1 tests changed because FR-85 was replaced (approved at Gate 2,
 23 Nov 2026): T1.1, T2.2, T3.1, T3.2, T4.1 and T4.2 change an existing
-test; T3.3 deletes one.
+test; T3.3 deletes one, and T1.2 replaces one (deleted).
 
 ### B1 — Someone active in another home can be added
 
-- [x] T1.1 unit — `test_member_active_in_another_home_is_added` _(changed from Phase 1's `test_member_active_in_another_home_cannot_be_added`: FR-85 replaced)_: Maruf, active in Old Flat, is added to Our Flat; he has 2 active memberships and gets the notice naming Our Flat
-- [x] T1.2 unit (database rule) — `test_database_allows_one_person_active_in_two_homes`: two active memberships of one person in different homes, saved past the service, are accepted
+- [x] T1.1 unit — `test_member_active_in_another_home_is_added` ✅ _(changed from Phase 1's `test_member_active_in_another_home_cannot_be_added`: FR-85 replaced)_: Maruf, active in Old Flat, is added to Our Flat; he has 2 active memberships and gets the notice naming Our Flat
+- [x] T1.2 unit (database rule) — `test_database_allows_one_person_active_in_two_homes` ✅ _(replaces Phase 1's `test_models.py::test_person_cannot_have_two_active_memberships`, deleted with the user's OK on 23 Nov 2026: it pinned the dropped index and was missed at Gate 2)_: two active memberships of one person in different homes, saved past the service, are accepted
 - [ ] T1.3 web — _(skipped: the web sends the same request and shows the same success as any add, already covered by `members-test.ts` › owner adds a member)_
 
 ### B2 — An active member of this home can't be added again

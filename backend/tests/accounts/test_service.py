@@ -413,22 +413,26 @@ def maruf_memberships(session: Session, person: Person) -> int:
     ).one()
 
 
-def test_member_active_in_another_home_cannot_be_added(
+def test_member_active_in_another_home_is_added(
     session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
 ) -> None:
     """
     GIVEN Maruf is an active member of "Old Flat"
     WHEN  the owner of "Our Flat" adds him
-    THEN  it is refused with 409; he isn't added and gets no notice (FR-85)
+    THEN  he is active in both homes, and is told he was added to Our Flat
     """
     owner = sign_up_with_new_code(session, redis_client, clock)
     person = add_maruf_to(session, "Old Flat", MembershipStatus.ACTIVE)
 
-    with pytest.raises(HTTPException) as error:
-        service.add_member(session, notifier, owner, maruf(), clock())
+    service.add_member(session, notifier, owner, maruf(), clock())
 
-    assert error.value.status_code == 409
-    assert (maruf_memberships(session, person), notifier.sent) == (1, [])
+    statuses = session.exec(
+        select(Membership.status).where(Membership.person_id == person.id)
+    ).all()
+    assert statuses == [MembershipStatus.ACTIVE, MembershipStatus.ACTIVE]
+    assert any(m.to == MARUF_E164 and "Our Flat" in m.text for m in notifier.sent), (
+        "Maruf was told he was added to Our Flat"
+    )
 
 
 def add_past_member(

@@ -342,9 +342,6 @@ def add_member(
             member already has the name.
     """
     person = find_person(session, data.contact)
-    if person and active_membership(session, person):
-        # FR-85: one active home per person.
-        raise HTTPException(409, ALREADY_IN_A_HOME)
     if person and membership_in(session, person, adder.home_id):
         raise HTTPException(409, PAST_MEMBER)
     check_name_free(session, adder.home_id, data.name)

@@ -611,9 +611,6 @@ def test_changing_another_homes_member_answers_404(
     assert karim.name == "Karim"
 
 
-@pytest.mark.xfail(
-    strict=True, reason="acceptance: someone active in another home can be added"
-)
 def test_member_of_another_home_is_added_to_this_home(
     client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
 ) -> None:
