@@ -2,6 +2,20 @@
 
 All notable changes to Colivo, grouped by date (newest first).
 
+## 2026-11-22
+
+- On the web, restyled every Phase 1 screen to match colivo-design: form controls, buttons and cards; the sidebar with icons, the current page in teal and a profile card with initials; the home page with its header, four stat cards (empty until their phases) and the setup checklist with a progress bar; Members & roles with role and status pills; and log-in with its brand panel, card forms and styled code errors.
+- On the web, the home page's header names the current month in the home's time zone; "Start ›" on "Add members" and an "Add members" button on the empty meals card open Members for the owner and managers.
+- On the web, log-in and sign-up became two tabs; "Send code" sits beside the code box and "Log in" waits until a code is sent; a wrong or expired code marks the box invalid.
+- On the web, drew the taka sign with Noto Sans Bengali, which Inter and Space Grotesk lack.
+- In the roadmap, planned Phase 1c: changing a member's phone or email.
+- On the web, Members has one add-or-edit card: Edit opens an "Edit <name>" tab with Cancel, and you can switch back to adding; editing another member now starts from their own details instead of what was typed for the last one.
+- In the requirements, removing the Manager role is blocked while that person holds fund cash or has money waiting for their confirmation (FR-104, built in Phase 4).
+- On the web, a manager who lost the role is sent home on their next action, and the Members link disappears.
+- In the specs, log-in codes are read from the development outbox in Redis; ID documents and profile photos are planned as Phase 2's last group, the ID optional when adding (FR-60) and the photo settable by the owner or a manager too (FR-86).
+- In the project rules, every phase follows colivo-design for web and mobile, with each difference agreed and listed in the phase's Screens table; recorded Phase 1's agreed differences.
+- Added `make web-screens`, which saves every page at 390px and 1440px with sample data to compare with the design; it found and fixed the members table widening the page on phones.
+
 ## 2026-11-21
 
 - In the specs, added the Phase 1 spec (accounts and log-in) and its data model: people, homes, memberships with their stays, and a change log.
