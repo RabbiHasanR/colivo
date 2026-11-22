@@ -78,6 +78,53 @@ module('Acceptance | members', function (hooks) {
     assert.dom('[data-test-add-member-form]').doesNotExist();
   });
 
+  test('saving an edit closes the Edit tab', async function (assert) {
+    // GIVEN the owner and Maruf; the API saves the change
+    // WHEN  the owner edits Maruf's name and saves
+    // THEN  the Edit tab closes and the add form is back
+    worker.use(
+      loggedInAs('owner'),
+      ...membersApi([owner, member()]),
+      http.patch('*/api/v1/members/:id', () =>
+        HttpResponse.json({
+          success: true,
+          message: 'Member changed',
+          data: member({ name: 'Maruf Hossain' }),
+        }),
+      ),
+    );
+
+    await visit('/members');
+    await click('[data-test-edit-member="Maruf"]');
+    await fillIn('[data-test-edit-member-name]', 'Maruf Hossain');
+    await click('[data-test-edit-member-submit]');
+
+    assert.dom('[data-test-member-form-tab]').doesNotExist();
+    assert.dom('[data-test-add-member-form]').exists();
+  });
+
+  test('editing another member starts from their details', async function (assert) {
+    // GIVEN the owner, Maruf and Hijam
+    // WHEN  the owner edits Maruf, types a new name, then presses Edit on Hijam
+    // THEN  the form shows Hijam's name, not what was typed for Maruf
+    const hijam = member({
+      id: '01a1fd00-0000-7000-8000-000000000011',
+      name: 'Hijam Shusil',
+      phone: '+8801912345678',
+    });
+    worker.use(loggedInAs('owner'), ...membersApi([owner, member(), hijam]));
+
+    await visit('/members');
+    await click('[data-test-edit-member="Maruf"]');
+    await fillIn('[data-test-edit-member-name]', 'Maruf Hossain');
+    await click('[data-test-edit-member="Hijam Shusil"]');
+
+    assert
+      .dom('[data-test-member-form-tab="edit"]')
+      .hasText('Edit Hijam Shusil');
+    assert.dom('[data-test-edit-member-name]').hasValue('Hijam Shusil');
+  });
+
   test('a member has no Members link, and opening Members sends them home', async function (assert) {
     // GIVEN Maruf, a member (not the owner or a manager), is logged in
     // WHEN  he looks at the shell, and opens /members

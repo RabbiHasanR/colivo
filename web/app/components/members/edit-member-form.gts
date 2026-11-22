@@ -23,21 +23,34 @@ interface EditMemberFormSignature {
   };
 }
 
+interface Draft {
+  memberId: string;
+  name?: string;
+  joinedOn?: string;
+}
+
 /** Change a member's name or join date (FR-86), owner and managers only. */
 export default class EditMemberForm extends Component<EditMemberFormSignature> {
   @service declare members: MembersService;
 
-  /** What was typed; until then, the member's current details. */
-  @tracked typedName: string | null = null;
-  @tracked typedJoinedOn: string | null = null;
+  /**
+   * What was typed, and for whom. The page reuses this form when Edit is
+   * pressed on someone else, so typing for one member never shows for another.
+   */
+  @tracked typed: Draft | null = null;
   @tracked refusal: Refusal | null = null;
 
+  /** What was typed for the member shown now; nothing if it was for another. */
+  get draft(): Draft | null {
+    return this.typed?.memberId === this.args.member.id ? this.typed : null;
+  }
+
   get name(): string {
-    return this.typedName ?? this.args.member.name;
+    return this.draft?.name ?? this.args.member.name;
   }
 
   get joinedOn(): string {
-    return this.typedJoinedOn ?? this.args.member.joined_on ?? '';
+    return this.draft?.joinedOn ?? this.args.member.joined_on ?? '';
   }
 
   get fieldErrors(): Record<string, string[]> {
@@ -45,11 +58,15 @@ export default class EditMemberForm extends Component<EditMemberFormSignature> {
   }
 
   @action setName(value: string): void {
-    this.typedName = value;
+    this.typed = { ...this.draft, memberId: this.args.member.id, name: value };
   }
 
   @action setJoinedOn(value: string): void {
-    this.typedJoinedOn = value;
+    this.typed = {
+      ...this.draft,
+      memberId: this.args.member.id,
+      joinedOn: value,
+    };
   }
 
   @action
