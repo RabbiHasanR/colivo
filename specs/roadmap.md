@@ -82,6 +82,23 @@ FR-85).
   and how a session keeps its current home
   ([data-model.md → Open questions](data-model.md#open-questions)).
 
+## Phase 1c — Change a member's phone or email ⏳ Not started
+
+`[backend] [web]`
+
+After this phase, the owner or a manager can change the phone or email a
+member logs in with (asked for on 22 Nov 2026, while checking Phase 1's
+Members page; Phase 1 edits only the name and join date, FR-86). After
+Phase 1b, because a phone belongs to the person, not one home: changing it
+changes how they log in to every home they are in.
+
+- To decide at the phase's Gate 0: whether the new phone or email must be
+  confirmed with a code first (a typo would lock the member out), and
+  whether the member's open sessions end.
+- Refused if the new phone or email already belongs to someone else.
+- The change is kept in `change_log` (FR-27), and the member is told on
+  both the old and the new phone or email.
+
 ## Phase 2 — Home setup ⏳ Not started
 
 `[backend] [web]`
