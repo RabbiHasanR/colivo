@@ -136,9 +136,9 @@ export default class LogInPage extends Component {
                   @contact={{this.signUpContact}}
                   @onSignedUp={{this.goHome}}
                 />
-                <p class="text-[13px] leading-normal text-muted">One account can
-                  own one home for now. If your number is already in a home, log
-                  in instead.</p>
+                <p class="text-[13px] leading-normal text-muted">Already in a
+                  home? You can still create your own, and choose between them
+                  when you log in.</p>
               </section>
             {{/if}}
           </div>
