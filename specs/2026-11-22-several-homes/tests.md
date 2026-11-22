@@ -18,7 +18,7 @@ test; T3.3 deletes one, and T1.2 replaces one (deleted).
 ### B2 — An active member of this home can't be added again
 
 - [x] T2.1 unit — `test_active_member_of_this_home_cannot_be_added_again` ✅: 409 "Already a member of this home."; no second membership, no notice
-- [x] T2.2 web integration — `add-member-form-test.gts` › shows why the API refused the member _(changed: its GIVEN and refusal text become "Already a member of this home."; the behaviour it checks, showing the API's 409, is the same)_
+- [x] T2.2 web integration — `add-member-form-test.gts` › shows why the API refused the member ✅ _(changed; no web code changes: the form already shows the API's message: its GIVEN and refusal text become "Already a member of this home."; the behaviour it checks, showing the API's 409, is the same)_
 - [ ] T2.3 integration — _(skipped: the router only passes the service's 409 on; T2.1 covers the rule, and the 409 envelope is pinned by Phase 1's tests)_
 
 ### B3 — Someone active in another home can sign up
@@ -30,7 +30,7 @@ test; T3.3 deletes one, and T1.2 replaces one (deleted).
 ### B4 — A past member who joined another home can be reactivated
 
 - [x] T4.1 unit — `test_member_who_joined_another_home_can_be_reactivated` ✅ _(changed from `test_reactivating_someone_active_in_another_home_is_refused`)_: Maruf left Our Flat and is active in Old Fort; Our Flat reactivates him; both memberships are active
-- [x] T4.2 web integration — `reactivate-dialog-test.gts` › shows the API's 409 message _(changed: its GIVEN becomes "another active member has Karim's name", with the name-taken message, the 409 reactivate still gives)_
+- [x] T4.2 web integration — `reactivate-dialog-test.gts` › shows the API's 409 message ✅ _(changed; no web code changes: its GIVEN becomes "another active member has Karim's name", with the name-taken message, the 409 reactivate still gives)_
 
 ### B5 — Each home sees only its own membership of a person
 
