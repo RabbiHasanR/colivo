@@ -154,13 +154,29 @@ export default class LogInForm extends Component<LogInFormSignature> {
           {{#if this.sentTo}}
             <p class="text-sm text-muted" data-test-code-sent-to>Sent to
               {{this.sentTo}}</p>
-            <CodeField @value={{this.code}} @onInput={{this.setCode}} />
-            {{#if this.resentTo}}
-              <Notice @tone="success" role="status" data-test-code-resent>New
-                code sent to
-                {{this.resentTo}}. The old one no longer works.</Notice>
-            {{/if}}
-            <Button type="submit" @size="lg" data-test-log-in-submit>Log in</Button>
+          {{/if}}
+          <CodeField @value={{this.code}} @onInput={{this.setCode}}>
+            {{#unless this.sentTo}}
+              <Button
+                @variant="outline"
+                class="h-[46px]"
+                data-test-log-in-send-code
+                {{on "click" this.sendNewCode}}
+              >Send code</Button>
+            {{/unless}}
+          </CodeField>
+          {{#if this.resentTo}}
+            <Notice @tone="success" role="status" data-test-code-resent>New code
+              sent to
+              {{this.resentTo}}. The old one no longer works.</Notice>
+          {{/if}}
+          <Button
+            type="submit"
+            @size="lg"
+            disabled={{unless this.sentTo true}}
+            data-test-log-in-submit
+          >Log in</Button>
+          {{#if this.sentTo}}
             {{#if this.canResend}}
               <Button
                 @variant="secondary"
@@ -177,9 +193,6 @@ export default class LogInForm extends Component<LogInFormSignature> {
                   @onDone={{this.allowResend}}
                 /></p>
             {{/if}}
-          {{else}}
-            <Button type="submit" @size="lg" data-test-log-in-send-code>Send
-              code</Button>
           {{/if}}
         </Stack>
       </form>

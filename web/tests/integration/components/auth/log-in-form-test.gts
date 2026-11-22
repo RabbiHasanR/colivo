@@ -42,6 +42,27 @@ module('Integration | Component | auth/log-in-form', function (hooks) {
     assert.true(loggedIn);
   });
 
+  test('the code box shows from the start; Log in waits for a sent code', async function (assert) {
+    // GIVEN the API sends a code
+    // WHEN  the form opens, then a phone is entered and "Send code" pressed
+    // THEN  the code box and "Send code" show at once and "Log in" is
+    //       disabled; once the code is sent, "Log in" can be pressed
+    worker.use(
+      http.post('*/api/v1/auth/codes', () => HttpResponse.json(codeSentBody)),
+    );
+    const onLoggedIn = () => {};
+    await render(<template><LogInForm @onLoggedIn={{onLoggedIn}} /></template>);
+
+    assert.dom('[data-test-code-field]').exists();
+    assert.dom('[data-test-log-in-send-code]').exists();
+    assert.dom('[data-test-log-in-submit]').isDisabled();
+
+    await fillIn('[data-test-log-in-contact]', '01712 345678');
+    await click('[data-test-log-in-send-code]');
+
+    assert.dom('[data-test-log-in-submit]').isEnabled();
+  });
+
   test('an expired code says so and offers a new one', async function (assert) {
     // GIVEN the API says the typed code expired
     // WHEN  someone tries to log in with it, then presses "Send a new code"
@@ -134,7 +155,7 @@ module('Integration | Component | auth/log-in-form', function (hooks) {
     await click('[data-test-use-different-contact]');
 
     assert.dom('[data-test-log-in-contact]').hasValue('');
-    assert.dom('[data-test-code-field]').doesNotExist();
+    assert.dom('[data-test-code-field]').hasValue('');
     assert.dom('[data-test-log-in-send-code]').exists();
   });
 
