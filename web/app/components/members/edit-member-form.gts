@@ -15,7 +15,12 @@ import Stack from '../ui/stack';
 import TextInput from '../ui/text-input';
 
 interface EditMemberFormSignature {
-  Args: { member: Member; onSaved: (member: Member) => void };
+  Args: {
+    member: Member;
+    onSaved: (member: Member) => void;
+    /** Shows a Cancel button that closes the form without saving. */
+    onCancel?: () => void;
+  };
 }
 
 /** Change a member's name or join date (FR-86), owner and managers only. */
@@ -99,11 +104,16 @@ export default class EditMemberForm extends Component<EditMemberFormSignature> {
             {{this.refusal.message}}
           </FormError>
         {{/if}}
-        <Button
-          type="submit"
-          @size="lg"
-          data-test-edit-member-submit
-        >Save</Button>
+        <div class="flex flex-wrap justify-end gap-2">
+          {{#if @onCancel}}
+            <Button
+              @variant="secondary"
+              data-test-edit-member-cancel
+              {{on "click" @onCancel}}
+            >Cancel</Button>
+          {{/if}}
+          <Button type="submit" data-test-edit-member-submit>Save</Button>
+        </div>
       </Stack>
     </form>
   </template>

@@ -6,6 +6,7 @@ import type MembersService from '../../services/members';
 import type SessionService from '../../services/session';
 import type { Member } from '../../services/members';
 import Card from '../ui/card';
+import { SEGMENT_TRACK, segmentClasses } from '../ui/segment-classes';
 import AddMemberForm from './add-member-form';
 import DeactivateDialog from './deactivate-dialog';
 import EditMemberForm from './edit-member-form';
@@ -63,6 +64,11 @@ export default class MembersPage extends Component<MembersPageSignature> {
     this.editing = member;
   }
 
+  @action
+  cancelEdit(): void {
+    this.editing = null;
+  }
+
   <template>
     <header class="flex flex-col gap-1">
       <p class="text-[13px] text-muted">{{if
@@ -83,27 +89,45 @@ export default class MembersPage extends Component<MembersPageSignature> {
         />
       </div>
       <div class="flex min-w-0 flex-[1_1_340px] flex-col gap-4">
-        {{#if this.editing}}
-          <Card
-            class="flex flex-col gap-3 p-4"
-            aria-labelledby="edit-member-title"
-          >
-            <h2
-              id="edit-member-title"
-              class="font-sans text-base font-semibold"
-            >Change {{this.editing.name}}</h2>
-            <EditMemberForm @member={{this.editing}} @onSaved={{this.reload}} />
-          </Card>
-        {{/if}}
         <Card
           class="flex flex-col gap-3 p-4"
-          aria-labelledby="add-member-title"
+          aria-labelledby="member-form-title"
         >
-          <h2
-            id="add-member-title"
-            class="font-sans text-base font-semibold"
-          >Add a member</h2>
-          <AddMemberForm @onAdded={{this.reload}} />
+          {{#if this.editing}}
+            <div
+              role="tablist"
+              aria-label="Add or edit a member"
+              class="{{SEGMENT_TRACK}} grid grid-cols-2"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected="false"
+                class={{segmentClasses false}}
+                data-test-member-form-tab="add"
+              >Add member</button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected="true"
+                class={{segmentClasses true}}
+                data-test-member-form-tab="edit"
+              >Edit {{this.editing.name}}</button>
+            </div>
+            <h2 id="member-form-title" class="sr-only">Edit
+              {{this.editing.name}}</h2>
+            <EditMemberForm
+              @member={{this.editing}}
+              @onSaved={{this.reload}}
+              @onCancel={{this.cancelEdit}}
+            />
+          {{else}}
+            <h2
+              id="member-form-title"
+              class="font-sans text-base font-semibold"
+            >Add a member</h2>
+            <AddMemberForm @onAdded={{this.reload}} />
+          {{/if}}
         </Card>
       </div>
     </div>

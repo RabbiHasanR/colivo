@@ -1,9 +1,10 @@
 import { module, test } from 'qunit';
 import { click, currentURL, fillIn, visit } from '@ember/test-helpers';
+import { http, HttpResponse } from 'msw';
 import { setupApplicationTest } from 'colivo-web/tests/helpers';
 import { setupMsw, worker } from 'colivo-web/tests/helpers/msw';
 import { loggedInAs, newHomeSetup } from 'colivo-web/tests/helpers/accounts';
-import { membersApi } from 'colivo-web/tests/helpers/members';
+import { member, membersApi, owner } from 'colivo-web/tests/helpers/members';
 
 module('Acceptance | members', function (hooks) {
   setupApplicationTest(hooks);
@@ -23,6 +24,35 @@ module('Acceptance | members', function (hooks) {
 
     assert.dom('[data-test-member-row]').exists({ count: 2 });
     assert.dom('[data-test-member-row="Maruf"]').exists();
+  });
+
+  test('owner opens Edit for a member, then cancels without saving', async function (assert) {
+    // GIVEN the owner and Maruf; the API would save any change
+    // WHEN  the owner presses Edit on Maruf, changes his name, then Cancel
+    // THEN  an "Edit Maruf" tab showed his details; after Cancel it is gone,
+    //       the add form is back and nothing was sent
+    let sent = 0;
+    worker.use(
+      loggedInAs('owner'),
+      ...membersApi([owner, member()]),
+      http.patch('*/api/v1/members/:id', () => {
+        sent += 1;
+        return HttpResponse.json({ success: true, message: 'Changed' });
+      }),
+    );
+
+    await visit('/members');
+    await click('[data-test-edit-member="Maruf"]');
+    assert.dom('[data-test-member-form-tab="edit"]').hasText('Edit Maruf');
+    assert.dom('[data-test-edit-member-name]').hasValue('Maruf');
+    assert.dom('[data-test-add-member-form]').doesNotExist();
+    await fillIn('[data-test-edit-member-name]', 'Maruf Hossain');
+    await click('[data-test-edit-member-cancel]');
+
+    assert.dom('[data-test-member-form-tab="edit"]').doesNotExist();
+    assert.dom('[data-test-edit-member-form]').doesNotExist();
+    assert.dom('[data-test-add-member-form]').exists();
+    assert.strictEqual(sent, 0);
   });
 
   test('a member has no Members link, and opening Members sends them home', async function (assert) {
