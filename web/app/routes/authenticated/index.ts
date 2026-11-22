@@ -4,11 +4,16 @@ import type CurrentHomeService from '../../services/current-home';
 import type { Setup } from '../../services/current-home';
 import type SessionService from '../../services/session';
 import type { Me } from '../../services/session';
+import { DEFAULT_TIME_ZONE, thisMonthLabel } from '../../utils/months';
 
 export interface HomeModel {
   me: Me;
   /** The setup checklist; only the owner and managers get one. */
   setup: Setup | null;
+  /** Whether they are the owner or a manager. */
+  runsHome: boolean;
+  /** The month the home is in: `November 2026`. */
+  month: string;
 }
 
 /** The home page. */
@@ -21,6 +26,11 @@ export default class AuthenticatedIndexRoute extends Route {
     const setup = this.session.isOwnerOrManager
       ? await this.currentHome.loadSetup()
       : null;
-    return { me, setup };
+    return {
+      me,
+      setup,
+      runsHome: this.session.isOwnerOrManager,
+      month: thisMonthLabel(new Date(), DEFAULT_TIME_ZONE),
+    };
   }
 }

@@ -29,7 +29,11 @@ const SIZES: Record<Size, string> = {
   lg: 'min-h-12 rounded-xl text-[15px]',
 };
 
-function classes(variant: Variant = 'primary', size: Size = 'md'): string {
+/** A button's classes, also for a link that looks like one. */
+export function buttonClasses(
+  variant: Variant = 'primary',
+  size: Size = 'md',
+): string {
   return `${BASE} ${VARIANTS[variant]} ${SIZES[size]}`;
 }
 
@@ -40,7 +44,7 @@ function classes(variant: Variant = 'primary', size: Size = 'md'): string {
  * <Button type="submit" @size="lg">Log in</Button>
  */
 const Button: TOC<ButtonSignature> = <template>
-  <button type="button" class={{classes @variant @size}} ...attributes>
+  <button type="button" class={{buttonClasses @variant @size}} ...attributes>
     {{yield}}
   </button>
 </template>;
