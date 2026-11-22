@@ -133,76 +133,82 @@ export default class SignUpForm extends Component<SignUpFormSignature> {
   }
 
   <template>
-    <form data-test-sign-up-form {{on "submit" this.submit}}>
+    <form
+      class="rounded-card border border-line bg-surface p-5"
+      data-test-sign-up-form
+      {{on "submit" this.submit}}
+    >
       <Stack>
-        <Field
-          @label="Your name"
-          @errors={{get this.fieldErrors "name"}}
-          data-test-field="name"
-          as |id|
-        >
-          <TextInput
-            id={{id}}
-            autocomplete="name"
-            @value={{this.name}}
-            @onInput={{this.setName}}
-            data-test-sign-up-name
-          />
-        </Field>
-        <Field
-          @label="Phone or email"
-          @errors={{get this.fieldErrors "contact"}}
-          data-test-field="contact"
-          as |id|
-        >
-          <TextInput
-            id={{id}}
-            autocomplete="username"
-            @value={{this.contact}}
-            @onInput={{this.setContact}}
-            data-test-sign-up-contact
-          />
-        </Field>
-        <Field
-          @label="Home name"
-          @errors={{get this.fieldErrors "home_name"}}
-          data-test-field="home_name"
-          as |id|
-        >
-          <TextInput
-            id={{id}}
-            @value={{this.homeName}}
-            @onInput={{this.setHomeName}}
-            data-test-sign-up-home-name
-          />
-        </Field>
-        <Field
-          @label="Area (optional)"
-          @errors={{get this.fieldErrors "area"}}
-          data-test-field="area"
-          as |id|
-        >
-          <TextInput
-            id={{id}}
-            @value={{this.area}}
-            @onInput={{this.setArea}}
-            data-test-sign-up-area
-          />
-        </Field>
-        <Field
-          @label="First month"
-          @errors={{get this.fieldErrors "first_month"}}
-          data-test-field="first_month"
-          as |id|
-        >
-          <Select
-            id={{id}}
-            @options={{this.monthChoices}}
-            @value={{this.firstMonth}}
-            @onChange={{this.setFirstMonth}}
-            data-test-sign-up-first-month
-          />
-        </Field>
+        <div class="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
+          <Field
+            @label="Your name"
+            @errors={{get this.fieldErrors "name"}}
+            data-test-field="name"
+            as |id|
+          >
+            <TextInput
+              id={{id}}
+              autocomplete="name"
+              @value={{this.name}}
+              @onInput={{this.setName}}
+              data-test-sign-up-name
+            />
+          </Field>
+          <Field
+            @label="Phone or email"
+            @errors={{get this.fieldErrors "contact"}}
+            data-test-field="contact"
+            as |id|
+          >
+            <TextInput
+              id={{id}}
+              autocomplete="username"
+              @value={{this.contact}}
+              @onInput={{this.setContact}}
+              data-test-sign-up-contact
+            />
+          </Field>
+          <Field
+            @label="Home name"
+            @errors={{get this.fieldErrors "home_name"}}
+            data-test-field="home_name"
+            as |id|
+          >
+            <TextInput
+              id={{id}}
+              @value={{this.homeName}}
+              @onInput={{this.setHomeName}}
+              data-test-sign-up-home-name
+            />
+          </Field>
+          <Field
+            @label="Area (optional)"
+            @errors={{get this.fieldErrors "area"}}
+            data-test-field="area"
+            as |id|
+          >
+            <TextInput
+              id={{id}}
+              @value={{this.area}}
+              @onInput={{this.setArea}}
+              data-test-sign-up-area
+            />
+          </Field>
+          <Field
+            @label="First month"
+            @errors={{get this.fieldErrors "first_month"}}
+            data-test-field="first_month"
+            as |id|
+          >
+            <Select
+              id={{id}}
+              @options={{this.monthChoices}}
+              @value={{this.firstMonth}}
+              @onChange={{this.setFirstMonth}}
+              data-test-sign-up-first-month
+            />
+          </Field>
+        </div>
         <Checkbox
           @checked={{this.livesHere}}
           @onChange={{this.setLivesHere}}
@@ -216,15 +222,16 @@ export default class SignUpForm extends Component<SignUpFormSignature> {
         {{/if}}
 
         {{#if this.sentTo}}
-          <p data-test-code-sent-to>Sent to {{this.sentTo}}</p>
+          <p class="text-sm text-muted" data-test-code-sent-to>Sent to
+            {{this.sentTo}}</p>
           <CodeField
             @value={{this.code}}
             @onInput={{this.setCode}}
             @errors={{get this.fieldErrors "code"}}
           />
-          <Button type="submit" data-test-sign-up-submit>Create home</Button>
+          <Button type="submit" @size="lg" data-test-sign-up-submit>Create home</Button>
         {{else}}
-          <Button type="submit" data-test-sign-up-send-code>Send code</Button>
+          <Button type="submit" @size="lg" data-test-sign-up-send-code>Send code</Button>
         {{/if}}
       </Stack>
     </form>

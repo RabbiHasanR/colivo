@@ -5,6 +5,7 @@ import { triesLeftText, type CodeError } from '../../utils/code-error';
 import Button from '../ui/button';
 import Countdown from '../ui/countdown';
 import FormError from '../ui/form-error';
+import Notice from '../ui/notice';
 
 interface CodeErrorsSignature {
   Args: {
@@ -20,14 +21,19 @@ interface CodeErrorsSignature {
  */
 const CodeErrors: TOC<CodeErrorsSignature> = <template>
   {{#if (eq @error.reason "locked")}}
-    <FormError data-test-code-error>
-      <strong>Too many wrong codes</strong>
+    <Notice
+      @tone="warning"
+      @title="Too many wrong codes"
+      role="alert"
+      data-test-code-error
+    >
       To keep your account safe, try again in
       <Countdown @seconds={{@error.retryInSeconds}} />. Your home's data isn't
       affected.
-    </FormError>
+    </Notice>
     <Button
       @variant="secondary"
+      @size="lg"
       data-test-use-different-contact
       {{on "click" @onUseDifferentContact}}
     >Use a different phone or email</Button>
@@ -38,7 +44,7 @@ const CodeErrors: TOC<CodeErrorsSignature> = <template>
     </FormError>
     {{#if (eq @error.reason "expired")}}
       <Button
-        @variant="secondary"
+        @size="lg"
         data-test-send-new-code
         {{on "click" @onSendNewCode}}
       >Send a new code</Button>

@@ -1,11 +1,12 @@
 import Component from '@glimmer/component';
 import { action } from '@ember/object';
 import { on } from '@ember/modifier';
-import { CONTROL_CLASSES } from './control-classes';
+import { CODE_CONTROL_CLASSES, CONTROL_CLASSES } from './control-classes';
 
 interface TextInputSignature {
   Element: HTMLInputElement;
-  Args: { value: string; onInput: (value: string) => void };
+  /** `@code`: the 6-digit one-time code's bigger, spaced-out digits. */
+  Args: { value: string; onInput: (value: string) => void; code?: boolean };
 }
 
 /** A one-line text box: `<TextInput @value={{this.name}} @onInput={{this.setName}} />` */
@@ -18,7 +19,7 @@ export default class TextInput extends Component<TextInputSignature> {
   <template>
     <input
       type="text"
-      class={{CONTROL_CLASSES}}
+      class={{if @code CODE_CONTROL_CLASSES CONTROL_CLASSES}}
       value={{@value}}
       ...attributes
       {{on "input" this.changed}}

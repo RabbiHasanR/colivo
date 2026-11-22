@@ -3,7 +3,11 @@ import Field from '../ui/field';
 import TextInput from '../ui/text-input';
 
 interface CodeFieldSignature {
-  Args: { value: string; onInput: (value: string) => void; errors?: string[] };
+  Args: {
+    value: string;
+    onInput: (value: string) => void;
+    errors?: string[];
+  };
 }
 
 /**
@@ -17,6 +21,8 @@ const CodeField: TOC<CodeFieldSignature> = <template>
       inputmode="numeric"
       autocomplete="one-time-code"
       maxlength="6"
+      placeholder="••••••"
+      @code={{true}}
       @value={{@value}}
       @onInput={{@onInput}}
       data-test-code-field

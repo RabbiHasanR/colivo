@@ -10,6 +10,7 @@ import { formatDate } from '../../utils/dates';
 import { refusalFrom, type Refusal } from '../../utils/refusal';
 import { roleLabel } from '../../utils/roles';
 import Button from '../ui/button';
+import Card from '../ui/card';
 import Field from '../ui/field';
 import FormError from '../ui/form-error';
 import Stack from '../ui/stack';
@@ -57,18 +58,30 @@ export default class FirstLogInCheck extends Component<FirstLogInCheckSignature>
   }
 
   <template>
-    <section data-test-first-log-in-check aria-labelledby="first-log-in-title">
-      <h1 id="first-log-in-title">Welcome, check your details once</h1>
-      <p>You were added to</p>
-      <p><strong>{{@me.home.name}}</strong></p>
-      <p>{{roleLabel @me.membership.role}}</p>
-      {{#if @me.membership.joined_on}}
-        <p>From {{formatDate @me.membership.joined_on}}</p>
-      {{/if}}
-      {{#if @me.membership.added_by_name}}
-        <p>Added by {{@me.membership.added_by_name}}</p>
-      {{/if}}
-      <form {{on "submit" this.submit}}>
+    <section
+      class="mx-auto flex w-full max-w-[440px] flex-col gap-4"
+      data-test-first-log-in-check
+      aria-labelledby="first-log-in-title"
+    >
+      <h1 id="first-log-in-title" class="text-[28px] font-semibold">Welcome,
+        check your details once</h1>
+      <Card class="flex flex-col gap-1 p-5">
+        <p class="text-xs text-muted">You were added to</p>
+        <p class="font-display text-xl font-semibold">{{@me.home.name}}</p>
+        <p class="text-sm">{{roleLabel @me.membership.role}}
+          {{#if @me.membership.joined_on}}
+            · From
+            {{formatDate @me.membership.joined_on}}
+          {{/if}}</p>
+        {{#if @me.membership.added_by_name}}
+          <p class="text-[13px] text-muted">Added by
+            {{@me.membership.added_by_name}}</p>
+        {{/if}}
+      </Card>
+      <form
+        class="rounded-card border border-line bg-surface p-5"
+        {{on "submit" this.submit}}
+      >
         <Stack>
           <Field
             @label="Your name"
@@ -87,9 +100,10 @@ export default class FirstLogInCheck extends Component<FirstLogInCheckSignature>
           {{#if this.refusal.message}}
             <FormError>{{this.refusal.message}}</FormError>
           {{/if}}
-          <p>Something wrong, like the join date? Ask your home's owner or a
-            manager: only they can change it.</p>
-          <Button type="submit" data-test-go-to-my-home>Go to my home</Button>
+          <p class="text-[13px] leading-normal text-muted">Something wrong, like
+            the join date? Ask your home's owner or a manager: only they can
+            change it.</p>
+          <Button type="submit" @size="lg" data-test-go-to-my-home>Go to my home</Button>
         </Stack>
       </form>
     </section>
