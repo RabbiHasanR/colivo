@@ -292,7 +292,7 @@ The system SHALL meet these requirements for v1; each maps to a feature above.
 * **FR-83** Sign-up is for the person who runs the home. They enter their name and phone or email, confirm a 6-digit code, then give the home a name (plus optional area, the first month and whether they live there too). The home is created at once and they become its owner. In the MVP one account owns one home.
 * **FR-84** Members don't sign up. The owner or a manager adds them by phone or email (FR-79); they log in with that phone or email and a one-time code. No home code or invite link is needed, because the phone or email already points to exactly one home. _Changed on 21 Nov 2026: from Phase 1b a person can be in several homes and chooses one after logging in._
 * **FR-85** In the MVP a person can be an active member of only one home. Adding a phone or email that is active in another home is blocked with a message. Someone who wants their own home must leave the current one first; once deactivated they can be added elsewhere. _Replaced on 21 Nov 2026 (Phase 1b): a person can be an active member of several homes; adding someone already in this home is refused._
-* **FR-86** A member's first log-in shows the home, their role, room and join date to check. They can fix their name and add a photo; the room or join date can only be changed by the owner or a manager.
+* **FR-86** A member's first log-in shows the home, their role, room and join date to check. They can fix their name and add a photo; the room or join date can only be changed by the owner or a manager. _Added on 22 Nov 2026: the owner or a manager can also set a member's profile photo._
 * **FR-87** Logging in with a phone or email that isn't linked to any home shows "not added yet", with two choices: ask the home's owner or manager to add it, or create a new home.
 * **FR-88** Each home gets a short Home ID (for example OF-4827), shown in Home settings for support. Members never need to type it.
 
@@ -478,7 +478,7 @@ A fund is money kept for a purpose (the grocery fund and the home fund in v1). I
 - **FR-57** The manager shall set the home's location by picking a point on Google Maps; the address field is filled from the map and can be edited.
 - **FR-58** The manager may upload home photos (optional, several) and one photo per room (optional).
 - **FR-59** Each member may have a profile photo (optional).
-- **FR-60** Each member shall have at least one ID document before joining: type (NID, passport, driving licence, birth certificate or student ID), number, and front and back images. The members list shows who is missing one.
+- **FR-60** Each member shall have at least one ID document before joining: type (NID, passport, driving licence, birth certificate or student ID), number, and front and back images. The members list shows who is missing one. _Clarified on 22 Nov 2026: the ID can be added when the member is added or later; adding a member doesn't wait for it, and "ID missing" stays on the list until it is there._
 - **FR-61** ID documents shall be visible only to the manager, stored encrypted, and kept after a member leaves; members can see only their own.
 
 ### Home contacts

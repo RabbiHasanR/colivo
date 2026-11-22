@@ -136,6 +136,21 @@ After this phase, the owner can describe the home the app will calculate for.
   balances, home fund and grocery fund cash **per holder**, money with
   shoppers and unpaid bills.
 
+### ID documents and profile photos (last group)
+
+Decided 22 Nov 2026, while checking Phase 1's Members page; builds on the
+`attachment` model above.
+
+- **ID document** (FR-60, FR-61): type, number, front and back images. Added
+  on "Add a member" or later from the member's Edit tab; optional when
+  adding, and the members list shows "ID missing" until there is one
+  (Phase 1 members start missing). Replacing one keeps the old in history.
+- Only the owner and managers see ID images, through short-lived links; a
+  member sees only their own (profile page). Encrypted, kept after leaving.
+- **Profile photo** (FR-86): the member sets their own at the first log-in
+  check or on their profile; the owner or a manager can also set it from
+  the Edit tab. Shown instead of initials.
+
 ## Phase 3 — Meals and cost per meal ⏳ Not started
 
 `[backend] [web]`
