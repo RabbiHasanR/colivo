@@ -1,16 +1,12 @@
 import Component from '@glimmer/component';
 import { action } from '@ember/object';
 import { on } from '@ember/modifier';
+import { CONTROL_CLASSES } from './control-classes';
 
 interface TextInputSignature {
   Element: HTMLInputElement;
   Args: { value: string; onInput: (value: string) => void };
 }
-
-const CLASSES =
-  'min-h-touch w-full rounded-xl border border-line bg-surface px-3 text-base ' +
-  'text-ink focus-visible:outline-2 focus-visible:outline-offset-1 ' +
-  'focus-visible:outline-primary';
 
 /** A one-line text box: `<TextInput @value={{this.name}} @onInput={{this.setName}} />` */
 export default class TextInput extends Component<TextInputSignature> {
@@ -22,7 +18,7 @@ export default class TextInput extends Component<TextInputSignature> {
   <template>
     <input
       type="text"
-      class={{CLASSES}}
+      class={{CONTROL_CLASSES}}
       value={{@value}}
       ...attributes
       {{on "input" this.changed}}

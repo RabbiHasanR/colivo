@@ -18,16 +18,19 @@ export default class Field extends Component<FieldSignature> {
   readonly id = `${guidFor(this)}-control`;
 
   <template>
-    <div class="flex flex-col gap-1" ...attributes>
-      <label for={{this.id}} class="text-sm font-medium text-ink">
+    <div class="flex flex-col gap-1.5" ...attributes>
+      <label for={{this.id}} class="text-xs text-muted">
         {{@label}}
       </label>
       {{yield this.id}}
       {{#if @hint}}
-        <p class="text-sm text-muted">{{@hint}}</p>
+        <p class="text-[13px] leading-normal text-muted">{{@hint}}</p>
       {{/if}}
       {{#each @errors as |error|}}
-        <p class="text-sm text-owes-ink" data-test-field-error>{{error}}</p>
+        <p
+          class="text-sm leading-snug text-owes-ink"
+          data-test-field-error
+        >{{error}}</p>
       {{/each}}
     </div>
   </template>

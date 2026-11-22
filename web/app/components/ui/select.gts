@@ -2,6 +2,7 @@ import Component from '@glimmer/component';
 import { action } from '@ember/object';
 import { on } from '@ember/modifier';
 import { eq } from '../../utils/template';
+import { CONTROL_CLASSES } from './control-classes';
 
 export interface SelectOption {
   value: string;
@@ -17,11 +18,6 @@ interface SelectSignature {
   };
 }
 
-const CLASSES =
-  'min-h-touch w-full rounded-xl border border-line bg-surface px-3 text-base ' +
-  'text-ink focus-visible:outline-2 focus-visible:outline-offset-1 ' +
-  'focus-visible:outline-primary';
-
 /** A drop-down list of `@options`. */
 export default class Select extends Component<SelectSignature> {
   @action
@@ -30,7 +26,11 @@ export default class Select extends Component<SelectSignature> {
   }
 
   <template>
-    <select class={{CLASSES}} ...attributes {{on "change" this.changed}}>
+    <select
+      class={{CONTROL_CLASSES}}
+      ...attributes
+      {{on "change" this.changed}}
+    >
       {{! Not "as |option|": in a strict template that would shadow <option>. }}
       {{#each @options as |choice|}}
         <option value={{choice.value}} selected={{eq choice.value @value}}>

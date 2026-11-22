@@ -9,7 +9,7 @@ interface FormErrorSignature {
 const FormError: TOC<FormErrorSignature> = <template>
   <p
     role="alert"
-    class="rounded-xl bg-owes-tint px-3 py-2 text-sm text-owes-ink"
+    class="text-sm leading-snug text-owes-ink"
     ...attributes
   >{{yield}}</p>
 </template>;
