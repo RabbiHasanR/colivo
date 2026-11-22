@@ -189,6 +189,11 @@ After this phase, groceries are recorded with who paid and from where.
 - A holder gives grocery money to a shopper; nobody gives out more than they
   hold; spending is capped at what was given; leftover is handed back.
 - **Handover** of cash between holders, confirmed by the receiver.
+- **Removing a holder** (taking away the Manager or fund keeper role, or
+  deactivating) is blocked while they hold cash or given money, or have a
+  top-up or handover waiting for their confirmation; they hand over first
+  (FR-104, decided 22 Nov 2026 for the Manager role). Phase 5 adds payments
+  waiting for them to the same check.
 
 ## Phase 5 — Bills, payments and confirmation ⏳ Not started
 

@@ -388,7 +388,7 @@ A fund is money kept for a purpose (the grocery fund and the home fund in v1). I
   - **Cash per holder:** for each fund the app keeps every holder's cash (BR-23). The fund's balance is the sum of its holders' cash plus money given to members and not yet spent (money with shoppers).
   - **Paying a holder:** money paid into a fund names the holder who received it (FR-75) and counts in their cash once they confirm it.
   - **Spending:** a holder can spend, give out or refund only what they hold of that fund. From the home fund, the home's free-to-spend cash (FR-32) can't go below ৳0 either, because deposit cash stays reserved (BR-17).
-  - **Removing a holder:** taking the fund keeper role away, or deactivating the member (FR-80), is blocked while they hold cash or given money; they hand it over first (FR-105).
+  - **Removing a holder:** taking the fund keeper role away, taking the Manager role away (FR-63), or deactivating the member (FR-80), is blocked while they hold cash or given money; they hand it over first (FR-105). It is also blocked while money paid to them (FR-75) or a handover to them (FR-105) is waiting for their confirmation, because only the receiver can confirm it. _Added on 22 Nov 2026: managers hold funds too, so removing the Manager role follows the same rule._ Everything they did while holding the role keeps their name (FR-27).
   - **Month close:** each holder's cash is counted (FR-78) and carried into the next month with the same holder (FR-99).
 - **FR-105** Handover. A holder passes cash to another holder of the same fund (for example, Karim hands ৳4,000 of rent cash to Rabbi):
   - The giver records the handover with an amount and optional proof; it can't be more than they hold.
