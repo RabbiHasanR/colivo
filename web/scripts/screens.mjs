@@ -72,9 +72,18 @@ const API = {
   ],
 };
 
-/** Each page: its name, its URL, and whether someone is logged in. */
+/**
+ * Each page: its name, its URL, whether someone is logged in, and what to
+ * click first, if anything (a tab).
+ */
 const PAGES = [
   { name: 'log-in', path: '/log-in', loggedIn: false },
+  {
+    name: 'create-home',
+    path: '/log-in',
+    loggedIn: false,
+    click: '[data-test-auth-tab="create-home"]',
+  },
   { name: 'home', path: '/', loggedIn: true },
   { name: 'members', path: '/members', loggedIn: true },
 ];
@@ -141,13 +150,14 @@ async function main() {
   const browser = await chromium.launch();
   try {
     await waitForServer();
-    for (const { name, path, loggedIn } of PAGES) {
+    for (const { name, path, loggedIn, click } of PAGES) {
       for (const width of WIDTHS) {
         const page = await browser.newPage({
           viewport: { width, height: 900 },
         });
         await answerApi(page, loggedIn);
         await page.goto(`${BASE}${path}`, { waitUntil: 'networkidle' });
+        if (click) await page.click(click);
         const file = `${OUT}/${name}-${width}.png`;
         await page.screenshot({ path: file, fullPage: true });
         console.log(file);
