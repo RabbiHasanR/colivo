@@ -13,7 +13,7 @@ from app.core.notifier import Channel
 from app.modules.accounts import codes, sessions
 from app.modules.accounts.constants import SESSION_COOKIE
 from app.modules.accounts.contact import Contact
-from app.modules.accounts.models import Membership, Person, Role
+from app.modules.accounts.models import Membership, MembershipPeriod, Person, Role
 from app.modules.homes import service as homes_service
 from tests.conftest import FakeNotifier, MovableClock
 
@@ -631,6 +631,50 @@ def test_member_of_another_home_is_added_to_this_home(
     assert "Karim" in names
     session.refresh(karim)
     assert karim.status == "active"
+
+
+def test_person_in_two_homes_shows_each_homes_details_only(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf is "Maruf Ahmed", a manager of "Old Fort" since January
+    WHEN  the owner of "Our Flat" adds him as "Maruf", a member from 21 Nov,
+          and asks for the members list
+    THEN  Our Flat lists him as "Maruf", member, joined 21 Nov, and nothing of
+          his Old Fort name, role, dates or home
+    """
+    sign_up_owner(client, redis_client, clock)
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area=None, first_month=date(2026, 1, 1)
+    )
+    person = Person(phone=MARUF_E164)
+    session.add(person)
+    session.flush()
+    in_old_fort = Membership(
+        home_id=old_fort.id, person_id=person.id, name="Maruf Ahmed", role=Role.MANAGER
+    )
+    session.add(in_old_fort)
+    session.flush()
+    session.add(
+        MembershipPeriod(
+            home_id=old_fort.id,
+            membership_id=in_old_fort.id,
+            starts_on=date(2026, 1, 1),
+        )
+    )
+    session.flush()
+    client.post("/api/v1/members", json=maruf_body())
+
+    response = client.get("/api/v1/members")
+
+    [maruf] = [m for m in response.json()["data"] if m["phone"] == MARUF_E164]
+    assert (maruf["name"], maruf["role"], maruf["joined_on"]) == (
+        "Maruf",
+        "member",
+        "2026-11-21",
+    )
+    for other in ("Maruf Ahmed", "manager", "Old Fort", "2026-01-01"):
+        assert other not in response.text
 
 
 def test_members_list_shows_only_this_homes_members(

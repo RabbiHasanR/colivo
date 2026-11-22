@@ -34,7 +34,7 @@ test; T3.3 deletes one, and T1.2 replaces one (deleted).
 
 ### B5 — Each home sees only its own membership of a person
 
-- [x] T5.1 integration — `test_person_in_two_homes_shows_each_homes_details_only`: Maruf is "Maruf Ahmed", manager, in Old Fort; Our Flat adds him as "Maruf", member; Our Flat's `GET /members` shows "Maruf", role member, Our Flat's join date, and no "Maruf Ahmed", "manager" or "Old Fort"
+- [x] T5.1 integration — `test_person_in_two_homes_shows_each_homes_details_only` ✅ _(passed on its first run: Phase 1's home scoping already delivers it; seen failing by removing `list_members`'s home filter)_: Maruf is "Maruf Ahmed", manager, in Old Fort; Our Flat adds him as "Maruf", member; Our Flat's `GET /members` shows "Maruf", role member, Our Flat's join date, and no "Maruf Ahmed", "manager" or "Old Fort"
 
 ### B6 — Changing a person in one home leaves their other homes alone
 
