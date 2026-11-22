@@ -6,8 +6,8 @@ Backend acceptance: `backend/tests/accounts/test_api.py::test_member_of_another_
 Web acceptance: `web/tests/acceptance/members-test.ts` › adding someone already in this home shows "Already a member of this home"
 
 Phase 1 tests changed because FR-85 was replaced (approved at Gate 2,
-23 Nov 2026): T1.1, T2.2, T3.1, T3.2, T4.1 and T4.2 change an existing
-test; T3.3 deletes one, and T1.2 replaces one (deleted).
+23 Nov 2026): T1.1, T2.2, T3.1, T3.2, T3.3, T4.1 and T4.2 change an existing
+test, and T1.2 replaces one (deleted).
 
 ### B1 — Someone active in another home can be added
 
@@ -25,7 +25,7 @@ test; T3.3 deletes one, and T1.2 replaces one (deleted).
 
 - [x] T3.1 unit — `test_person_active_in_another_home_can_sign_up` ✅ _(changed from `test_sign_up_refused_when_already_active_in_a_home`)_: the owner of Our Flat signs up "Second Home"; 2 homes, both owned by the same person; Our Flat's membership is unchanged
 - [x] T3.2 unit — `test_email_in_any_letter_case_is_the_same_person` ✅ _(changed: it proved "same person" through the old 409; now the second sign-up, in another letter case, creates its home under the same single person, `rabbi@example.com`)_
-- [x] T3.3 web — `sign-up-form-test.gts` › shows the 409 message when the person is already in a home: **deleted** _(the API no longer answers 409 to sign-up; the form's error display stays covered by its 422 and refused-contact tests)_
+- [x] T3.3 web integration — `sign-up-form-test.gts` › shows the API's refusal above the button ✅ _(changed, not deleted as first agreed: on 23 Nov 2026 the user chose to keep the form's error display covered, since sign-up still answers 400 and 429. The old "already in a home" 409 case became a 400 first-month refusal; no web code changes)_
 
 ### B4 — A past member who joined another home can be reactivated
 
