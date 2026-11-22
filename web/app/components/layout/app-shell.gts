@@ -7,8 +7,15 @@ import { service } from '@ember/service';
 import { LinkTo } from '@ember/routing';
 import type RouterService from '@ember/routing/router-service';
 import type SessionService from '../../services/session';
+import { initials } from '../../utils/names';
 import { roleLabel } from '../../utils/roles';
 import Button from '../ui/button';
+
+// A sidebar link; the current page's is teal (LinkTo adds `active`).
+const NAV_LINK =
+  'flex min-h-touch items-center gap-2.5 rounded-field px-3 text-sm ' +
+  'font-medium text-ink-soft hover:bg-page ' +
+  '[&.active]:bg-primary-tint [&.active]:font-semibold [&.active]:text-primary';
 
 interface AppShellSignature {
   Blocks: { default: [] };
@@ -43,9 +50,7 @@ export default class AppShell extends Component<AppShellSignature> {
       <header
         class="flex items-center justify-between border-b border-line bg-surface px-4 py-2 lg:hidden"
       >
-        <span
-          class="font-display text-lg font-semibold text-primary"
-        >Colivo</span>
+        <span class="font-display text-lg font-bold text-primary">Colivo</span>
         <Button
           @variant="secondary"
           aria-controls={{this.sidebarId}}
@@ -62,43 +67,88 @@ export default class AppShell extends Component<AppShellSignature> {
         aria-label="Main"
         data-test-sidebar
         data-open={{if this.isMenuOpen "true" "false"}}
-        class="hidden border-b border-line bg-surface p-4 data-[open=true]:block lg:block lg:w-64 lg:shrink-0 lg:border-r lg:border-b-0"
+        class="hidden flex-col gap-[18px] border-b border-line bg-surface px-3.5 py-5 data-[open=true]:flex lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-58 lg:shrink-0 lg:border-r lg:border-b-0"
       >
-        <span
-          class="hidden font-display text-lg font-semibold text-primary lg:block"
-        >Colivo</span>
+        <div class="hidden flex-col gap-0.5 px-2 lg:flex">
+          <span
+            class="font-display text-lg font-bold text-primary"
+          >Colivo</span>
+          {{#if this.session.me}}
+            <span class="text-xs text-muted" data-test-shell-home>
+              {{this.session.me.home.name}}
+            </span>
+          {{/if}}
+        </div>
         {{#if this.session.me}}
-          <ul class="mt-4 flex flex-col gap-1">
+          <ul class="flex flex-col gap-1">
             <li><LinkTo
                 @route="authenticated.index"
-                class="flex min-h-touch items-center rounded-xl px-3 text-ink hover:bg-page"
+                class={{NAV_LINK}}
                 data-test-nav-home
-              >Home</LinkTo></li>
+              ><svg
+                  class="size-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                ><path
+                    d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"
+                  /></svg>Home</LinkTo></li>
             {{#if this.session.isOwnerOrManager}}
               <li><LinkTo
                   @route="authenticated.members"
-                  class="flex min-h-touch items-center rounded-xl px-3 text-ink hover:bg-page"
+                  class={{NAV_LINK}}
                   data-test-nav-members
-                >Members</LinkTo></li>
+                ><svg
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  ><circle cx="9" cy="8" r="3.5" /><path
+                      d="M2.5 20c1-3.5 3.6-5.5 6.5-5.5s5.5 2 6.5 5.5"
+                    /><circle cx="17" cy="9" r="2.5" /><path
+                      d="M17 14c2.3 0 4 1.5 4.5 4.5"
+                    /></svg>Members</LinkTo></li>
             {{/if}}
           </ul>
-          <div class="mt-4 flex flex-col gap-2">
-            <p class="text-sm text-muted" data-test-shell-person>
-              {{this.session.me.membership.name}}
-              ·
-              {{roleLabel this.session.me.membership.role}}
-            </p>
-            <Button
-              @variant="secondary"
+          <div class="mt-auto flex flex-col gap-1">
+            <div class="flex items-center gap-2.5 rounded-xl bg-page p-2.5">
+              <span
+                aria-hidden="true"
+                class="flex size-9 shrink-0 items-center justify-center rounded-full bg-tag-prepaid text-[13px] font-semibold text-tag-prepaid-ink"
+              >{{initials this.session.me.membership.name}}</span>
+              {{! One text for screen readers: "Rabbi Hasan · Owner". }}
+              <span class="flex min-w-0 flex-col" data-test-shell-person>
+                <span
+                  class="truncate text-[13px] font-semibold"
+                >{{this.session.me.membership.name}}</span>
+                <span class="sr-only"> · </span>
+                <span class="text-[11px] text-muted">{{roleLabel
+                    this.session.me.membership.role
+                  }}</span>
+              </span>
+            </div>
+            <button
+              type="button"
+              class="min-h-touch rounded-field px-3 text-left text-sm font-medium text-ink-soft hover:bg-page"
               data-test-log-out
               {{on "click" this.logOut}}
-            >Log out</Button>
+            >Log out</button>
           </div>
         {{/if}}
       </nav>
 
-      <main class="min-w-0 flex-1 p-4 lg:p-8">
-        {{yield}}
+      <main class="min-w-0 flex-1 px-4 pt-7 pb-10 sm:px-6 lg:px-10">
+        <div class="mx-auto flex w-full max-w-[1180px] flex-col gap-5">
+          {{yield}}
+        </div>
       </main>
     </div>
   </template>
