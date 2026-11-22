@@ -201,6 +201,21 @@ Who: the owner and managers.
 - The "can't deactivate someone holding fund cash" rule (FR-80) starts in
   Phase 4, when cash exists.
 
+## Screens
+
+Every screen follows its design. The differences below were agreed with the
+user on 22 Nov 2026, while checking the built pages against the designs.
+
+| Screen | Design file | Differences |
+| --- | --- | --- |
+| Everywhere | all | The product is called "Colivo", not "Mess Manager". The ৳ sign is drawn with Noto Sans Bengali (Inter and Space Grotesk have none). |
+| Log in or create a home | `web/WebAuth.html` | Sign-up stays two steps ("Send code", then the code and "Create home"), not one "Send code and create home" button, so each button says what it does. Sign-up has "Area (optional)". |
+| Log-in problems | `web/WebAuthErrors.html` | None. "Not added yet" follows `mobile/Login.html`. |
+| App shell | `web/WebHomeEmpty.html` | Only the built pages are in the sidebar (Home, Members); each phase adds its links. A "Log out" link sits under the profile card. |
+| Home | `web/WebHomeEmpty.html` | The four stat cards show their empty values until their phases. "Start ›" only on steps whose page exists (Add members). "Home ID" shown in the header (FR-88). The Groceries card's note says "November 2026", not "November". |
+| First log-in check | `mobile/Login.html` | Web layout of the mobile screen: a card with the home, role and join date, then the name form. |
+| Members & roles | `web/WebMembers.html`, `web/WebPastMembers.html` | No Room or ID column yet (Phases 2), a Joined column instead. One role pill per person (Phase 1 has one role each). The Current/Past switch sits above the table card, not in the header. "Add a member" has no room, ID or deposit yet. One card on the right holds "Add a member", and while editing, an "Edit <name>" tab with Cancel (not in the design). The role stays a row link ("Make manager"), not part of Edit. |
+
 ## API
 
 All responses use the `StandardResponse` envelope
