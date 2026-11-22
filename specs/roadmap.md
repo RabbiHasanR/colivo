@@ -78,6 +78,8 @@ FR-85).
 - Log-in with several active homes asks which home; a person in one home
   goes straight there, as now.
 - The session knows the current home; switch homes from the shell.
+- Run `/security-review`, including Phase 1's deferred 22 Nov web changes
+  (the 403 role re-check above all).
 - Data model at the phase's Gate 0: drop "one active membership per person",
   and how a session keeps its current home
   ([data-model.md → Open questions](data-model.md#open-questions)).

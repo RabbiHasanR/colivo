@@ -148,6 +148,8 @@ recorded in this phase.
 | CI                        | `CI OK` on the pull request                                                                       | Green                                                                                          |
 | Security review           | `/security-review` on the branch                                                                  | No open high or medium finding; each finding fixed (test first) or recorded with the user's OK |
 
+_Deferred on 22 Nov 2026 (user's decision): the security review of the 22 Nov web changes (the restyle, log-in tabs, the add-or-edit card, and the 403 role re-check in `error-watch.ts` / `session.recheckRole`) moves to Phase 1b. The earlier Phase 1 review covered the backend._
+
 ## TDD record
 
 Every group's section in `tests.md` (groups 2–5) is complete: each selected
