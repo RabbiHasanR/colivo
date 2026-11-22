@@ -92,6 +92,22 @@ export default class SessionService extends Service {
     this.router.transitionTo('log-in');
   }
 
+  /**
+   * A request was refused (403): the owner may have changed this person's
+   * role meanwhile. Ask `GET /me` again; if the role changed, re-run the
+   * current page's access check, which sends them home from a page they may
+   * no longer open (Members for a former manager).
+   */
+  async recheckRole(): Promise<void> {
+    const before = this.me?.membership.role;
+    if (!before) return;
+    const { content } = await this.store.request<Me>(getMe());
+    this.me = content;
+    if (content.membership.role !== before) {
+      this.router.refresh();
+    }
+  }
+
   /** End the session in the API (it clears the cookie) and forget who it was. */
   async logOut(): Promise<void> {
     await this.store.request(logOut());

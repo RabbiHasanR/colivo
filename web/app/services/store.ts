@@ -5,7 +5,7 @@ import type { Handler as WarpDriveHandler } from '@warp-drive/core/request';
 import { ErrorHandler } from '../data/handlers/errors';
 import { createAuthHandler } from '../data/handlers/auth';
 import { createEnvelopeHandler } from '../data/handlers/api-envelope';
-import { createSessionEndHandler } from '../data/handlers/session-end';
+import { createErrorWatchHandler } from '../data/handlers/error-watch';
 import type { Handler } from '../data/handlers/types';
 import type SessionService from './session';
 
@@ -20,18 +20,20 @@ function asWarpDriveHandler(handler: Handler): WarpDriveHandler {
   return handler as unknown as WarpDriveHandler;
 }
 
-/** Set by the store once it exists, so the handler can reach the session. */
+/** Set by the store once it exists, so the handlers can reach the session. */
 let onSessionEnded: () => void = () => {};
+let onForbidden: () => void = () => {};
 
 /**
- * Requests go through: session end -> errors -> auth -> envelope -> fetch
+ * Requests go through: session end -> role check -> errors -> auth -> envelope -> fetch
  * (added by useLegacyStore). Only app/data talks HTTP.
  */
 const BaseStore = useLegacyStore({
   linksMode: false,
   cache: JSONAPICache,
   handlers: [
-    createSessionEndHandler(() => onSessionEnded()),
+    createErrorWatchHandler('unauthorized', () => onSessionEnded()),
+    createErrorWatchHandler('forbidden', () => onForbidden()),
     ErrorHandler,
     createAuthHandler(),
     createEnvelopeHandler(),
@@ -41,7 +43,8 @@ const BaseStore = useLegacyStore({
 
 /**
  * The app's store. A 401 on any request means the session ended: the session
- * service then forgets who was logged in and goes to log-in.
+ * service then forgets who was logged in and goes to log-in. A 403 makes it
+ * check whether the person's role changed meanwhile.
  */
 export default class Store extends BaseStore {
   @service declare session: SessionService;
@@ -49,5 +52,6 @@ export default class Store extends BaseStore {
   constructor(...args: ConstructorParameters<typeof BaseStore>) {
     super(...args);
     onSessionEnded = () => this.session.expire();
+    onForbidden = () => void this.session.recheckRole();
   }
 }

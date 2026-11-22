@@ -125,6 +125,32 @@ module('Acceptance | members', function (hooks) {
     assert.dom('[data-test-edit-member-name]').hasValue('Hijam Shusil');
   });
 
+  test('a manager who lost the role is sent home on their next action', async function (assert) {
+    // GIVEN Hijam is a manager on Members; meanwhile the owner makes him a member
+    // WHEN  he tries to add a member and the API answers 403
+    // THEN  he is sent home, and the Members link is gone
+    const NOT_ALLOWED = 'Only the owner or a manager can do this.';
+    worker.use(loggedInAs('manager'), ...membersApi());
+    await visit('/members');
+    worker.use(
+      loggedInAs('member'),
+      http.post('*/api/v1/members', () =>
+        HttpResponse.json(
+          { success: false, message: NOT_ALLOWED, errors: [NOT_ALLOWED] },
+          { status: 403 },
+        ),
+      ),
+    );
+
+    await fillIn('[data-test-add-member-name]', 'Maruf');
+    await fillIn('[data-test-add-member-contact]', '01812 345678');
+    await fillIn('[data-test-add-member-joined-on]', '2026-11-21');
+    await click('[data-test-add-member-submit]');
+
+    assert.strictEqual(currentURL(), '/');
+    assert.dom('[data-test-nav-members]').doesNotExist();
+  });
+
   test('a member has no Members link, and opening Members sends them home', async function (assert) {
     // GIVEN Maruf, a member (not the owner or a manager), is logged in
     // WHEN  he looks at the shell, and opens /members
