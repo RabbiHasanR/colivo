@@ -90,7 +90,10 @@ def new_person(contact: Contact) -> Person:
 
 
 def active_membership(session: Session, person: Person) -> Membership | None:
-    """Return the person's active membership; there is at most one (FR-85).
+    """Return one of the person's active memberships.
+
+    A person can be active in several homes since Phase 1b; until log-in asks
+    which home (Phase 1b group 3), this returns any one of them.
 
     Args:
         session: The database session.
