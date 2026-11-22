@@ -23,8 +23,8 @@ test; T3.3 deletes one, and T1.2 replaces one (deleted).
 
 ### B3 — Someone active in another home can sign up
 
-- [x] T3.1 unit — `test_person_active_in_another_home_can_sign_up` _(changed from `test_sign_up_refused_when_already_active_in_a_home`)_: the owner of Our Flat signs up "Second Home"; 2 homes, both owned by the same person; Our Flat's membership is unchanged
-- [x] T3.2 unit — `test_email_in_any_letter_case_is_the_same_person` _(changed: it proved "same person" through the old 409; now the second sign-up, in another letter case, creates its home under the same single person, `rabbi@example.com`)_
+- [x] T3.1 unit — `test_person_active_in_another_home_can_sign_up` ✅ _(changed from `test_sign_up_refused_when_already_active_in_a_home`)_: the owner of Our Flat signs up "Second Home"; 2 homes, both owned by the same person; Our Flat's membership is unchanged
+- [x] T3.2 unit — `test_email_in_any_letter_case_is_the_same_person` ✅ _(changed: it proved "same person" through the old 409; now the second sign-up, in another letter case, creates its home under the same single person, `rabbi@example.com`)_
 - [x] T3.3 web — `sign-up-form-test.gts` › shows the 409 message when the person is already in a home: **deleted** _(the API no longer answers 409 to sign-up; the form's error display stays covered by its 422 and refused-contact tests)_
 
 ### B4 — A past member who joined another home can be reactivated

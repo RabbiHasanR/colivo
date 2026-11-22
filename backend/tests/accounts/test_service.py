@@ -161,23 +161,26 @@ def sign_up_with_new_code(
     return service.sign_up(session, redis_client, data, clock())
 
 
-def test_sign_up_refused_when_already_active_in_a_home(
+def test_person_active_in_another_home_can_sign_up(
     session: Session, redis_client: Redis, clock: MovableClock
 ) -> None:
     """
     GIVEN 01712 345678 is the active owner of "Our Flat"
     WHEN  they sign up again to create "Second Home"
-    THEN  it is refused with 409 ("log in instead"), and no second home exists
+    THEN  they own both homes as one person, and Our Flat is unchanged
     """
-    sign_up_with_new_code(session, redis_client, clock)
+    first = sign_up_with_new_code(session, redis_client, clock)
     # A new code waits a minute after the last one (B11).
     clock.advance(timedelta(minutes=2))
 
-    with pytest.raises(HTTPException) as error:
-        sign_up_with_new_code(session, redis_client, clock, home_name="Second Home")
+    second = sign_up_with_new_code(
+        session, redis_client, clock, home_name="Second Home"
+    )
 
-    assert error.value.status_code == 409
-    assert session.exec(select(func.count()).select_from(Home)).one() == 1
+    assert second.person_id == first.person_id
+    assert second.home_id != first.home_id
+    session.refresh(first)
+    assert (first.role, first.status) == (Role.OWNER, MembershipStatus.ACTIVE)
 
 
 def test_person_no_longer_active_anywhere_can_sign_up(
@@ -240,8 +243,7 @@ def test_email_in_any_letter_case_is_the_same_person(
     """
     GIVEN Rabbi@Example.com signed up and owns "Our Flat"
     WHEN  rabbi@example.COM signs up for another home
-    THEN  it is the same person, kept as rabbi@example.com, so it is refused
-          with 409
+    THEN  that home's owner is the same person, kept as rabbi@example.com
     """
     first = Contact.model_validate(parse_contact("Rabbi@Example.com"))
     code = codes.issue_code(redis_client, first, clock())
@@ -251,12 +253,11 @@ def test_email_in_any_letter_case_is_the_same_person(
     again = Contact.model_validate(parse_contact("rabbi@example.COM"))
     code = codes.issue_code(redis_client, again, clock())
 
-    with pytest.raises(HTTPException) as error:
-        service.sign_up(
-            session, redis_client, sign_up_data(again, code, home_name="Two"), clock()
-        )
+    second = service.sign_up(
+        session, redis_client, sign_up_data(again, code, home_name="Two"), clock()
+    )
 
-    assert error.value.status_code == 409
+    assert second.person_id == owner.person_id
     person = session.get_one(Person, owner.person_id)
     assert (person.email, person.phone) == ("rabbi@example.com", None)
 
