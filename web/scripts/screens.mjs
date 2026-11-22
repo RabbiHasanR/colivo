@@ -9,6 +9,7 @@
  * data they read to API.
  */
 import { spawn } from 'node:child_process';
+import { get } from 'node:http';
 import { mkdir } from 'node:fs/promises';
 import { chromium } from '@playwright/test';
 
@@ -109,14 +110,20 @@ async function answerApi(page, loggedIn) {
   });
 }
 
+/** Whether the web app answers yet. */
+function isUp() {
+  return new Promise((resolve) => {
+    get(BASE, (response) => {
+      response.resume();
+      resolve(true);
+    }).on('error', () => resolve(false));
+  });
+}
+
 async function waitForServer() {
   for (let attempt = 0; attempt < 60; attempt += 1) {
-    try {
-      await fetch(BASE);
-      return;
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
+    if (await isUp()) return;
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
   throw new Error(`The web app did not start on ${BASE}`);
 }
