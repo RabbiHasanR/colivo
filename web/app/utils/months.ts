@@ -44,3 +44,8 @@ export function firstMonthChoices(now: Date, timeZone: string): MonthChoice[] {
     month === 12 ? [year + 1, 1] : [year, month + 1];
   return [choice(year, month), choice(...next)];
 }
+
+/** The month `now` falls in, in `timeZone`, as people read it: `November 2026`. */
+export function thisMonthLabel(now: Date, timeZone: string): string {
+  return choice(...yearAndMonth(now, timeZone)).label;
+}

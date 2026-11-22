@@ -1,5 +1,5 @@
 import { module, test } from 'qunit';
-import { firstMonthChoices } from 'colivo-web/utils/months';
+import { firstMonthChoices, thisMonthLabel } from 'colivo-web/utils/months';
 
 module('Unit | Utils | months', function () {
   test('first-month choices are this month and next in the home time zone', function (assert) {
@@ -26,5 +26,17 @@ module('Unit | Utils | months', function () {
         now,
       );
     }
+  });
+
+  test('this month is named as the home time zone sees it', function (assert) {
+    // GIVEN 30 Nov 19:00 UTC, already 1 Dec in Dhaka
+    // WHEN  the month is named for a home in Asia/Dhaka
+    // THEN  it is December 2026, as in the WebHomeEmpty.html header
+    const label = thisMonthLabel(
+      new Date('2026-11-30T19:00:00Z'),
+      'Asia/Dhaka',
+    );
+
+    assert.strictEqual(label, 'December 2026');
   });
 });
