@@ -55,6 +55,29 @@ module('Acceptance | members', function (hooks) {
     assert.strictEqual(sent, 0);
   });
 
+  test('owner switches between the add form and an open edit', async function (assert) {
+    // GIVEN the owner and Maruf
+    // WHEN  the owner presses Edit on Maruf, then the "Add member" tab,
+    //       then the "Edit Maruf" tab
+    // THEN  the add form shows with the Edit tab still there, then Maruf's
+    //       edit form is back
+    worker.use(loggedInAs('owner'), ...membersApi([owner, member()]));
+
+    await visit('/members');
+    await click('[data-test-edit-member="Maruf"]');
+    await click('[data-test-member-form-tab="add"]');
+
+    assert.dom('[data-test-add-member-form]').exists();
+    assert.dom('[data-test-edit-member-form]').doesNotExist();
+    assert.dom('[data-test-member-form-tab="add"]').hasAria('selected', 'true');
+    assert.dom('[data-test-member-form-tab="edit"]').exists();
+
+    await click('[data-test-member-form-tab="edit"]');
+
+    assert.dom('[data-test-edit-member-name]').hasValue('Maruf');
+    assert.dom('[data-test-add-member-form]').doesNotExist();
+  });
+
   test('a member has no Members link, and opening Members sends them home', async function (assert) {
     // GIVEN Maruf, a member (not the owner or a manager), is logged in
     // WHEN  he looks at the shell, and opens /members
