@@ -89,7 +89,7 @@ export default class MemberList extends Component<MemberListSignature> {
                 >{{roleLabel member.status}}</Tag></td>
               <td class={{CELL}}>{{formatDate member.joined_on}}</td>
               <td class="{{CELL}} text-right"><span
-                  class="inline-flex flex-wrap justify-end gap-x-2"
+                  class="inline-flex justify-end gap-x-2"
                 >
                   {{#if @onRoleChanged}}
                     {{! The owner's own role never changes (FR-63). }}

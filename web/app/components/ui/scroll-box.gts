@@ -5,9 +5,13 @@ interface ScrollBoxSignature {
   Blocks: { default: [] };
 }
 
-/** A wide table scrolls inside this box, never the page (Responsive design). */
+/**
+ * A wide table scrolls inside this box, never the page (Responsive design).
+ * `relative` keeps absolutely placed children (an `sr-only` header) inside
+ * it too; without it they widen the page.
+ */
 const ScrollBox: TOC<ScrollBoxSignature> = <template>
-  <div class="max-w-full overflow-x-auto" ...attributes>{{yield}}</div>
+  <div class="relative max-w-full overflow-x-auto" ...attributes>{{yield}}</div>
 </template>;
 
 export default ScrollBox;
