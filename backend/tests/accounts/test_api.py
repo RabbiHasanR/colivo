@@ -611,6 +611,31 @@ def test_changing_another_homes_member_answers_404(
     assert karim.name == "Karim"
 
 
+@pytest.mark.xfail(
+    strict=True, reason="acceptance: someone active in another home can be added"
+)
+def test_member_of_another_home_is_added_to_this_home(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Karim is an active member of "Old Fort", and Rabbi owns "Our Flat"
+    WHEN  Rabbi adds Karim's phone to Our Flat
+    THEN  Karim is a member of Our Flat too, and still active in Old Fort
+    """
+    sign_up_owner(client, redis_client, clock)
+    karim = member_of_old_fort(session)
+
+    response = client.post(
+        "/api/v1/members", json=maruf_body(name="Karim", contact="01612 345678")
+    )
+
+    assert response.status_code == 201
+    names = [m["name"] for m in client.get("/api/v1/members").json()["data"]]
+    assert "Karim" in names
+    session.refresh(karim)
+    assert karim.status == "active"
+
+
 def test_members_list_shows_only_this_homes_members(
     client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
 ) -> None:
