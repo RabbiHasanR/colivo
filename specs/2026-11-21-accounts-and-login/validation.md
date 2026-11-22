@@ -158,7 +158,8 @@ mark is left. Group 1 is groundwork and has no tests.
 
 1. **End-to-end walkthrough against the design.** From a fresh clone,
    follow the README setup. Sign up as an owner
-   (`colivo-design/web/WebAuth.html`), read the code from the backend log,
+   (`colivo-design/web/WebAuth.html`), read the code from the development
+   outbox (`docker compose exec redis redis-cli LRANGE dev:outbox 0 4`),
    land on the new home (`WebHomeEmpty.html`) and see the Home ID. Add a
    member and a manager (`WebMembers.html`). Log out; log in as the member,
    pass the first log-in check (`colivo-design/mobile/Login.html`), and see
