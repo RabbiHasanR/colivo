@@ -29,7 +29,7 @@ test; T3.3 deletes one, and T1.2 replaces one (deleted).
 
 ### B4 — A past member who joined another home can be reactivated
 
-- [x] T4.1 unit — `test_member_who_joined_another_home_can_be_reactivated` _(changed from `test_reactivating_someone_active_in_another_home_is_refused`)_: Maruf left Our Flat and is active in Old Fort; Our Flat reactivates him; both memberships are active
+- [x] T4.1 unit — `test_member_who_joined_another_home_can_be_reactivated` ✅ _(changed from `test_reactivating_someone_active_in_another_home_is_refused`)_: Maruf left Our Flat and is active in Old Fort; Our Flat reactivates him; both memberships are active
 - [x] T4.2 web integration — `reactivate-dialog-test.gts` › shows the API's 409 message _(changed: its GIVEN becomes "another active member has Karim's name", with the name-taken message, the 409 reactivate still gives)_
 
 ### B5 — Each home sees only its own membership of a person

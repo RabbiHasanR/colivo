@@ -40,7 +40,6 @@ from app.modules.homes import service as homes_service
 from app.modules.homes.constants import DEFAULT_TIME_ZONE
 from app.modules.homes.models import Home
 
-ALREADY_IN_A_HOME = "This phone or email is already in a home."
 ALREADY_IN_THIS_HOME = "Already a member of this home."
 PAST_MEMBER = "This person was a member of this home. Reactivate them instead."
 NAME_TAKEN = "Someone in this home already has that name."
@@ -784,9 +783,9 @@ def reactivate(
 
     Raises:
         HTTPException: 404 for another home's member; 403 for a manager
-            reactivating a manager; 409 when already active, active in another
-            home, or an active member has their
-            name; 400 for a date not after their last stay ended.
+            reactivating a manager; 409 when already active, or an active
+            member has their name; 400 for a date not after their last stay
+            ended.
     """
     member = get_member(session, editor.home_id, member_id, lock=True)
     if member.role == Role.MANAGER and editor.role != Role.OWNER:
@@ -797,10 +796,8 @@ def reactivate(
     last_end = last_stay_end(session, member)
     if last_end is not None and data.on <= last_end:
         raise HTTPException(400, REACTIVATE_TOO_EARLY)
-    person = session.get_one(Person, member.person_id)
-    if active_membership(session, person):
-        # FR-85: they joined another home meanwhile.
-        raise HTTPException(409, ALREADY_IN_A_HOME)
+    # Joining another home meanwhile is fine (Phase 1b); only the name must
+    # still be free here.
     check_name_free(session, member.home_id, member.name, except_id=member.id)
     session.add(
         MembershipPeriod(
