@@ -133,9 +133,10 @@ class MemberOut(BaseModel):
 
 
 class MePersonOut(BaseModel):
-    """The logged-in person's log-in identity."""
+    """The logged-in person's log-in identity: their phone and email."""
 
     phone: str | None
+    email: str | None
 
 
 class MeMembershipOut(BaseModel):

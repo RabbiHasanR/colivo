@@ -1605,3 +1605,22 @@ def test_person_changes_their_own_phone_with_a_code(
     assert saved.json()["data"]["phone"] == "+8801912345678"
     assert by_new["data"]["me"]["membership"]["name"] == "Rabbi Hasan"
     assert by_old.status_code == 404
+
+
+def test_me_answers_the_persons_phone_and_email(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678 and added rabbi@example.com
+    WHEN  GET /api/v1/me is read
+    THEN  its person has both the phone and the email
+    """
+    sign_up_owner(client, redis_client, clock)
+    owner_id = owner_membership_id(client)
+    change_marufs_contact(
+        client, notifier, owner_id, "rabbi@example.com", "rabbi@example.com"
+    )
+
+    me = client.get("/api/v1/me").json()["data"]
+
+    assert me["person"] == {"phone": PHONE_E164, "email": "rabbi@example.com"}

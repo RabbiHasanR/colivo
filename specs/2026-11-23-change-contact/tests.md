@@ -127,7 +127,7 @@ Web acceptance: `web/tests/acceptance/profile-test.ts` › person changes their 
 
 ### B20 — Anyone opens My profile and sees their name, role, "member since", phone and email
 
-- [x] T20.1 integration — `GET /me` answers the person's phone and email
+- [x] T20.1 integration — `GET /me` answers the person's phone and email ✅
 - [x] T20.2 web unit — `formatMonth('2026-11-21')` is "November 2026"
 - [x] T20.3 web integration — app shell: the name card links to My profile
 - [x] T20.4 web integration — profile page shows the name, "Owner · member since November 2026", the phone and the email
