@@ -63,6 +63,8 @@ test('a person in two homes chooses one, switches in another tab, and is told wh
   await arriveHome(tabTwo);
   await expect(shellHome(tabTwo)).toContainText('Our Flat');
 
+  // Playwright's page reload, not a WarpDrive record (the rule's false match).
+  // eslint-disable-next-line warp-drive/no-legacy-request-patterns
   await tabOne.reload();
   await expect(shellHome(tabOne)).toContainText('Green House');
 
