@@ -426,6 +426,50 @@ column, and the old value works meanwhile), the old contact confirming the
 change (doesn't help someone who lost their number), and keeping sessions
 after a change (a lost phone stays logged in).
 
+### Home setup _(agreed 23 Nov 2026)_
+
+From the Phase 2 spec, Gate 0 (FR-02–FR-05, FR-28, FR-51, FR-55, FR-58–FR-61,
+FR-100, FR-109–FR-112, BR-3, BR-11).
+
+- **Rent is rows from a month**, not a column: `room_rent` per room and
+  `home_rent` for the landlord's rent, each `(starts_on, amount)` with
+  `starts_on` on the 1st. October's statement uses October's rent (FR-51),
+  and Phase 6's rent revisions only add a link column. Until a month is
+  closed (Phase 6), editing a rent corrects the current row in place, with
+  the old value in `change_log`.
+- **Each pays = room rent ÷ the people in the room now** (BR-3, US-A1, the
+  "occupant count" edge case). `room.beds` is only a cap; an empty room's
+  rent shows as a shortfall against `home_rent`.
+- **Who lives where is `room_assignment`**, the same shape as
+  `membership_period`: one open stay per member; deactivating ends it on
+  the same date.
+- **Home rules are versions from a date** (`home_rules_version`). There is
+  no row until the owner first saves them; two saves on one day update the
+  same version. BR-11's snapshot is not stored: Phase 7 reads the version in
+  force on each join date, and adds a column only for re-applying rules.
+- **Who edits what:** the owner alone changes `home` details, `home_rent`,
+  the landlord and the rules; the owner or a manager rooms, assignments,
+  contacts and bill categories.
+- **Every home has two bill categories from the start**, Household
+  (`other`) and Landlord rent (`rent`), which can't be archived. A bill's
+  split comes from its class (rent by room, the rest equally), so it isn't
+  stored.
+- **Files** follow [Files](#files-s3-and-presigned-urls-agreed-21-nov-2026):
+  `attachment.purpose` decides the allowed types and size, who may upload
+  and see it, and encryption. Single files are FK columns
+  (`membership.photo_id`, `contact.photo_id`, `room.photo_id`,
+  `id_document.front_id` / `back_id`); several are link tables
+  (`contact_document`, `home_photo`) with `removed_at`, so removing one
+  keeps the row.
+
+Rejected: a `room.rent` column (a data migration later and a late start to
+the history), the landlord's rent on `home_rules_version` (a rent change
+would make a rules version), dividing by beds (contradicts BR-3), a new
+rent row from next month on every edit (a setup typo would apply to this
+month), default rules at sign-up (the checklist can't tell they were
+chosen), and copying deposit and notice months onto `membership` now
+(nothing reads them before Phase 7).
+
 ### Who made a record _(agreed 21 Nov 2026)_
 
 - **No `updated_by` anywhere.** `change_log` keeps every change with who,
@@ -584,6 +628,28 @@ erDiagram
   home ||--o{ change_log : ""
   membership |o--o{ change_log : "changed by"
 
+  home ||--o{ room : has
+  room ||--o{ room_rent : "rent from a month"
+  room ||--o{ room_assignment : ""
+  membership ||--o{ room_assignment : "lives in"
+  home ||--o{ home_rent : "landlord rent from a month"
+  home ||--o{ home_rules_version : "rules from a date"
+  home ||--o{ contact : "deals with"
+  contact ||--o{ contact_method : "phones and emails"
+  home ||--o{ bill_category : defines
+  contact |o--o{ bill_category : "is paid to"
+  home ||--o{ attachment : ""
+  membership ||--o{ attachment : "uploaded by"
+  attachment |o--o{ membership : "profile photo"
+  attachment |o--o{ contact : photo
+  attachment |o--o{ room : photo
+  home ||--o{ home_photo : ""
+  attachment ||--o| home_photo : ""
+  contact ||--o{ contact_document : ""
+  attachment ||--o| contact_document : ""
+  membership ||--o{ id_document : has
+  attachment ||--o{ id_document : "front, back"
+
   person {
     uuid id PK
     text phone UK
@@ -596,6 +662,8 @@ erDiagram
     text area
     date first_month
     text time_zone
+    text address
+    date lease_started_on
   }
   membership {
     uuid id PK
@@ -606,6 +674,107 @@ erDiagram
     text status
     uuid created_by FK
     timestamptz details_checked_at
+    uuid photo_id FK
+  }
+  room {
+    uuid id PK
+    uuid home_id FK
+    text name
+    int beds
+    uuid photo_id FK
+    timestamptz archived_at
+  }
+  room_rent {
+    uuid id PK
+    uuid home_id FK
+    uuid room_id FK
+    date starts_on
+    numeric amount
+  }
+  room_assignment {
+    uuid id PK
+    uuid home_id FK
+    uuid room_id FK
+    uuid membership_id FK
+    date starts_on
+    date ends_on
+  }
+  home_rent {
+    uuid id PK
+    uuid home_id FK
+    date starts_on
+    numeric amount
+  }
+  home_rules_version {
+    uuid id PK
+    uuid home_id FK
+    date starts_on
+    smallint deposit_months
+    smallint notice_months
+    text rent_split
+    text rent_gap_policy
+  }
+  contact {
+    uuid id PK
+    uuid home_id FK
+    text kind
+    text name
+    text account_ref
+    text note
+    uuid photo_id FK
+    date started_on
+    date ended_on
+  }
+  contact_method {
+    uuid id PK
+    uuid home_id FK
+    uuid contact_id FK
+    text kind
+    text value
+    text label
+    bool is_primary
+  }
+  bill_category {
+    uuid id PK
+    uuid home_id FK
+    text name
+    text bill_class
+    uuid paid_to_contact_id FK
+    numeric default_estimate
+    timestamptz archived_at
+  }
+  attachment {
+    uuid id PK
+    uuid home_id FK
+    text purpose
+    text status
+    text content_type
+    int size_bytes
+    text filename
+    uuid created_by FK
+  }
+  id_document {
+    uuid id PK
+    uuid home_id FK
+    uuid membership_id FK
+    text doc_type
+    text number
+    uuid front_id FK
+    uuid back_id FK
+    timestamptz replaced_at
+  }
+  contact_document {
+    uuid id PK
+    uuid home_id FK
+    uuid contact_id FK
+    uuid attachment_id FK
+    timestamptz removed_at
+  }
+  home_photo {
+    uuid id PK
+    uuid home_id FK
+    uuid attachment_id FK
+    timestamptz removed_at
   }
   membership_period {
     uuid id PK
@@ -668,6 +837,8 @@ The tenant. Every home-owned table points here.
 | area        | text | yes  | —              | CHECK at most 80 characters         | Optional at sign-up                                                                  |
 | first_month | date | no   | —              | CHECK day of month = 1              | "First month" at sign-up; seeds the `month` table in Phase 3                         |
 | time_zone   | text | no   | `'Asia/Dhaka'` | —                                   | NFR-10; "today" for join and deactivation dates, the meal lock in Phase 3            |
+| address          | text | yes | — | CHECK at most 200 characters | Home & landlord; text only, no map (FR-57). _(Phase 2, planned: group 3)_ |
+| lease_started_on | date | yes | — | — | The lease start (FR-28). _(Phase 2, planned: group 3)_ |
 
 | Index               | Serves              |
 | ------------------- | ------------------- |
@@ -690,6 +861,7 @@ A person in one home. Everything in a home points here, never to `person`.
 | status             | text        | no   | `'active'` | CHECK in (`active`, `inactive`)         | Who may log in now (FR-80); Phase 7 adds `notice_served`                                                   |
 | created_by         | uuid        | yes  | —          | FK `membership`                         | Who added them ("Added by Rabbi Hasan"); null for the owner. Group 4 migration                             |
 | details_checked_at | timestamptz | yes  | —          | —                                       | The first log-in check (FR-86) is shown until this is set; set at sign-up for the owner. Group 4 migration |
+| photo_id | uuid | yes | — | FK `attachment` | Profile photo in this home (FR-59, FR-86). _(Phase 2, planned: group 5)_ |
 
 CHECK `role <> 'owner' OR status = 'active'`: the owner can't be
 deactivated.
@@ -733,7 +905,7 @@ migration.
 | id         | uuid  | no   | UUIDv7  | PK                                                            | Convention                                                 |
 | home_id    | uuid  | no   | —       | FK `home`                                                     | Tenant                                                     |
 | changed_by | uuid  | yes  | —       | FK `membership`                                               | Who; null for system changes (month close, Phase 6)        |
-| entity     | text  | no   | —       | CHECK from `ChangeEntity` (`membership`, `membership_period`) | What was changed; later phases add values                  |
+| entity     | text  | no   | —       | CHECK from `ChangeEntity` (`membership`, `membership_period`; Phase 2, planned: `room`, `room_assignment`, `home_rules_version` in group 2, `home`, `contact` in group 3, `bill_category` in group 4) | What was changed; later phases add values. Rent edits are under `room` and `home`; a contact's phones, photo and documents under `contact`; ID documents and photos under `membership` |
 | entity_id  | uuid  | no   | —       | —                                                             | Which row                                                  |
 | action     | text  | no   | —       | CHECK in (`create`, `update`, `delete`)                       | `delete` is the soft delete of Phase 8                     |
 | old_values | jsonb | yes  | —       | —                                                             | Null on create                                             |
@@ -748,6 +920,219 @@ Redis, not tables (Phase 1): one-time codes, wrong-code counts, locks, send
 limits and sessions (Phase 1c adds change codes and `person_sessions`; see
 [Log-in contacts](#log-in-contacts-agreed-23-nov-2026)); see
 [Phase 1 requirements → API](2026-11-21-accounts-and-login/requirements.md#api).
+
+### room _(Phase 2, planned)_
+
+A room of the home ([Home setup](#home-setup-agreed-23-nov-2026)). Group 2
+migration; `photo_id` in group 5.
+
+| Column      | Type        | Null | Default | Constraint                       | Why                                       |
+| ----------- | ----------- | ---- | ------- | -------------------------------- | ----------------------------------------- |
+| id          | uuid        | no   | UUIDv7  | PK                               | Convention                                |
+| home_id     | uuid        | no   | —       | FK `home`                        | Tenant                                    |
+| name        | text        | no   | —       | CHECK 1–40 characters after trim | FR-02                                     |
+| beds        | integer     | no   | 1       | CHECK `beds >= 1`                | The most people it holds (FR-02)          |
+| photo_id    | uuid        | yes  | —       | FK `attachment`                  | One room photo (FR-58). Group 5           |
+| archived_at | timestamptz | yes  | —       | —                                | Removed rooms are archived, never deleted |
+
+| Index                                                         | Serves                                                    |
+| ------------------------------------------------------------- | --------------------------------------------------------- |
+| `room(home_id, lower(name)) WHERE archived_at IS NULL` UNIQUE | The Rooms list; names unique in a home, ignoring case (NFR-03) |
+
+### room_rent _(Phase 2, planned)_
+
+A room's total rent from a month (FR-51). Phase 6 adds `rent_revision_id`.
+Group 2 migration.
+
+| Column    | Type          | Null | Default | Constraint            | Why                              |
+| --------- | ------------- | ---- | ------- | --------------------- | -------------------------------- |
+| id        | uuid          | no   | UUIDv7  | PK                    | Convention                       |
+| home_id   | uuid          | no   | —       | FK `home`             | Tenant                           |
+| room_id   | uuid          | no   | —       | FK `room`             |                                  |
+| starts_on | date          | no   | —       | CHECK day of month = 1 | The month this rent starts       |
+| amount    | numeric(12,2) | no   | —       | CHECK `amount >= 0`   | Room total rent; Each pays ÷ people (BR-3) |
+
+| Index                               | Serves                       |
+| ----------------------------------- | ---------------------------- |
+| `room_rent(room_id, starts_on)` UNIQUE | The rent in force for a month |
+
+### room_assignment _(Phase 2, planned)_
+
+Who lives in which room, and when; the same shape as `membership_period`.
+Group 2 migration.
+
+| Column        | Type | Null | Default | Constraint                   | Why                                         |
+| ------------- | ---- | ---- | ------- | ---------------------------- | ------------------------------------------- |
+| id            | uuid | no   | UUIDv7  | PK                           | Convention                                  |
+| home_id       | uuid | no   | —       | FK `home`                    | Tenant                                      |
+| room_id       | uuid | no   | —       | FK `room`                    |                                             |
+| membership_id | uuid | no   | —       | FK `membership`              |                                             |
+| starts_on     | date | no   | —       | —                            | The join date, or the date of a move        |
+| ends_on       | date | yes  | —       | CHECK `ends_on >= starts_on` | Set by a move or a deactivation             |
+
+The beds cap compares rows, so the service checks it inside the transaction
+after locking the room row (`SELECT … FOR UPDATE`).
+
+| Index                                                         | Serves                                  |
+| ------------------------------------------------------------- | --------------------------------------- |
+| `room_assignment(membership_id) WHERE ends_on IS NULL` UNIQUE | One room per member at a time           |
+| `room_assignment(home_id, room_id) WHERE ends_on IS NULL`     | Who is in each room now; Each pays      |
+
+### home_rules_version _(Phase 2, planned)_
+
+The home's rules from a date (FR-28, FR-55, US-R1). No row until the owner
+first saves them. Group 2 migration.
+
+| Column          | Type     | Null | Default | Constraint                                                                   | Why                                                    |
+| --------------- | -------- | ---- | ------- | ---------------------------------------------------------------------------- | ------------------------------------------------------ |
+| id              | uuid     | no   | UUIDv7  | PK                                                                           | Convention                                             |
+| home_id         | uuid     | no   | —       | FK `home`                                                                    | Tenant                                                 |
+| starts_on       | date     | no   | —       | —                                                                            | A joiner gets the version in force on their join date (BR-11) |
+| deposit_months  | smallint | no   | —       | CHECK 0–12                                                                   | Months of rent a new member pays first                 |
+| notice_months   | smallint | no   | —       | CHECK 0–12                                                                   | Minimum notice to leave (FR-34)                        |
+| rent_split      | text     | no   | —       | CHECK from `RentSplit` (`equal`, `percent`)                                  | Default way to share a rent change (BR-19)             |
+| rent_gap_policy | text     | no   | —       | CHECK from `RentGapPolicy` (`split_equally`, `split_by_rent_share`, `home_fund`, `ask_members`) | Who covers a rent gap (BR-20)  |
+
+| Index                                          | Serves                  |
+| ---------------------------------------------- | ----------------------- |
+| `home_rules_version(home_id, starts_on)` UNIQUE | The rules in force on a date |
+
+### home_rent _(Phase 2, planned)_
+
+The landlord's monthly rent from a month (FR-28, US-C5). Group 3 migration.
+
+| Column    | Type          | Null | Default | Constraint             | Why                        |
+| --------- | ------------- | ---- | ------- | ---------------------- | -------------------------- |
+| id        | uuid          | no   | UUIDv7  | PK                     | Convention                 |
+| home_id   | uuid          | no   | —       | FK `home`              | Tenant                     |
+| starts_on | date          | no   | —       | CHECK day of month = 1 | The month this rent starts |
+| amount    | numeric(12,2) | no   | —       | CHECK `amount >= 0`    | Compared with the rooms' total |
+
+| Index                                 | Serves                                         |
+| ------------------------------------- | ---------------------------------------------- |
+| `home_rent(home_id, starts_on)` UNIQUE | The landlord's rent for a month; the gap line |
+
+### contact _(Phase 2, planned)_
+
+Everyone the home deals with
+([Contacts and files](#contacts-and-files-agreed-19-nov-2026)). Never
+deleted. Group 3 migration; `photo_id` in group 5.
+
+| Column      | Type | Null | Default | Constraint                                                                                        | Why                                                                 |
+| ----------- | ---- | ---- | ------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| id          | uuid | no   | UUIDv7  | PK                                                                                                | Convention                                                          |
+| home_id     | uuid | no   | —       | FK `home`                                                                                         | Tenant                                                              |
+| kind        | text | no   | —       | CHECK from `ContactKind` (`landlord`, `cook`, `internet`, `electricity`, `gas`, `caretaker`, `other`) | FR-109                                                         |
+| name        | text | no   | —       | CHECK 1–80 characters after trim                                                                  |                                                                     |
+| account_ref | text | yes  | —       | CHECK at most 80 characters                                                                       | "Account or customer ID"; not `account_id`, which would read as an FK |
+| note        | text | yes  | —       | CHECK at most 500 characters                                                                      |                                                                     |
+| photo_id    | uuid | yes  | —       | FK `attachment`                                                                                   | Group 5                                                             |
+| started_on  | date | no   | —       | —                                                                                                 | "Since 1 Oct 2026"                                                  |
+| ended_on    | date | yes  | —       | CHECK `ended_on >= started_on`                                                                    | Mark as left (FR-110)                                               |
+
+| Index                                                                   | Serves                      |
+| ----------------------------------------------------------------------- | --------------------------- |
+| `contact(home_id) WHERE kind = 'landlord' AND ended_on IS NULL` UNIQUE | One active landlord (FR-109) |
+| `contact(home_id, ended_on)`                                            | Current and Past lists      |
+
+### contact_method _(Phase 2, planned)_
+
+A contact's phones and emails. Removing one deletes its row; the old value
+is in `change_log`. Group 3 migration.
+
+| Column     | Type    | Null | Default | Constraint                                                                 | Why                                    |
+| ---------- | ------- | ---- | ------- | -------------------------------------------------------------------------- | -------------------------------------- |
+| id         | uuid    | no   | UUIDv7  | PK                                                                         | Convention                             |
+| home_id    | uuid    | no   | —       | FK `home`                                                                  | Tenant                                 |
+| contact_id | uuid    | no   | —       | FK `contact`                                                               |                                        |
+| kind       | text    | no   | —       | CHECK in (`phone`, `email`)                                                |                                        |
+| value      | text    | no   | —       | CHECK phone `^\+[1-9][0-9]{7,14}$` or email `value = lower(value)`, by kind | Checked like log-in phones and emails  |
+| label      | text    | yes  | —       | CHECK at most 30 characters                                                | "bKash", "Support"                     |
+| is_primary | boolean | no   | false   | —                                                                          | Used for calls and on Bills to pay     |
+
+| Index                                                       | Serves                                   |
+| ----------------------------------------------------------- | ---------------------------------------- |
+| `contact_method(contact_id, kind) WHERE is_primary` UNIQUE | One primary phone and one primary email  |
+| `contact_method(contact_id)`                                | A contact's phones and emails            |
+
+### bill_category _(Phase 2, planned)_
+
+A bill the home pays (FR-05, FR-100, FR-111). Household and Landlord rent
+are added to every home and can't be archived. Group 4 migration, which
+inserts them for existing homes.
+
+| Column             | Type          | Null | Default | Constraint                                                       | Why                                          |
+| ------------------ | ------------- | ---- | ------- | ---------------------------------------------------------------- | -------------------------------------------- |
+| id                 | uuid          | no   | UUIDv7  | PK                                                               | Convention                                   |
+| home_id            | uuid          | no   | —       | FK `home`                                                        | Tenant                                       |
+| name               | text          | no   | —       | CHECK 1–40 characters after trim                                 |                                              |
+| bill_class         | text          | no   | —       | CHECK from `BillClass` (`rent`, `prepaid`, `postpaid`, `other`) | The design's "Group"; the split follows it   |
+| paid_to_contact_id | uuid          | yes  | —       | FK `contact`                                                     | One payee (FR-111); a current contact when chosen |
+| default_estimate   | numeric(12,2) | yes  | —       | CHECK `default_estimate >= 0`                                    | Every month's estimate; null is "Actual only" (FR-100) |
+| archived_at        | timestamptz   | yes  | —       | —                                                                | Removed bills are archived                   |
+
+| Index                                                                  | Serves                                       |
+| ---------------------------------------------------------------------- | -------------------------------------------- |
+| `bill_category(home_id, lower(name)) WHERE archived_at IS NULL` UNIQUE | The bills list; names unique in a home       |
+
+### attachment _(Phase 2, planned)_
+
+Every uploaded file ([Files](#files-s3-and-presigned-urls-agreed-21-nov-2026));
+the bytes are at `homes/<home_id>/<id>` in the private bucket. Group 5
+migration.
+
+| Column       | Type    | Null | Default     | Constraint                                                                                                                   | Why                                                          |
+| ------------ | ------- | ---- | ----------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| id           | uuid    | no   | UUIDv7      | PK                                                                                                                           | Also the object key                                          |
+| home_id      | uuid    | no   | —           | FK `home`                                                                                                                    | Tenant                                                       |
+| purpose      | text    | no   | —           | CHECK from `AttachmentPurpose` (`profile_photo`, `id_document`, `contact_photo`, `contact_document`, `home_photo`, `room_photo`) | Allowed types and size, who may upload and see it, encryption |
+| status       | text    | no   | `'pending'` | CHECK in (`pending`, `ready`)                                                                                                | Ready once the API has checked the object                    |
+| content_type | text    | no   | —           | —                                                                                                                            | From the purpose's list; checked again on finish             |
+| size_bytes   | integer | no   | —           | CHECK `size_bytes > 0`                                                                                                       | Within the purpose's limit                                   |
+| filename     | text    | no   | —           | CHECK 1–200 characters                                                                                                       | "Lease agreement.pdf"                                        |
+| created_by   | uuid    | no   | —           | FK `membership`                                                                                                              | Who uploaded it                                              |
+
+| Index                                             | Serves                             |
+| ------------------------------------------------- | ---------------------------------- |
+| `attachment(created_at) WHERE status = 'pending'` | The clean-up of unfinished uploads |
+
+### id_document _(Phase 2, planned)_
+
+A member's ID (FR-60, FR-61). Replacing one sets `replaced_at` on the old.
+Seen only by the owner, managers and the member. Group 5 migration.
+
+| Column        | Type        | Null | Default | Constraint                                                                                         | Why                                       |
+| ------------- | ----------- | ---- | ------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| id            | uuid        | no   | UUIDv7  | PK                                                                                                 | Convention                                |
+| home_id       | uuid        | no   | —       | FK `home`                                                                                          | Tenant                                    |
+| membership_id | uuid        | no   | —       | FK `membership`                                                                                    |                                           |
+| doc_type      | text        | no   | —       | CHECK from `IdDocType` (`nid`, `passport`, `driving_licence`, `birth_certificate`, `student_id`) | FR-60                                     |
+| number        | text        | no   | —       | CHECK 1–40 characters after trim                                                                   |                                           |
+| front_id      | uuid        | no   | —       | FK `attachment`                                                                                    |                                           |
+| back_id       | uuid        | yes  | —       | FK `attachment`; CHECK `back_id IS NOT NULL OR doc_type = 'passport'`                              | A passport has one photo page             |
+| replaced_at   | timestamptz | yes  | —       | —                                                                                                  | The old one stays in history              |
+
+| Index                                                     | Serves                                 |
+| --------------------------------------------------------- | -------------------------------------- |
+| `id_document(membership_id) WHERE replaced_at IS NULL` UNIQUE | One current ID per member; "ID missing" |
+
+### contact_document, home_photo _(Phase 2, planned)_
+
+Link tables for records with several files. Removing one sets `removed_at`.
+Group 5 migration.
+
+| Column        | Type        | Null | Default | Constraint               | Why                                        |
+| ------------- | ----------- | ---- | ------- | ------------------------ | ------------------------------------------ |
+| id            | uuid        | no   | UUIDv7  | PK                       | Convention                                 |
+| home_id       | uuid        | no   | —       | FK `home`                | Tenant                                     |
+| contact_id    | uuid        | no   | —       | FK `contact`             | `contact_document` only                    |
+| attachment_id | uuid        | no   | —       | FK `attachment`; UNIQUE  | A file belongs to one record               |
+| removed_at    | timestamptz | yes  | —       | —                        | Off the record, kept in history            |
+
+| Index                                                   | Serves                |
+| ------------------------------------------------------- | --------------------- |
+| `contact_document(contact_id) WHERE removed_at IS NULL` | A contact's documents |
+| `home_photo(home_id) WHERE removed_at IS NULL`          | Home photos           |
 
 ## Change log
 
@@ -769,3 +1154,4 @@ limits and sessions (Phase 1c adds change codes and `person_sessions`; see
 | Phase 1b (built)       | Built in `a8f729dfae84_several_homes`: `uq_membership_active_person_id` dropped, `ix_membership_active_person_id` (partial, not unique) added; Phase 1 data migrates unchanged                                                                                |
 | Phase 1c (23 Nov 2026) | Planned: a person may have a phone and an email, each added or changed with a code; `ix_membership_person_id` replaces `ix_membership_active_person_id`; change codes and `person_sessions` in Redis; one `change_log` row per home for a log-in change       |
 | Phase 1c (built)       | Built in `1c59687c8639_change_contact`: `ix_membership_active_person_id` dropped, `ix_membership_person_id` added; Redis keys `otp:change:{person_id}:{contact}` (with `:wrong:`, `:lock:`, `:old:`) and `person_sessions:{person_id}`; Phase 1b data migrates unchanged |
+| Phase 2 (23 Nov 2026) | Planned: `room`, `room_rent`, `room_assignment`, `home_rules_version` (group 2); `home.address`, `home.lease_started_on`, `home_rent`, `contact`, `contact_method` (group 3); `bill_category` with Household and Landlord rent on every home (group 4); `attachment`, `id_document`, `contact_document`, `home_photo` and `photo_id` on `membership`, `contact`, `room` (group 5); `change_log` gains six entity values. Rent as rows from a month, Each pays by people, rules versions from a date; the deposit and notice snapshot waits for Phase 7 |
