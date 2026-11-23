@@ -19,6 +19,7 @@ from app.modules.accounts.models import (
     Role,
 )
 from app.modules.accounts.schemas import (
+    ContactChangeIn,
     DeactivateIn,
     HomeRefusalOut,
     HomeRefusalReason,
@@ -1292,3 +1293,70 @@ def test_naming_a_home_the_person_is_not_active_in_is_refused(
         "You're no longer a member of this home.",
     )
     assert error.value.data == HomeRefusalOut(reason=HomeRefusalReason.NOT_IN_HOME)
+
+
+# Phase 1c: changing the phone or email a member logs in with.
+
+MARUF_EMAIL = "maruf@example.com"
+
+
+def email(value: str = MARUF_EMAIL) -> Contact:
+    """An email to log in with."""
+    return Contact(channel=Channel.EMAIL, value=value)
+
+
+def phone(value: str) -> Contact:
+    """A phone (E.164) to log in with."""
+    return Contact(channel=Channel.SMS, value=value)
+
+
+def owner_and_maruf(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> tuple[Membership, Membership]:
+    """Rabbi Hasan owns "Our Flat" and has added Maruf by phone; no messages yet."""
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+    notifier.sent.clear()
+    return owner, member
+
+
+def change_with_code(
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    editor: Membership,
+    member: Membership,
+    contact: Contact,
+) -> Membership:
+    """``editor`` asks for a code to ``contact`` and saves it for ``member``."""
+    service.request_member_contact_code(
+        session, redis_client, notifier, editor, member.id, contact, clock()
+    )
+    data = ContactChangeIn(contact=contact, code=notifier.last_code_to(contact.value))
+    return service.set_member_contact(
+        session, redis_client, notifier, editor, member.id, data, clock()
+    )
+
+
+def person_of(session: Session, member: Membership) -> Person:
+    """The person behind ``member``, read again from the database."""
+    person = session.get_one(Person, member.person_id)
+    session.refresh(person)
+    return person
+
+
+def test_adding_an_email_keeps_the_phone(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678
+    WHEN  the owner adds maruf@example.com with the code sent to it
+    THEN  Maruf has both the phone and the email
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    change_with_code(session, redis_client, notifier, clock, owner, member, email())
+
+    person = person_of(session, member)
+    assert (person.phone, person.email) == (MARUF_E164, MARUF_EMAIL)

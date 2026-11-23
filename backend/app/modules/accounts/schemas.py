@@ -50,6 +50,13 @@ class LogInIn(BaseModel):
     code: str
 
 
+class ContactChangeIn(BaseModel):
+    """A new phone or email to log in with, and the code sent to it (Phase 1c)."""
+
+    contact: ContactIn
+    code: str
+
+
 class SignUpIn(BaseModel):
     """The owner's sign-up: who they are, their code and their new home."""
 

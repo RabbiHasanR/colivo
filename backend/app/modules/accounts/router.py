@@ -24,6 +24,7 @@ from app.modules.accounts.schemas import (
     CodeErrorOut,
     CodeRequestIn,
     CodeSentOut,
+    ContactChangeIn,
     DeactivateIn,
     HomeChoiceOut,
     HomeRefusalOut,
@@ -285,5 +286,47 @@ def reactivate(
     """Reactivate a member from the date charges start again."""
     member = service.reactivate(session, editor, member_id, data, clock())
     set_response_message(request, "Member reactivated")
+    response.status_code = 200
+    return service.member_out(session, member)
+
+
+@router.post("/members/{member_id}/contact/code", responses=CODE_ERRORS)
+def request_member_contact_code(
+    request: Request,
+    response: Response,
+    member_id: uuid.UUID,
+    data: CodeRequestIn,
+    editor: OwnerOrManagerDep,
+    session: SessionDep,
+    redis_client: RedisDep,
+    notifier: NotifierDep,
+    clock: ClockDep,
+) -> CodeSentOut:
+    """Send a code to a member's new phone or email, to confirm it."""
+    sent = service.request_member_contact_code(
+        session, redis_client, notifier, editor, member_id, data.contact, clock()
+    )
+    set_response_message(request, "Code sent")
+    response.status_code = 200
+    return sent
+
+
+@router.put("/members/{member_id}/contact", responses=CODE_ERRORS)
+def set_member_contact(
+    request: Request,
+    response: Response,
+    member_id: uuid.UUID,
+    data: ContactChangeIn,
+    editor: OwnerOrManagerDep,
+    session: SessionDep,
+    redis_client: RedisDep,
+    notifier: NotifierDep,
+    clock: ClockDep,
+) -> MemberOut:
+    """Save a member's new phone or email with the code sent to it."""
+    member = service.set_member_contact(
+        session, redis_client, notifier, editor, member_id, data, clock()
+    )
+    set_response_message(request, "Log-in changed")
     response.status_code = 200
     return service.member_out(session, member)

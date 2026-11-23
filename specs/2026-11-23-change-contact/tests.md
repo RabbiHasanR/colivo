@@ -16,8 +16,8 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B2 — The owner or a manager adds the missing phone or email, confirmed with a code
 
-- [x] T2.1 unit — `test_adding_an_email_keeps_the_phone`
-- [x] T2.2 integration — `POST /members/{id}/contact/code` sends the code to the new email, not to the member's phone
+- [x] T2.1 unit — `test_adding_an_email_keeps_the_phone` ✅
+- [x] T2.2 integration — `POST /members/{id}/contact/code` sends the code to the new email, not to the member's phone ✅
 - [x] T2.3 web integration — contact editor: typing a new email and pressing Send code shows the code field; Save sends the email and the code
 - [x] T2.4 web integration — contact editor labels the missing one "(optional)"
 

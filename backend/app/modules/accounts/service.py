@@ -21,6 +21,7 @@ from app.modules.accounts.models import (
 )
 from app.modules.accounts.schemas import (
     CodeSentOut,
+    ContactChangeIn,
     DeactivateIn,
     HomeChoiceOut,
     HomeRefusalOut,
@@ -901,3 +902,117 @@ def last_stay_end(session: Session, member: Membership) -> date | None:
             MembershipPeriod.membership_id == member.id
         )
     ).one()
+
+
+# Phase 1c: the phone or email a person logs in with.
+
+
+def request_contact_code(
+    redis_client: Redis,
+    notifier: Notifier,
+    person: Person,
+    contact: Contact,
+    now: datetime,
+) -> CodeSentOut:
+    """Send a code to a new phone or email for ``person`` to log in with.
+
+    Args:
+        redis_client: Where codes are kept.
+        notifier: Sends the SMS or email.
+        person: Whose log-in changes.
+        contact: The new phone or email.
+        now: The current time.
+
+    Returns:
+        How the code was sent, how long it works and when a new one can be
+        sent.
+    """
+    return request_code(redis_client, notifier, contact, now)
+
+
+def set_contact(
+    session: Session,
+    redis_client: Redis,
+    person: Person,
+    data: ContactChangeIn,
+    now: datetime,
+) -> Person:
+    """Save a new phone or email for ``person``, with the code sent to it.
+
+    A phone replaces their phone and an email their email.
+
+    Args:
+        session: The database session.
+        redis_client: Where codes are kept.
+        person: Whose log-in changes.
+        data: The new phone or email and its code.
+        now: The current time.
+
+    Returns:
+        The changed person.
+    """
+    codes.use_code(redis_client, data.contact, data.code, now)
+    if data.contact.channel == Channel.EMAIL:
+        person.email = data.contact.value
+    else:
+        person.phone = data.contact.value
+    session.commit()
+    session.refresh(person)
+    return person
+
+
+def request_member_contact_code(
+    session: Session,
+    redis_client: Redis,
+    notifier: Notifier,
+    editor: Membership,
+    member_id: uuid.UUID,
+    contact: Contact,
+    now: datetime,
+) -> CodeSentOut:
+    """Send a code to a member's new phone or email, for the owner or a manager.
+
+    Args:
+        session: The database session.
+        redis_client: Where codes are kept.
+        notifier: Sends the SMS or email.
+        editor: The owner or manager making the change.
+        member_id: The member whose log-in changes.
+        contact: The new phone or email.
+        now: The current time.
+
+    Returns:
+        How the code was sent.
+    """
+    member = get_member(session, editor.home_id, member_id)
+    person = session.get_one(Person, member.person_id)
+    return request_contact_code(redis_client, notifier, person, contact, now)
+
+
+def set_member_contact(
+    session: Session,
+    redis_client: Redis,
+    notifier: Notifier,
+    editor: Membership,
+    member_id: uuid.UUID,
+    data: ContactChangeIn,
+    now: datetime,
+) -> Membership:
+    """Save a member's new phone or email with its code (owner or manager).
+
+    Args:
+        session: The database session.
+        redis_client: Where codes are kept.
+        notifier: Sends the notices.
+        editor: The owner or manager making the change.
+        member_id: The member whose log-in changes.
+        data: The new phone or email and its code.
+        now: The current time.
+
+    Returns:
+        The member.
+    """
+    member = get_member(session, editor.home_id, member_id)
+    person = session.get_one(Person, member.person_id)
+    set_contact(session, redis_client, person, data, now)
+    return member

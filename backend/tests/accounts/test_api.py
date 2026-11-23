@@ -1166,3 +1166,24 @@ def test_owner_adds_an_email_to_a_member_with_a_code(
     )
     assert by_email["data"]["me"]["membership"]["name"] == "Maruf"
     assert by_phone["data"]["me"]["membership"]["name"] == "Maruf"
+
+
+def test_member_contact_code_goes_to_the_new_contact(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf by phone
+    WHEN  POST /api/v1/members/{id}/contact/code is sent for maruf@example.com
+    THEN  it answers 200, and the code goes to the email, not to Maruf's phone
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    notifier.sent.clear()
+
+    response = client.post(
+        f"/api/v1/members/{member_id}/contact/code", json={"contact": MARUF_EMAIL}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["channel"] == "email"
+    assert [message.to for message in notifier.sent] == [MARUF_EMAIL]
