@@ -24,7 +24,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 ### B3 — The owner or a manager changes a member's phone or email
 
 - [x] T3.1 unit — `test_changing_the_phone_replaces_the_old_one` ✅ (the old phone finds nobody, the new one finds the member) _(passed on its first run: B2's save already writes into the column of its kind; kept to pin it)_
-- [x] T3.2 web acceptance — after a member's phone is changed, the Edit tab stays open showing the new phone
+- [x] T3.2 web acceptance — after a member's phone is changed, the Edit tab stays open showing the new phone ✅
 
 ### B4 — The owner or a manager removes one while the other remains
 

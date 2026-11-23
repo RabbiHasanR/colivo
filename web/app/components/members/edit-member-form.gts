@@ -5,8 +5,9 @@ import { get } from '@ember/helper';
 import { on } from '@ember/modifier';
 import { service } from '@ember/service';
 import type MembersService from '../../services/members';
-import type { Member } from '../../services/members';
+import type { ContactKind, Member } from '../../services/members';
 import { refusalFrom, type Refusal } from '../../utils/refusal';
+import ContactEditor from '../contact/contact-editor';
 import Button from '../ui/button';
 import DateInput from '../ui/date-input';
 import Field from '../ui/field';
@@ -20,6 +21,8 @@ interface EditMemberFormSignature {
     onSaved: (member: Member) => void;
     /** Shows a Cancel button that closes the form without saving. */
     onCancel?: () => void;
+    /** Their phone or email changed (Phase 1c); the page keeps the tab open. */
+    onContactChanged?: (member: Member) => void;
   };
 }
 
@@ -67,6 +70,32 @@ export default class EditMemberForm extends Component<EditMemberFormSignature> {
       memberId: this.args.member.id,
       joinedOn: value,
     };
+  }
+
+  /** The member, as a list of one: the contact editor starts afresh per member. */
+  get shownMember(): Member[] {
+    return [this.args.member];
+  }
+
+  @action
+  async sendContactCode(contact: string): Promise<void> {
+    await this.members.sendContactCode(this.args.member.id, contact);
+  }
+
+  @action
+  async saveContact(contact: string, code: string): Promise<void> {
+    const changed = await this.members.setContact(
+      this.args.member.id,
+      contact,
+      code,
+    );
+    this.args.onContactChanged?.(changed);
+  }
+
+  @action
+  async removeContact(kind: ContactKind): Promise<void> {
+    const changed = await this.members.removeContact(this.args.member.id, kind);
+    this.args.onContactChanged?.(changed);
   }
 
   @action
@@ -133,5 +162,15 @@ export default class EditMemberForm extends Component<EditMemberFormSignature> {
         </div>
       </Stack>
     </form>
+    {{#each this.shownMember key="id" as |shown|}}
+      <ContactEditor
+        @phone={{shown.phone}}
+        @email={{shown.email}}
+        @editable={{shown.contact_editable}}
+        @onSendCode={{this.sendContactCode}}
+        @onSave={{this.saveContact}}
+        @onRemove={{this.removeContact}}
+      />
+    {{/each}}
   </template>
 }

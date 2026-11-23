@@ -3,14 +3,12 @@ import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { fn } from '@ember/helper';
 import { on } from '@ember/modifier';
+import type { ContactKind } from '../../services/members';
 import { eq } from '../../utils/template';
 import CodeField from '../auth/code-field';
 import Button from '../ui/button';
 import Field from '../ui/field';
 import TextInput from '../ui/text-input';
-
-/** Which way to log in a row is about. */
-export type ContactKind = 'phone' | 'email';
 
 interface ContactEditorSignature {
   Args: {
@@ -73,6 +71,7 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
       await this.args.onSave(contact, this.code);
       this.confirming = null;
       this.code = '';
+      this.typed = { ...this.typed, [kind]: undefined };
       return;
     }
     await this.args.onSendCode(contact);

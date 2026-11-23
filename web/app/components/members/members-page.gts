@@ -81,6 +81,14 @@ export default class MembersPage extends Component<MembersPageSignature> {
     return this.formTab === 'edit' ? this.editing : null;
   }
 
+  /** A contact change keeps the Edit tab open on the changed member. */
+  @action
+  async contactChanged(member: Member): Promise<void> {
+    this.reloaded = await this.members.list();
+    this.editing =
+      this.reloaded.find((each) => each.id === member.id) ?? member;
+  }
+
   @action
   cancelEdit(): void {
     this.editing = null;
@@ -142,6 +150,7 @@ export default class MembersPage extends Component<MembersPageSignature> {
               @member={{this.shownForEdit}}
               @onSaved={{this.reload}}
               @onCancel={{this.cancelEdit}}
+              @onContactChanged={{this.contactChanged}}
             />
           {{else}}
             <h2
