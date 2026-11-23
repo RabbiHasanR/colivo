@@ -22,6 +22,7 @@ from app.modules.accounts.models import (
 from app.modules.accounts.schemas import (
     CodeSentOut,
     ContactChangeIn,
+    ContactKind,
     DeactivateIn,
     HomeChoiceOut,
     HomeRefusalOut,
@@ -1015,4 +1016,52 @@ def set_member_contact(
     member = get_member(session, editor.home_id, member_id)
     person = session.get_one(Person, member.person_id)
     set_contact(session, redis_client, person, data, now)
+    return member
+
+
+def remove_contact(session: Session, person: Person, kind: ContactKind) -> Person:
+    """Stop ``person`` logging in with their phone or their email.
+
+    Args:
+        session: The database session.
+        person: Whose log-in changes.
+        kind: Which one to remove.
+
+    Returns:
+        The changed person.
+    """
+    if kind == ContactKind.EMAIL:
+        person.email = None
+    else:
+        person.phone = None
+    session.commit()
+    session.refresh(person)
+    return person
+
+
+def remove_member_contact(
+    session: Session,
+    redis_client: Redis,
+    notifier: Notifier,
+    editor: Membership,
+    member_id: uuid.UUID,
+    kind: ContactKind,
+    now: datetime,
+) -> Membership:
+    """Remove a member's phone or email, for the owner or a manager.
+
+    Args:
+        session: The database session.
+        redis_client: Where sessions are kept.
+        notifier: Sends the notice.
+        editor: The owner or manager making the change.
+        member_id: The member whose log-in changes.
+        kind: Which one to remove.
+        now: The current time.
+
+    Returns:
+        The member.
+    """
+    member = get_member(session, editor.home_id, member_id)
+    remove_contact(session, session.get_one(Person, member.person_id), kind)
     return member

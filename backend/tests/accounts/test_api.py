@@ -1183,3 +1183,51 @@ def test_member_contact_code_goes_to_the_new_contact(
     assert response.status_code == 200
     assert response.json()["data"]["channel"] == "email"
     assert [message.to for message in notifier.sent] == [MARUF_EMAIL]
+
+
+def give_maruf_an_email(
+    client: TestClient, notifier: FakeNotifier, member_id: str
+) -> None:
+    """The logged-in owner adds maruf@example.com to Maruf, with its code."""
+    client.post(
+        f"/api/v1/members/{member_id}/contact/code", json={"contact": MARUF_EMAIL}
+    )
+    client.put(
+        f"/api/v1/members/{member_id}/contact",
+        json={"contact": MARUF_EMAIL, "code": notifier.last_code_to(MARUF_EMAIL)},
+    )
+
+
+def test_removing_a_members_email_answers_200_with_the_member(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with a phone and an email
+    WHEN  DELETE /api/v1/members/{id}/contact/email is sent
+    THEN  it answers 200 with Maruf, who has only his phone now
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    give_maruf_an_email(client, notifier, member_id)
+
+    response = client.delete(f"/api/v1/members/{member_id}/contact/email")
+
+    assert response.status_code == 200
+    member = response.json()["data"]
+    assert (member["phone"], member["email"]) == (MARUF_E164, None)
+
+
+def test_removing_an_unknown_kind_of_contact_answers_422(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf
+    WHEN  DELETE /api/v1/members/{id}/contact/fax is sent
+    THEN  it answers 422
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+
+    response = client.delete(f"/api/v1/members/{member_id}/contact/fax")
+
+    assert response.status_code == 422

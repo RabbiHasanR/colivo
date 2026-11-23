@@ -50,6 +50,13 @@ class LogInIn(BaseModel):
     code: str
 
 
+class ContactKind(StrEnum):
+    """Which way to log in a change is about: the phone or the email."""
+
+    PHONE = "phone"
+    EMAIL = "email"
+
+
 class ContactChangeIn(BaseModel):
     """A new phone or email to log in with, and the code sent to it (Phase 1c)."""
 

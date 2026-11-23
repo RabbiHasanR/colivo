@@ -20,6 +20,7 @@ from app.modules.accounts.models import (
 )
 from app.modules.accounts.schemas import (
     ContactChangeIn,
+    ContactKind,
     DeactivateIn,
     HomeRefusalOut,
     HomeRefusalReason,
@@ -1379,3 +1380,32 @@ def test_changing_the_phone_replaces_the_old_one(
     assert service.find_person(session, phone(MARUF_E164)) is None
     found = service.find_person(session, phone("+8801912345678"))
     assert found is not None and found.id == member.person_id
+
+
+def maruf_with_both(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> tuple[Membership, Membership]:
+    """Maruf logs in with 01812 345678 and maruf@example.com; no messages yet."""
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+    change_with_code(session, redis_client, notifier, clock, owner, member, email())
+    notifier.sent.clear()
+    return owner, member
+
+
+def test_removing_the_email_keeps_only_the_phone(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with a phone and an email
+    WHEN  the owner removes the email
+    THEN  Maruf has only the phone, and the email finds nobody
+    """
+    owner, member = maruf_with_both(session, redis_client, notifier, clock)
+
+    service.remove_member_contact(
+        session, redis_client, notifier, owner, member.id, ContactKind.EMAIL, clock()
+    )
+
+    person = person_of(session, member)
+    assert (person.phone, person.email) == (MARUF_E164, None)
+    assert service.find_person(session, email()) is None

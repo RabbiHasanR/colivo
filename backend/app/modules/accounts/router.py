@@ -25,6 +25,7 @@ from app.modules.accounts.schemas import (
     CodeRequestIn,
     CodeSentOut,
     ContactChangeIn,
+    ContactKind,
     DeactivateIn,
     HomeChoiceOut,
     HomeRefusalOut,
@@ -326,6 +327,27 @@ def set_member_contact(
     """Save a member's new phone or email with the code sent to it."""
     member = service.set_member_contact(
         session, redis_client, notifier, editor, member_id, data, clock()
+    )
+    set_response_message(request, "Log-in changed")
+    response.status_code = 200
+    return service.member_out(session, member)
+
+
+@router.delete("/members/{member_id}/contact/{channel}")
+def remove_member_contact(
+    request: Request,
+    response: Response,
+    member_id: uuid.UUID,
+    channel: ContactKind,
+    editor: OwnerOrManagerDep,
+    session: SessionDep,
+    redis_client: RedisDep,
+    notifier: NotifierDep,
+    clock: ClockDep,
+) -> MemberOut:
+    """Stop a member logging in with their phone or their email."""
+    member = service.remove_member_contact(
+        session, redis_client, notifier, editor, member_id, channel, clock()
     )
     set_response_message(request, "Log-in changed")
     response.status_code = 200
