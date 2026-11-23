@@ -1570,10 +1570,6 @@ def test_the_owner_changing_their_own_phone_stays_logged_in(
     assert client.get("/api/v1/me").status_code == 200
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="acceptance: a person changes their own phone with a code (Phase 1c)",
-)
 def test_person_changes_their_own_phone_with_a_code(
     client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
 ) -> None:
