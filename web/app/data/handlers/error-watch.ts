@@ -9,11 +9,11 @@ import type { Handler, NextFn, RequestContext } from './types';
  * caller.
  *
  * @param kind the error kind to watch for
- * @param onError called on every request that fails with it
+ * @param onError called with the error, on every request that fails with it
  */
 export function createErrorWatchHandler(
   kind: ApiErrorKind,
-  onError: () => void,
+  onError: (error: ApiError) => void,
 ): Handler {
   return {
     async request<T>(context: RequestContext, next: NextFn<T>) {
@@ -21,7 +21,7 @@ export function createErrorWatchHandler(
         return await next(context.request);
       } catch (error) {
         if (error instanceof ApiError && error.kind === kind) {
-          onError();
+          onError(error);
         }
         throw error;
       }

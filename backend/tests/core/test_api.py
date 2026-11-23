@@ -184,3 +184,36 @@ def test_only_the_web_origin_may_send_credentials(
         name: response.headers.get(name) for name in expected if name != "status"
     }
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    ("origin", "allowed"),
+    [
+        pytest.param(WEB_ORIGIN, True, id="web origin"),
+        pytest.param("https://other.example", False, id="other origin"),
+    ],
+)
+def test_preflight_allows_the_home_header(
+    origin: str, allowed: bool, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """
+    GIVEN BACKEND_CORS_ORIGINS lists only the web app's origin
+    WHEN  a browser asks (preflight) whether a page on `origin` may send
+          X-Colivo-Home with a request
+    THEN  only the web origin may (Phase 1b)
+    """
+    monkeypatch.setattr(settings, "backend_cors_origins", [WEB_ORIGIN])
+    client = TestClient(create_app())
+
+    response = client.options(
+        "/api/v1/members",
+        headers={
+            "Origin": origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type, x-colivo-home",
+        },
+    )
+
+    assert (response.status_code == 200) is allowed
+    expected = origin if allowed else None
+    assert response.headers.get("access-control-allow-origin") == expected

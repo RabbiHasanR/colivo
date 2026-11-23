@@ -3,7 +3,12 @@ import uuid
 from fastapi import Request, Response
 from starlette.exceptions import HTTPException
 
-from app.api.deps import CurrentMemberDep, OwnerDep, OwnerOrManagerDep
+from app.api.deps import (
+    CurrentMemberDep,
+    CurrentPersonDep,
+    OwnerDep,
+    OwnerOrManagerDep,
+)
 from app.core.clock import ClockDep
 from app.core.config import settings
 from app.core.database import SessionDep
@@ -20,7 +25,10 @@ from app.modules.accounts.schemas import (
     CodeRequestIn,
     CodeSentOut,
     DeactivateIn,
+    HomeChoiceOut,
+    HomeRefusalOut,
     LogInIn,
+    LogInOut,
     MemberIn,
     MemberOut,
     MemberUpdateIn,
@@ -37,6 +45,13 @@ router = CoreRouter()
 CODE_ERRORS: dict[int | str, dict[str, object]] = {
     400: {"model": StandardResponse[CodeErrorOut]},
     429: {"model": StandardResponse[CodeErrorOut]},
+}
+
+# Any endpoint that acts in a home can answer these (Phase 1b); declared on
+# GET /me so the contract carries the refusal's shape once.
+HOME_ERRORS: dict[int | str, dict[str, object]] = {
+    403: {"model": StandardResponse[HomeRefusalOut]},
+    409: {"model": StandardResponse[HomeRefusalOut]},
 }
 
 
@@ -103,31 +118,34 @@ def log_in(
     session: SessionDep,
     redis_client: RedisDep,
     clock: ClockDep,
-) -> MeOut:
-    """Log in with a phone or email and its one-time code."""
-    membership = service.log_in(session, redis_client, data, clock())
-    token = sessions.create_session(redis_client, membership.person_id, clock())
+) -> LogInOut:
+    """Log in with a phone or email and its one-time code.
+
+    The answer lists the person's homes; ``me`` is set only for one home.
+    """
+    person, answer = service.log_in(session, redis_client, data, clock())
+    token = sessions.create_session(redis_client, person.id, clock())
     set_session_cookie(response, token)
     set_response_message(request, "Logged in")
     response.status_code = 200
-    return service.get_me(session, membership)
+    return answer
 
 
 @router.post("/auth/log-out")
 def log_out(
     request: Request,
     response: Response,
-    membership: CurrentMemberDep,
+    person: CurrentPersonDep,
     redis_client: RedisDep,
 ) -> None:
-    """End the session and clear its cookie."""
+    """End the session and clear its cookie; needs no home (Phase 1b)."""
     service.log_out(redis_client, request.cookies[SESSION_COOKIE])
     response.delete_cookie(SESSION_COOKIE)
     set_response_message(request, "Logged out")
     response.status_code = 200
 
 
-@router.get("/me")
+@router.get("/me", responses=HOME_ERRORS)
 def get_me(
     request: Request,
     response: Response,
@@ -139,6 +157,19 @@ def get_me(
     set_response_message(request, "Logged in")
     response.status_code = 200
     return service.get_me(session, membership)
+
+
+@router.get("/me/homes")
+def my_homes(
+    request: Request,
+    response: Response,
+    person: CurrentPersonDep,
+    session: SessionDep,
+) -> list[HomeChoiceOut]:
+    """The logged-in person's active homes, to choose one; needs no home."""
+    set_response_message(request, "Your homes")
+    response.status_code = 200
+    return service.active_homes(session, person)
 
 
 @router.get("/members")

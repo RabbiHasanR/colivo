@@ -10,3 +10,10 @@ export const API_NAMESPACE = '/api/v1';
 export function apiUrl(path: string): string {
   return `${API_HOST}${API_NAMESPACE}/${path.replace(/^\/+/, '')}`;
 }
+
+/**
+ * The request header naming the home a tab acts in (Phase 1b). The server
+ * checks it against the logged-in person's homes; the cookie still says who
+ * they are.
+ */
+export const HOME_HEADER = 'X-Colivo-Home';

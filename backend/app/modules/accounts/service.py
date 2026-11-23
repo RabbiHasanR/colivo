@@ -7,6 +7,7 @@ from redis import Redis
 from sqlmodel import Session, col, func, select
 from starlette.exceptions import HTTPException
 
+from app.core.exceptions import AppError
 from app.core.notifier import Channel, Notifier
 from app.modules.accounts import codes, sessions
 from app.modules.accounts.constants import CODE_LIFETIME, CODE_RESEND_AFTER
@@ -21,7 +22,11 @@ from app.modules.accounts.models import (
 from app.modules.accounts.schemas import (
     CodeSentOut,
     DeactivateIn,
+    HomeChoiceOut,
+    HomeRefusalOut,
+    HomeRefusalReason,
     LogInIn,
+    LogInOut,
     MeHomeOut,
     MemberIn,
     MemberOut,
@@ -40,7 +45,9 @@ from app.modules.homes import service as homes_service
 from app.modules.homes.constants import DEFAULT_TIME_ZONE
 from app.modules.homes.models import Home
 
-ALREADY_IN_A_HOME = "This phone or email is already in a home."
+ALREADY_IN_THIS_HOME = "Already a member of this home."
+CHOOSE_HOME = "Choose a home."
+NOT_IN_HOME = "You're no longer a member of this home."
 PAST_MEMBER = "This person was a member of this home. Reactivate them instead."
 NAME_TAKEN = "Someone in this home already has that name."
 NO_STAY = "Only someone who lives in the home has a join date."
@@ -89,22 +96,49 @@ def new_person(contact: Contact) -> Person:
     return Person(phone=contact.value)
 
 
-def active_membership(session: Session, person: Person) -> Membership | None:
-    """Return the person's active membership; there is at most one (FR-85).
+def membership_for(
+    session: Session, person: Person, home_id: uuid.UUID | None
+) -> Membership:
+    """The person's active membership of the home a request names.
+
+    A request that names no home acts in the person's only home; with
+    several, it must say which (Phase 1b), so a missing header never sends
+    a change to the wrong home.
 
     Args:
         session: The database session.
-        person: The person.
+        person: The logged-in person.
+        home_id: The home named in the ``X-Colivo-Home`` header, if any.
 
     Returns:
-        The membership, or None when they are active nowhere.
+        The active membership.
+
+    Raises:
+        AppError: 409 "Choose a home." when no home is named and the person
+            is active in several; 403 when the named home isn't one they are
+            active in now, whether or not it exists.
+        HTTPException: 401 when they are active in no home.
     """
-    return session.exec(
-        select(Membership).where(
-            Membership.person_id == person.id,
-            Membership.status == MembershipStatus.ACTIVE,
+    query = select(Membership).where(
+        Membership.person_id == person.id,
+        Membership.status == MembershipStatus.ACTIVE,
+    )
+    if home_id is not None:
+        query = query.where(Membership.home_id == home_id)
+    memberships = session.exec(query.limit(2)).all()
+    if home_id is None and len(memberships) > 1:
+        raise AppError(
+            409, CHOOSE_HOME, HomeRefusalOut(reason=HomeRefusalReason.CHOOSE_HOME)
         )
-    ).first()
+    if not memberships and home_id is not None:
+        # The same answer whether the home exists or not, so nobody learns
+        # which homes exist.
+        raise AppError(
+            403, NOT_IN_HOME, HomeRefusalOut(reason=HomeRefusalReason.NOT_IN_HOME)
+        )
+    if not memberships:
+        raise HTTPException(401, "Log in first.")
+    return memberships[0]
 
 
 def check_name_free(
@@ -175,17 +209,14 @@ def sign_up(
         The owner's new membership.
 
     Raises:
-        HTTPException: 400 for a first month that isn't this month or next;
-            409 when the person is already active in a home (FR-85).
+        HTTPException: 400 for a first month that isn't this month or next.
     """
     # The first month says nothing about who someone is, so it is checked
-    # before the code (a wrong month doesn't use the code up). "Already in a
-    # home" is told only to someone with the right code.
+    # before the code (a wrong month doesn't use the code up). Someone already
+    # in other homes gets one more (Phase 1b).
     homes_service.check_first_month(data.first_month, now, DEFAULT_TIME_ZONE)
     codes.use_code(redis_client, data.contact, data.code, now)
     person = find_person(session, data.contact) or new_person(data.contact)
-    if active_membership(session, person) is not None:
-        raise HTTPException(409, "You're already in a home. Log in instead.")
     home = homes_service.create_home(
         session, name=data.home_name, area=data.area, first_month=data.first_month
     )
@@ -243,6 +274,7 @@ def get_me(session: Session, membership: Membership) -> MeOut:
             details_checked=membership.details_checked_at is not None,
         ),
         home=MeHomeOut.model_validate(home, from_attributes=True),
+        homes=active_homes(session, person),
     )
 
 
@@ -287,10 +319,38 @@ def log_out(redis_client: Redis, token: str) -> None:
     sessions.end_session(redis_client, token)
 
 
+def active_homes(session: Session, person: Person) -> list[HomeChoiceOut]:
+    """The homes ``person`` is an active member of, by name, with their role.
+
+    Args:
+        session: The database session.
+        person: The person.
+
+    Returns:
+        One row per active home; empty when they are active nowhere.
+    """
+    rows = session.exec(
+        select(Home, Membership.role)
+        .join(Membership, col(Membership.home_id) == col(Home.id))
+        .where(
+            Membership.person_id == person.id,
+            Membership.status == MembershipStatus.ACTIVE,
+        )
+        .order_by(col(Home.name))
+    ).all()
+    return [
+        HomeChoiceOut(id=home.id, name=home.name, area=home.area, role=Role(role))
+        for home, role in rows
+    ]
+
+
 def log_in(
     session: Session, redis_client: Redis, data: LogInIn, now: datetime
-) -> Membership:
-    """Log in with a one-time code (FR-84): into the person's one active home.
+) -> tuple[Person, LogInOut]:
+    """Log in with a one-time code (FR-84).
+
+    A person in one home goes straight to it; with several, the answer
+    lists them and the client asks which one (Phase 1b).
 
     Args:
         session: The database session.
@@ -299,7 +359,8 @@ def log_in(
         now: The current time.
 
     Returns:
-        The person's active membership.
+        The person, for the session, and the answer: their homes, and
+        ``me`` when there is exactly one.
 
     Raises:
         HTTPException: 404 "Not added yet" when the person is active in no
@@ -307,11 +368,15 @@ def log_in(
     """
     codes.use_code(redis_client, data.contact, data.code, now)
     person = find_person(session, data.contact)
-    membership = person and active_membership(session, person)
-    if not membership:
+    homes = active_homes(session, person) if person else []
+    if not person or not homes:
         # Only after the right code, so nobody learns who has an account.
         raise HTTPException(404, NOT_ADDED)
-    return membership
+    me = None
+    if len(homes) == 1:
+        membership = membership_in(session, person, homes[0].id)
+        me = membership and get_me(session, membership)
+    return person, LogInOut(homes=homes, me=me)
 
 
 def add_member(
@@ -337,16 +402,18 @@ def add_member(
         The new membership.
 
     Raises:
-        HTTPException: 409 when the person is already active in a home, was
-            a member of this one (they are reactivated instead), or an active
-            member already has the name.
+        HTTPException: 409 when the person is already an active member of
+            this home, was one (they are reactivated instead), or an active
+            member already has the name. Being active in another home is
+            fine (Phase 1b).
     """
     person = find_person(session, data.contact)
-    if person and active_membership(session, person):
-        # FR-85: one active home per person.
-        raise HTTPException(409, ALREADY_IN_A_HOME)
-    if person and membership_in(session, person, adder.home_id):
-        raise HTTPException(409, PAST_MEMBER)
+    existing = person and membership_in(session, person, adder.home_id)
+    if existing:
+        # One membership per person per home: an active one is a duplicate,
+        # an inactive one is reactivated instead.
+        active = existing.status == MembershipStatus.ACTIVE
+        raise HTTPException(409, ALREADY_IN_THIS_HOME if active else PAST_MEMBER)
     check_name_free(session, adder.home_id, data.name)
     person = person or new_person(data.contact)
     session.add(person)
@@ -784,9 +851,9 @@ def reactivate(
 
     Raises:
         HTTPException: 404 for another home's member; 403 for a manager
-            reactivating a manager; 409 when already active, active in another
-            home, or an active member has their
-            name; 400 for a date not after their last stay ended.
+            reactivating a manager; 409 when already active, or an active
+            member has their name; 400 for a date not after their last stay
+            ended.
     """
     member = get_member(session, editor.home_id, member_id, lock=True)
     if member.role == Role.MANAGER and editor.role != Role.OWNER:
@@ -797,10 +864,8 @@ def reactivate(
     last_end = last_stay_end(session, member)
     if last_end is not None and data.on <= last_end:
         raise HTTPException(400, REACTIVATE_TOO_EARLY)
-    person = session.get_one(Person, member.person_id)
-    if active_membership(session, person):
-        # FR-85: they joined another home meanwhile.
-        raise HTTPException(409, ALREADY_IN_A_HOME)
+    # Joining another home meanwhile is fine (Phase 1b); only the name must
+    # still be free here.
     check_name_free(session, member.home_id, member.name, except_id=member.id)
     session.add(
         MembershipPeriod(

@@ -5,6 +5,8 @@ import type { components } from '../types/api.generated';
 type Schemas = components['schemas'];
 export type SignUpFields = Schemas['SignUpIn'];
 export type CodeSent = Schemas['CodeSentOut'];
+/** The log-in answer: the person's homes, and `me` only for one home. */
+export type LogInAnswer = Schemas['LogInOut'];
 
 /** A JSON POST that is not a stored record, so it skips the cache. */
 function postJson(path: string, body: unknown) {

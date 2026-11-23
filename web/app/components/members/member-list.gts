@@ -8,27 +8,16 @@ import type { Me } from '../../services/session';
 import { formatDate } from '../../utils/dates';
 import { canChangeStatus, canEditDetails } from '../../utils/members';
 import { eq } from '../../utils/template';
-import { roleLabel } from '../../utils/roles';
+import { roleLabel, roleTone } from '../../utils/roles';
 import Avatar from '../ui/avatar';
 import Button from '../ui/button';
-import Tag, { type TagTone } from '../ui/tag';
+import Tag from '../ui/tag';
 import ScrollBox from '../ui/scroll-box';
 import RoleEditor from './role-editor';
 
 const HEAD =
   'px-3.5 py-2.5 text-left text-xs font-medium whitespace-nowrap text-muted';
 const CELL = 'px-3.5 py-[11px] text-left whitespace-nowrap';
-
-/** Each role's pill colour, as in colivo-design/web/WebMembers.html. */
-const ROLE_TONES: Record<string, TagTone> = {
-  owner: 'dark',
-  manager: 'blue',
-  member: 'teal',
-};
-
-function roleTone(role: string): TagTone {
-  return ROLE_TONES[role] ?? 'grey';
-}
 
 interface MemberListSignature {
   Args: {

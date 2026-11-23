@@ -63,7 +63,7 @@ added to it can log in.
 - Deactivate and reactivate a member.
 - New home shows the setup checklist and empty states.
 
-## Phase 1b — A person in several homes ⏳ Not started
+## Phase 1b — A person in several homes ✅ Complete
 
 `[backend] [web]`
 

@@ -145,9 +145,45 @@ class MeHomeOut(BaseModel):
     first_month: date
 
 
+class HomeChoiceOut(BaseModel):
+    """One of the person's active homes, for choosing or switching homes."""
+
+    id: uuid.UUID
+    name: str
+    area: str | None
+    # The person's role in that home.
+    role: Role
+
+
 class MeOut(BaseModel):
-    """Who is logged in, and in which home."""
+    """Who is logged in, and in which home; ``homes`` for switching homes."""
 
     person: MePersonOut
     membership: MeMembershipOut
     home: MeHomeOut
+    homes: list[HomeChoiceOut]
+
+
+class LogInOut(BaseModel):
+    """The answer to a log-in: the person's homes, and ``me`` for one home.
+
+    With several homes, ``me`` is None and the client asks which home.
+    """
+
+    homes: list[HomeChoiceOut]
+    me: MeOut | None = None
+
+
+class HomeRefusalReason(StrEnum):
+    """Why a request was refused for the home it named (Phase 1b)."""
+
+    # The person is in several homes and the request named none.
+    CHOOSE_HOME = "choose_home"
+    # The named home isn't one the person is active in now.
+    NOT_IN_HOME = "not_in_home"
+
+
+class HomeRefusalOut(BaseModel):
+    """The ``data`` of a 409 "Choose a home" or 403 "no longer a member"."""
+
+    reason: HomeRefusalReason

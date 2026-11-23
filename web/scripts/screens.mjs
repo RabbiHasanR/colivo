@@ -26,6 +26,12 @@ const home = {
   first_month: '2026-11-01',
 };
 
+/** Rabbi's homes: he owns Our Flat and is a member of Green House. */
+const homes = [
+  { id: 'h2', name: 'Green House', area: 'Dhanmondi', role: 'member' },
+  { id: 'h1', name: 'Our Flat', area: 'Mirpur', role: 'owner' },
+];
+
 const owner = {
   person: { phone: '+8801712345678' },
   membership: {
@@ -38,6 +44,7 @@ const owner = {
     details_checked: true,
   },
   home,
+  homes,
 };
 
 function member(id, name, role, status, joinedOn) {
@@ -55,6 +62,7 @@ function member(id, name, role, status, joinedOn) {
 /** What the API answers, by path under /api/v1/. */
 const API = {
   me: owner,
+  'me/homes': homes,
   'home/setup': {
     steps: [
       { key: 'home_created', done: true },
@@ -72,10 +80,26 @@ const API = {
   ],
 };
 
-/** Each page: its name, its URL, and whether someone is logged in. */
+/**
+ * Each page: its name, its URL, whether someone is logged in, and what to
+ * click first, if anything (a tab).
+ */
 const PAGES = [
   { name: 'log-in', path: '/log-in', loggedIn: false },
+  {
+    name: 'create-home',
+    path: '/log-in',
+    loggedIn: false,
+    click: '[data-test-auth-tab="create-home"]',
+  },
   { name: 'home', path: '/', loggedIn: true },
+  { name: 'choose-home', path: '/choose-home', loggedIn: true },
+  {
+    name: 'home-switcher',
+    path: '/',
+    loggedIn: true,
+    click: '[data-test-home-switcher]:visible',
+  },
   { name: 'members', path: '/members', loggedIn: true },
 ];
 
@@ -141,13 +165,14 @@ async function main() {
   const browser = await chromium.launch();
   try {
     await waitForServer();
-    for (const { name, path, loggedIn } of PAGES) {
+    for (const { name, path, loggedIn, click } of PAGES) {
       for (const width of WIDTHS) {
         const page = await browser.newPage({
           viewport: { width, height: 900 },
         });
         await answerApi(page, loggedIn);
         await page.goto(`${BASE}${path}`, { waitUntil: 'networkidle' });
+        if (click) await page.click(click);
         const file = `${OUT}/${name}-${width}.png`;
         await page.screenshot({ path: file, fullPage: true });
         console.log(file);

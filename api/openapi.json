@@ -168,7 +168,7 @@
           "Accounts"
         ],
         "summary": "Log In",
-        "description": "Log in with a phone or email and its one-time code.",
+        "description": "Log in with a phone or email and its one-time code.\n\nThe answer lists the person's homes; ``me`` is set only for one home.",
         "operationId": "log_in_api_v1_auth_log_in_post",
         "requestBody": {
           "content": {
@@ -186,7 +186,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StandardResponse_MeOut_"
+                  "$ref": "#/components/schemas/StandardResponse_LogInOut_"
                 }
               }
             }
@@ -230,7 +230,7 @@
           "Accounts"
         ],
         "summary": "Log Out",
-        "description": "End the session and clear its cookie.",
+        "description": "End the session and clear its cookie; needs no home (Phase 1b).",
         "operationId": "log_out_api_v1_auth_log_out_post",
         "responses": {
           "200": {
@@ -252,6 +252,25 @@
         "summary": "Get Me",
         "description": "Who is logged in, and in which home; renews the cookie for 30 days.",
         "operationId": "get_me_api_v1_me_get",
+        "parameters": [
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -259,6 +278,36 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StandardResponse_MeOut_"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_HomeRefusalOut_"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_HomeRefusalOut_"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -272,15 +321,34 @@
         "summary": "Update Me",
         "description": "Fix your own name; this also finishes the first log-in check.",
         "operationId": "update_me_api_v1_me_patch",
+        "parameters": [
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/MeUpdateIn"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -306,6 +374,33 @@
         }
       }
     },
+    "/api/v1/me/homes": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "My Homes",
+        "description": "The logged-in person's active homes, to choose one; needs no home.",
+        "operationId": "my_homes_api_v1_me_homes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_list_HomeChoiceOut__",
+                  "items": {
+                    "$ref": "#/components/schemas/HomeChoiceOut"
+                  },
+                  "type": "array",
+                  "title": "Response My Homes Api V1 Me Homes Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/members": {
       "get": {
         "tags": [
@@ -314,18 +409,47 @@
         "summary": "List Members",
         "description": "Everyone in the home, for the owner and managers.",
         "operationId": "list_members_api_v1_members_get",
+        "parameters": [
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StandardResponse_list_MemberOut__",
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/MemberOut"
                   },
-                  "type": "array",
-                  "title": "Response List Members Api V1 Members Get"
+                  "title": "Response List Members Api V1 Members Get",
+                  "$ref": "#/components/schemas/StandardResponse_list_MemberOut__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -339,15 +463,34 @@
         "summary": "Add Member",
         "description": "Add a member to the home; they get an SMS or email to log in.",
         "operationId": "add_member_api_v1_members_post",
+        "parameters": [
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/MemberIn"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -390,6 +533,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Member Id"
+            }
+          },
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
             }
           }
         ],
@@ -445,6 +605,23 @@
               "format": "uuid",
               "title": "Member Id"
             }
+          },
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
+            }
           }
         ],
         "requestBody": {
@@ -498,6 +675,23 @@
               "type": "string",
               "format": "uuid",
               "title": "Member Id"
+            }
+          },
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
             }
           }
         ],
@@ -553,6 +747,23 @@
               "format": "uuid",
               "title": "Member Id"
             }
+          },
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
+            }
           }
         ],
         "requestBody": {
@@ -597,6 +808,25 @@
         "summary": "Get Setup",
         "description": "The setup checklist of the logged-in owner's or manager's home.",
         "operationId": "get_setup_api_v1_home_setup_get",
+        "parameters": [
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -604,6 +834,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StandardResponse_SetupOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -781,6 +1021,64 @@
         "title": "HealthOut",
         "description": "The status of each dependency the backend needs."
       },
+      "HomeChoiceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "area": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Area"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "area",
+          "role"
+        ],
+        "title": "HomeChoiceOut",
+        "description": "One of the person's active homes, for choosing or switching homes."
+      },
+      "HomeRefusalOut": {
+        "properties": {
+          "reason": {
+            "$ref": "#/components/schemas/HomeRefusalReason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "HomeRefusalOut",
+        "description": "The ``data`` of a 409 \"Choose a home\" or 403 \"no longer a member\"."
+      },
+      "HomeRefusalReason": {
+        "type": "string",
+        "enum": [
+          "choose_home",
+          "not_in_home"
+        ],
+        "title": "HomeRefusalReason",
+        "description": "Why a request was refused for the home it named (Phase 1b)."
+      },
       "LogInIn": {
         "properties": {
           "contact": {
@@ -799,6 +1097,33 @@
         ],
         "title": "LogInIn",
         "description": "Log in with a phone or email and the code sent to it."
+      },
+      "LogInOut": {
+        "properties": {
+          "homes": {
+            "items": {
+              "$ref": "#/components/schemas/HomeChoiceOut"
+            },
+            "type": "array",
+            "title": "Homes"
+          },
+          "me": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "homes"
+        ],
+        "title": "LogInOut",
+        "description": "The answer to a log-in: the person's homes, and ``me`` for one home.\n\nWith several homes, ``me`` is None and the client asks which home."
       },
       "MeHomeOut": {
         "properties": {
@@ -909,16 +1234,24 @@
           },
           "home": {
             "$ref": "#/components/schemas/MeHomeOut"
+          },
+          "homes": {
+            "items": {
+              "$ref": "#/components/schemas/HomeChoiceOut"
+            },
+            "type": "array",
+            "title": "Homes"
           }
         },
         "type": "object",
         "required": [
           "person",
           "membership",
-          "home"
+          "home",
+          "homes"
         ],
         "title": "MeOut",
-        "description": "Who is logged in, and in which home."
+        "description": "Who is logged in, and in which home; ``homes`` for switching homes."
       },
       "MePersonOut": {
         "properties": {
@@ -1370,6 +1703,90 @@
         ],
         "title": "StandardResponse[HealthOut]"
       },
+      "StandardResponse_HomeRefusalOut_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HomeRefusalOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StandardResponse[HomeRefusalOut]"
+      },
+      "StandardResponse_LogInOut_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LogInOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StandardResponse[LogInOut]"
+      },
       "StandardResponse_MeOut_": {
         "properties": {
           "success": {
@@ -1495,6 +1912,52 @@
           "message"
         ],
         "title": "StandardResponse[SetupOut]"
+      },
+      "StandardResponse_list_HomeChoiceOut__": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HomeChoiceOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StandardResponse[list[HomeChoiceOut]]"
       },
       "StandardResponse_list_MemberOut__": {
         "properties": {

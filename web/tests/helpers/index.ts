@@ -4,6 +4,18 @@ import {
   setupTest as upstreamSetupTest,
   type SetupTestOptions,
 } from 'ember-qunit';
+import { TAB_HOME_KEY, LAST_HOME_KEY } from 'colivo-web/services/current-home';
+
+/**
+ * Every test starts with no home chosen: the browser keeps sessionStorage
+ * and localStorage between tests (Phase 1b, services/current-home.ts).
+ */
+function forgetChosenHome(hooks: NestedHooks): void {
+  hooks.beforeEach(function () {
+    sessionStorage.removeItem(TAB_HOME_KEY);
+    localStorage.removeItem(LAST_HOME_KEY);
+  });
+}
 
 // This file exists to provide wrappers around ember-qunit's
 // test setup functions. This way, you can easily extend the setup that is
@@ -11,6 +23,7 @@ import {
 
 function setupApplicationTest(hooks: NestedHooks, options?: SetupTestOptions) {
   upstreamSetupApplicationTest(hooks, options);
+  forgetChosenHome(hooks);
 
   // Additional setup for application tests can be done here.
   //
@@ -30,12 +43,14 @@ function setupApplicationTest(hooks: NestedHooks, options?: SetupTestOptions) {
 
 function setupRenderingTest(hooks: NestedHooks, options?: SetupTestOptions) {
   upstreamSetupRenderingTest(hooks, options);
+  forgetChosenHome(hooks);
 
   // Additional setup for rendering tests can be done here.
 }
 
 function setupTest(hooks: NestedHooks, options?: SetupTestOptions) {
   upstreamSetupTest(hooks, options);
+  forgetChosenHome(hooks);
 
   // Additional setup for unit tests can be done here.
 }

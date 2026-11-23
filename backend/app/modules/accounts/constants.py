@@ -12,3 +12,7 @@ CODE_SEND_WINDOW = timedelta(hours=1)
 # Log-in sessions.
 SESSION_COOKIE = "colivo_session"
 SESSION_LIFETIME = timedelta(days=30)
+
+# The home a request acts in (Phase 1b): a home id, checked against the
+# logged-in person's active memberships; it only chooses among their homes.
+HOME_HEADER = "X-Colivo-Home"

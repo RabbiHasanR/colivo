@@ -4,10 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.api_v1 import api_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
+from app.modules.accounts.constants import HOME_HEADER
 
 API_PREFIX = "/api/v1"
 CORS_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-CORS_HEADERS = ["Accept", "Content-Type"]
+# X-Colivo-Home names the home a request acts in (Phase 1b).
+CORS_HEADERS = ["Accept", "Content-Type", HOME_HEADER]
 
 
 def create_app() -> FastAPI:

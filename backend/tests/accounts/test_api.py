@@ -11,9 +11,15 @@ from sqlmodel import Session, func, select
 from app.core.config import settings
 from app.core.notifier import Channel
 from app.modules.accounts import codes, sessions
-from app.modules.accounts.constants import SESSION_COOKIE
+from app.modules.accounts.constants import HOME_HEADER, SESSION_COOKIE
 from app.modules.accounts.contact import Contact
-from app.modules.accounts.models import Membership, Person, Role
+from app.modules.accounts.models import (
+    Membership,
+    MembershipPeriod,
+    MembershipStatus,
+    Person,
+    Role,
+)
 from app.modules.homes import service as homes_service
 from tests.conftest import FakeNotifier, MovableClock
 
@@ -611,6 +617,72 @@ def test_changing_another_homes_member_answers_404(
     assert karim.name == "Karim"
 
 
+def test_member_of_another_home_is_added_to_this_home(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Karim is an active member of "Old Fort", and Rabbi owns "Our Flat"
+    WHEN  Rabbi adds Karim's phone to Our Flat
+    THEN  Karim is a member of Our Flat too, and still active in Old Fort
+    """
+    sign_up_owner(client, redis_client, clock)
+    karim = member_of_old_fort(session)
+
+    response = client.post(
+        "/api/v1/members", json=maruf_body(name="Karim", contact="01612 345678")
+    )
+
+    assert response.status_code == 201
+    names = [m["name"] for m in client.get("/api/v1/members").json()["data"]]
+    assert "Karim" in names
+    session.refresh(karim)
+    assert karim.status == "active"
+
+
+def test_person_in_two_homes_shows_each_homes_details_only(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf is "Maruf Ahmed", a manager of "Old Fort" since January
+    WHEN  the owner of "Our Flat" adds him as "Maruf", a member from 21 Nov,
+          and asks for the members list
+    THEN  Our Flat lists him as "Maruf", member, joined 21 Nov, and nothing of
+          his Old Fort name, role, dates or home
+    """
+    sign_up_owner(client, redis_client, clock)
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area=None, first_month=date(2026, 1, 1)
+    )
+    person = Person(phone=MARUF_E164)
+    session.add(person)
+    session.flush()
+    in_old_fort = Membership(
+        home_id=old_fort.id, person_id=person.id, name="Maruf Ahmed", role=Role.MANAGER
+    )
+    session.add(in_old_fort)
+    session.flush()
+    session.add(
+        MembershipPeriod(
+            home_id=old_fort.id,
+            membership_id=in_old_fort.id,
+            starts_on=date(2026, 1, 1),
+        )
+    )
+    session.flush()
+    client.post("/api/v1/members", json=maruf_body())
+
+    response = client.get("/api/v1/members")
+
+    [maruf] = [m for m in response.json()["data"] if m["phone"] == MARUF_E164]
+    assert (maruf["name"], maruf["role"], maruf["joined_on"]) == (
+        "Maruf",
+        "member",
+        "2026-11-21",
+    )
+    for other in ("Maruf Ahmed", "manager", "Old Fort", "2026-01-01"):
+        assert other not in response.text
+
+
 def test_members_list_shows_only_this_homes_members(
     client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
 ) -> None:
@@ -810,3 +882,235 @@ def test_status_and_role_changes_answer_404_for_another_homes_member(
     assert "Karim" not in response.text
     session.refresh(karim)
     assert (karim.role, karim.status) == ("member", "active")
+
+
+def rabbi_joins_old_fort(session: Session) -> uuid.UUID:
+    """Make Rabbi (01712 345678) an active member of "Old Fort"; its id."""
+    person = session.exec(select(Person).where(Person.phone == PHONE_E164)).one()
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area="Dhanmondi", first_month=date(2026, 1, 1)
+    )
+    session.add(Membership(home_id=old_fort.id, person_id=person.id, name="Rabbi"))
+    session.flush()
+    return old_fort.id
+
+
+def test_person_in_two_homes_chooses_one_after_log_in(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" and is a member of "Old Fort"
+    WHEN  he logs in, and then opens Old Fort by naming it
+    THEN  log-in lists both homes without choosing one, a request naming no
+          home is refused with "choose_home", and naming Old Fort opens it
+          as a member
+    """
+    sign_up_owner(client, redis_client, clock)
+    old_fort_id = rabbi_joins_old_fort(session)
+    client.post("/api/v1/auth/log-out")
+    clock.advance(timedelta(minutes=2))
+    client.post("/api/v1/auth/codes", json={"contact": PHONE})
+
+    logged_in = client.post(
+        "/api/v1/auth/log-in",
+        json={"contact": PHONE, "code": notifier.last_code_to(PHONE_E164)},
+    ).json()["data"]
+    unnamed = client.get("/api/v1/me")
+    named = client.get("/api/v1/me", headers={"X-Colivo-Home": str(old_fort_id)})
+
+    assert logged_in["me"] is None
+    assert [home["name"] for home in logged_in["homes"]] == ["Old Fort", "Our Flat"]
+    assert unnamed.status_code == 409
+    assert unnamed.json()["data"] == {"reason": "choose_home"}
+    me = named.json()["data"]
+    assert (me["home"]["name"], me["membership"]["role"]) == ("Old Fort", "member")
+
+
+def test_my_homes_lists_active_homes_without_a_header(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat", is a member of "Old Fort", and was a member
+          of "Green House" (deactivated)
+    WHEN  he asks for his homes, naming none
+    THEN  it lists Old Fort and Our Flat with his role, and not Green House
+    """
+    sign_up_owner(client, redis_client, clock)
+    rabbi_joins_old_fort(session)
+    person = session.exec(select(Person).where(Person.phone == PHONE_E164)).one()
+    green_house = homes_service.create_home(
+        session, name="Green House", area=None, first_month=date(2026, 1, 1)
+    )
+    session.add(
+        Membership(
+            home_id=green_house.id,
+            person_id=person.id,
+            name="Rabbi",
+            status=MembershipStatus.INACTIVE,
+        )
+    )
+    session.flush()
+
+    response = client.get("/api/v1/me/homes")
+
+    assert response.status_code == 200
+    homes = [(home["name"], home["role"]) for home in response.json()["data"]]
+    assert homes == [("Old Fort", "member"), ("Our Flat", "owner")]
+
+
+def test_me_shows_the_chosen_homes_first_log_in_check(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" (details checked at sign-up) and was just
+          added to "Old Fort" (not checked yet)
+    WHEN  he asks who he is, naming Old Fort, then Our Flat
+    THEN  Old Fort's answer shows its check still to do; Our Flat's is done
+    """
+    sign_up_owner(client, redis_client, clock)
+    our_flat_id = owner_home_id(client)
+    old_fort_id = rabbi_joins_old_fort(session)
+
+    in_old_fort = client.get("/api/v1/me", headers={HOME_HEADER: str(old_fort_id)})
+    in_our_flat = client.get("/api/v1/me", headers={HOME_HEADER: str(our_flat_id)})
+
+    old_fort, our_flat = in_old_fort.json()["data"], in_our_flat.json()["data"]
+    assert (old_fort["home"]["name"], old_fort["membership"]["details_checked"]) == (
+        "Old Fort",
+        False,
+    )
+    assert (our_flat["home"]["name"], our_flat["membership"]["details_checked"]) == (
+        "Our Flat",
+        True,
+    )
+
+
+def test_me_lists_the_persons_homes_for_the_switcher(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" and is a member of "Old Fort"
+    WHEN  he asks who he is in Our Flat
+    THEN  the answer lists both his homes, for switching
+    """
+    sign_up_owner(client, redis_client, clock)
+    our_flat_id = owner_home_id(client)
+    rabbi_joins_old_fort(session)
+
+    response = client.get("/api/v1/me", headers={HOME_HEADER: str(our_flat_id)})
+
+    homes = [home["name"] for home in response.json()["data"]["homes"]]
+    assert homes == ["Old Fort", "Our Flat"]
+
+
+def test_adding_a_member_without_naming_a_home_changes_nothing(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" and is a member of "Old Fort"
+    WHEN  he adds Maruf without naming a home
+    THEN  it is refused with 409 "choose_home", and Maruf is in no home
+    """
+    sign_up_owner(client, redis_client, clock)
+    rabbi_joins_old_fort(session)
+
+    response = client.post("/api/v1/members", json=maruf_body())
+
+    assert response.status_code == 409
+    assert response.json()["data"] == {"reason": "choose_home"}
+    assert members_named(session, "Maruf") == 0
+
+
+def test_log_out_works_without_choosing_a_home(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" and is a member of "Old Fort"
+    WHEN  he logs out without naming a home
+    THEN  he is logged out: the next request needs a log-in
+    """
+    sign_up_owner(client, redis_client, clock)
+    rabbi_joins_old_fort(session)
+
+    response = client.post("/api/v1/auth/log-out")
+
+    assert response.status_code == 200
+    assert client.get("/api/v1/me/homes").status_code == 401
+
+
+def test_not_in_home_answer_is_the_same_for_any_home(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat", and Karim's "Old Fort" exists
+    WHEN  Rabbi names Old Fort, and then a home id that doesn't exist
+    THEN  both answers are the same 403, and neither names Old Fort
+    """
+    sign_up_owner(client, redis_client, clock)
+    old_fort_id = member_of_old_fort(session).home_id
+
+    other = client.get("/api/v1/me", headers={HOME_HEADER: str(old_fort_id)})
+    unknown = client.get("/api/v1/me", headers={HOME_HEADER: str(uuid.uuid7())})
+
+    assert (other.status_code, unknown.status_code) == (403, 403)
+    assert other.json() == unknown.json()
+    assert "Old Fort" not in other.text
+
+
+def test_my_homes_answers_401_with_no_active_home(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Hijam is logged in, and his only home deactivates him
+    WHEN  his open page asks for his homes
+    THEN  it answers 401: he is logged out at once
+    """
+    sign_up_owner(client, redis_client, clock)
+    log_in_as_new(client, session, redis_client, clock, role=Role.MEMBER)
+    hijam = session.exec(select(Membership).where(Membership.name == "Hijam")).one()
+    hijam.status = MembershipStatus.INACTIVE
+    session.flush()
+
+    response = client.get("/api/v1/me/homes")
+
+    assert response.status_code == 401
+
+
+def test_role_follows_the_chosen_home(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" and is a plain member of "Old Fort"
+    WHEN  he asks for the members list in each home
+    THEN  Our Flat answers it; Old Fort refuses with 403 for his role there
+    """
+    sign_up_owner(client, redis_client, clock)
+    our_flat_id = owner_home_id(client)
+    old_fort_id = rabbi_joins_old_fort(session)
+
+    in_our_flat = client.get("/api/v1/members", headers={HOME_HEADER: str(our_flat_id)})
+    in_old_fort = client.get("/api/v1/members", headers={HOME_HEADER: str(old_fort_id)})
+
+    assert in_our_flat.status_code == 200
+    assert in_old_fort.status_code == 403
+    assert in_old_fort.json().get("data") is None
+
+
+def test_home_header_that_is_not_an_id_answers_422(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat"
+    WHEN  a request names the home "our-flat", which isn't a home id
+    THEN  it answers 422, saying which header is wrong
+    """
+    sign_up_owner(client, redis_client, clock)
+
+    response = client.get("/api/v1/me", headers={HOME_HEADER: "our-flat"})
+
+    assert response.status_code == 422
+    assert "x-colivo-home" in response.json()["errors"][0].lower()

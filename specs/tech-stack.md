@@ -216,6 +216,37 @@ _Filled in as Phase 0 is planned and built. Record each decision as:_
 - **Dialogs:** the native `<dialog>` with `showModal()` (focus trap,
   Escape, focus return) through an `ember-modifier` function modifier.
 
+## Decided in Phase 1b
+
+- **Several homes per person:** a person can be an active member of any
+  number of homes; each home has its own membership (name, role, status,
+  stays, first log-in check). Sign-up, adding a member and reactivating no
+  longer refuse someone active elsewhere; adding an active member of the
+  same home is a 409.
+- **Current home per request:** the client names the home in the
+  `X-Colivo-Home` header (a home id); the session stays "who you are"
+  (`person_id` in Redis). Chosen over the home in the session (one home for
+  every tab sharing the cookie, so a form could save into the wrong home)
+  and `/homes/{id}/…` paths (rewrites every endpoint). The mobile app will
+  send the same header.
+- **Dependencies:** `current_person` (cookie → session → a person with at
+  least one active home, else 401) for endpoints that need no home
+  (`/auth/log-out`, `/me/homes`); `current_membership` (person + header) for
+  everything else, so `require_role` reads the role in the chosen home.
+- **Header rules:** no header with one active home uses it; with several,
+  409 `choose_home`; a home the person isn't active in, or one that doesn't
+  exist, the same 403 `not_in_home`; a malformed id, 422. The refusal's
+  shape, `HomeRefusalOut`, is declared once in OpenAPI, on `GET /me`.
+- **Log-in answer:** `LogInOut` (`homes`, and `me` only for one home);
+  `MeOut.homes` feeds the home switcher.
+- **Per-tab home on the web:** `services/current-home.ts` keeps the tab's
+  home in `sessionStorage` and the last home chosen in `localStorage` (where
+  a new tab starts), every access in `try/catch`; the auth handler sends it
+  through a getter, so `data/` never imports a service. Log-out forgets
+  both. After being removed from the open home, the tab always goes to
+  "Choose a home" with a notice.
+- **CORS:** `X-Colivo-Home` is in the explicit `allow_headers` list.
+
 ## Project conventions
 
 Every phase follows this layout. Update this section when a convention changes.
@@ -223,7 +254,7 @@ Every phase follows this layout. Update this section when a convention changes.
 | Directory                                   | Holds                                                                                                                                                                                      |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `backend/app/main.py`                       | FastAPI app, middleware, exception handlers; `api_router` mounted at `/api/v1`                                                                                                             |
-| `backend/app/api/api_v1.py`                 | Registers every module router; `deps.py` holds the log-in and role dependencies (`current_membership`, `require_role`, `OwnerDep`, `OwnerOrManagerDep`)                                    |
+| `backend/app/api/api_v1.py`                 | Registers every module router; `deps.py` holds the log-in and role dependencies (`current_person`, `current_membership`, `require_role`, `OwnerDep`, `OwnerOrManagerDep`)                  |
 | `backend/app/core/`                         | `config.py` (settings from env vars), `database.py` (engine, `get_session`), `router.py` (`CoreRouter`), `schemas.py` (`StandardResponse`), `exceptions.py` (error handlers), `utils.py`   |
 | `backend/app/modules/<module>/`             | `models.py`, `schemas.py`, `service.py`, `router.py` per module: `accounts`, `homes`, `history`, `meals`, `groceries`, `payments`, `bills`, `statements`, `deposits`, `inbox`, `messaging` |
 | `backend/app/utils/`                        | Shared helpers used by several modules                                                                                                                                                     |
@@ -388,10 +419,11 @@ Add each one as it's discovered: **<Area>:** <limitation>.
   the API on one site (e.g. `app.` and `api.` of one domain), Phase 9.
 - **No ID documents yet:** members are added without one until Phase 2's
   `attachment` (FR-60).
-- **Account check through "add member":** an owner learns whether a phone or
-  email is active in some home from the 409; accepted (security review,
-  21 Nov 2026), and gone with Phase 1b.
-- **One active home per person** until Phase 1b.
+- **Anyone can be added to a home:** an owner or manager can add any phone
+  or email; the person then sees that home in their list and gets an SMS.
+  Nothing about them is revealed (security review, 23 Nov 2026).
+- **Picker after every log-in:** a person in several homes always chooses
+  after logging in; the last home is only where a new tab starts.
 - **Not test-driven, checked by hand:** countdowns ticking, layout at each
   width, focus after "Create my own home", the dialog's keyboard behaviour.
 

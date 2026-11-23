@@ -7,8 +7,11 @@ import {
   codeSentBody,
   loggedInAs,
   meBody,
+  meIn,
   newHomeSetup,
+  newHomeSetupBody,
   notLoggedIn,
+  OUR_FLAT_ID,
 } from 'colivo-web/tests/helpers/accounts';
 
 module('Acceptance | sign up', function (hooks) {
@@ -45,5 +48,37 @@ module('Acceptance | sign up', function (hooks) {
       .hasAttribute('data-test-done');
     assert.dom('[data-test-empty-state="meals"]').exists();
     assert.dom('[data-test-empty-state="inbox"]').exists();
+  });
+
+  test('signing up for another home opens the new home', async function (assert) {
+    // GIVEN Rabbi is a member of "Green House" and logged out
+    // WHEN  he signs up and creates "Our Flat"
+    // THEN  he lands in Our Flat, and its requests name Our Flat
+    let named: string | null = null;
+    worker.use(
+      http.post('*/api/v1/auth/codes', () => HttpResponse.json(codeSentBody)),
+      http.post('*/api/v1/auth/sign-up', () =>
+        HttpResponse.json(
+          { success: true, message: 'Home created', data: meIn(OUR_FLAT_ID) },
+          { status: 201 },
+        ),
+      ),
+      http.get('*/api/v1/home/setup', ({ request }) => {
+        named = request.headers.get('X-Colivo-Home');
+        return HttpResponse.json(newHomeSetupBody);
+      }),
+    );
+
+    await visit('/log-in');
+    await click('[data-test-auth-tab="create-home"]');
+    await fillIn('[data-test-sign-up-name]', 'Rabbi Hasan');
+    await fillIn('[data-test-sign-up-contact]', '01712 345678');
+    await fillIn('[data-test-sign-up-home-name]', 'Our Flat');
+    await click('[data-test-sign-up-send-code]');
+    await fillIn('[data-test-code-field]', '123456');
+    await click('[data-test-sign-up-submit]');
+
+    assert.dom('[data-test-welcome-home]').hasText('Our Flat');
+    assert.strictEqual(named, OUR_FLAT_ID);
   });
 });

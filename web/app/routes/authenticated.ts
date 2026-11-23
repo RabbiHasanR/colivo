@@ -7,7 +7,8 @@ import type SessionService from '../services/session';
 const WELCOME = 'authenticated.welcome';
 
 /**
- * Every page behind log-in: a visitor who isn't logged in goes to log-in;
+ * Every page behind log-in: a visitor who isn't logged in goes to log-in,
+ * and a tab with no usable home to "Choose a home" (Phase 1b);
  * a member who hasn't checked their details sees the first log-in check
  * first (FR-86).
  */
@@ -16,9 +17,9 @@ export default class AuthenticatedRoute extends Route {
   @service declare session: SessionService;
 
   async beforeModel(transition: Transition): Promise<void> {
-    const me = await this.session.load();
-    if (!me) {
-      this.router.transitionTo('log-in');
+    const me = await this.session.landing();
+    if (typeof me === 'string') {
+      this.router.transitionTo(me);
       return;
     }
     if (!me.membership.details_checked && transition.to?.name !== WELCOME) {

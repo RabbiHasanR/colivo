@@ -7,6 +7,7 @@ from redis import Redis
 from sqlmodel import Session, col, func, select
 from starlette.exceptions import HTTPException
 
+from app.core.exceptions import AppError
 from app.core.notifier import Channel
 from app.modules.accounts import codes, service
 from app.modules.accounts.contact import Contact, parse_contact
@@ -19,6 +20,8 @@ from app.modules.accounts.models import (
 )
 from app.modules.accounts.schemas import (
     DeactivateIn,
+    HomeRefusalOut,
+    HomeRefusalReason,
     LogInIn,
     MemberIn,
     MemberUpdateIn,
@@ -161,23 +164,26 @@ def sign_up_with_new_code(
     return service.sign_up(session, redis_client, data, clock())
 
 
-def test_sign_up_refused_when_already_active_in_a_home(
+def test_person_active_in_another_home_can_sign_up(
     session: Session, redis_client: Redis, clock: MovableClock
 ) -> None:
     """
     GIVEN 01712 345678 is the active owner of "Our Flat"
     WHEN  they sign up again to create "Second Home"
-    THEN  it is refused with 409 ("log in instead"), and no second home exists
+    THEN  they own both homes as one person, and Our Flat is unchanged
     """
-    sign_up_with_new_code(session, redis_client, clock)
+    first = sign_up_with_new_code(session, redis_client, clock)
     # A new code waits a minute after the last one (B11).
     clock.advance(timedelta(minutes=2))
 
-    with pytest.raises(HTTPException) as error:
-        sign_up_with_new_code(session, redis_client, clock, home_name="Second Home")
+    second = sign_up_with_new_code(
+        session, redis_client, clock, home_name="Second Home"
+    )
 
-    assert error.value.status_code == 409
-    assert session.exec(select(func.count()).select_from(Home)).one() == 1
+    assert second.person_id == first.person_id
+    assert second.home_id != first.home_id
+    session.refresh(first)
+    assert (first.role, first.status) == (Role.OWNER, MembershipStatus.ACTIVE)
 
 
 def test_person_no_longer_active_anywhere_can_sign_up(
@@ -240,8 +246,7 @@ def test_email_in_any_letter_case_is_the_same_person(
     """
     GIVEN Rabbi@Example.com signed up and owns "Our Flat"
     WHEN  rabbi@example.COM signs up for another home
-    THEN  it is the same person, kept as rabbi@example.com, so it is refused
-          with 409
+    THEN  that home's owner is the same person, kept as rabbi@example.com
     """
     first = Contact.model_validate(parse_contact("Rabbi@Example.com"))
     code = codes.issue_code(redis_client, first, clock())
@@ -251,12 +256,11 @@ def test_email_in_any_letter_case_is_the_same_person(
     again = Contact.model_validate(parse_contact("rabbi@example.COM"))
     code = codes.issue_code(redis_client, again, clock())
 
-    with pytest.raises(HTTPException) as error:
-        service.sign_up(
-            session, redis_client, sign_up_data(again, code, home_name="Two"), clock()
-        )
+    second = service.sign_up(
+        session, redis_client, sign_up_data(again, code, home_name="Two"), clock()
+    )
 
-    assert error.value.status_code == 409
+    assert second.person_id == owner.person_id
     person = session.get_one(Person, owner.person_id)
     assert (person.email, person.phone) == ("rabbi@example.com", None)
 
@@ -280,24 +284,57 @@ def test_sign_up_refused_with_a_wrong_code(
     assert session.exec(select(func.count()).select_from(Home)).one() == 0
 
 
-def test_log_in_returns_the_active_membership(
+def test_log_in_with_one_home_returns_it(
     session: Session, redis_client: Redis, clock: MovableClock
 ) -> None:
     """
-    GIVEN 01712 345678 owns "Our Flat"
+    GIVEN 01712 345678 owns "Our Flat" and no other home
     WHEN  they log in with a new code
-    THEN  their owner membership of Our Flat is the one logged in
+    THEN  the answer is their owner membership of Our Flat, the one home
     """
     owner = sign_up_with_new_code(session, redis_client, clock)
     clock.advance(timedelta(minutes=2))
     contact = Contact(channel=Channel.SMS, value=PHONE_E164)
     code = codes.issue_code(redis_client, contact, clock())
 
-    membership = service.log_in(
+    person, answer = service.log_in(
         session, redis_client, LogInIn(contact=contact, code=code), clock()
     )
 
-    assert membership.id == owner.id
+    assert person.id == owner.person_id
+    assert answer.me is not None and answer.me.membership.id == owner.id
+    assert [home.name for home in answer.homes] == ["Our Flat"]
+
+
+def test_log_in_with_several_homes_lists_them_without_me(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN 01712 345678 owns "Our Flat" (Mirpur) and is a member of "Old Fort"
+    WHEN  they log in with a new code
+    THEN  the answer lists both homes by name, with area and role, and
+          chooses none
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area=None, first_month=date(2026, 1, 1)
+    )
+    session.add(Membership(home_id=old_fort.id, person_id=owner.person_id, name="R"))
+    session.flush()
+    clock.advance(timedelta(minutes=2))
+    contact = Contact(channel=Channel.SMS, value=PHONE_E164)
+    code = codes.issue_code(redis_client, contact, clock())
+
+    _, answer = service.log_in(
+        session, redis_client, LogInIn(contact=contact, code=code), clock()
+    )
+
+    homes = [(home.name, home.area, home.role) for home in answer.homes]
+    assert homes == [
+        ("Old Fort", None, Role.MEMBER),
+        ("Our Flat", "Mirpur", Role.OWNER),
+    ]
+    assert answer.me is None
 
 
 def add_inactive_member(session: Session, phone: str) -> None:
@@ -413,22 +450,26 @@ def maruf_memberships(session: Session, person: Person) -> int:
     ).one()
 
 
-def test_member_active_in_another_home_cannot_be_added(
+def test_member_active_in_another_home_is_added(
     session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
 ) -> None:
     """
     GIVEN Maruf is an active member of "Old Flat"
     WHEN  the owner of "Our Flat" adds him
-    THEN  it is refused with 409; he isn't added and gets no notice (FR-85)
+    THEN  he is active in both homes, and is told he was added to Our Flat
     """
     owner = sign_up_with_new_code(session, redis_client, clock)
     person = add_maruf_to(session, "Old Flat", MembershipStatus.ACTIVE)
 
-    with pytest.raises(HTTPException) as error:
-        service.add_member(session, notifier, owner, maruf(), clock())
+    service.add_member(session, notifier, owner, maruf(), clock())
 
-    assert error.value.status_code == 409
-    assert (maruf_memberships(session, person), notifier.sent) == (1, [])
+    statuses = session.exec(
+        select(Membership.status).where(Membership.person_id == person.id)
+    ).all()
+    assert statuses == [MembershipStatus.ACTIVE, MembershipStatus.ACTIVE]
+    assert any(m.to == MARUF_E164 and "Our Flat" in m.text for m in notifier.sent), (
+        "Maruf was told he was added to Our Flat"
+    )
 
 
 def add_past_member(
@@ -467,6 +508,32 @@ def test_deactivated_member_of_this_home_is_not_added_again(
     assert error.value.status_code == 409
     assert "Reactivate" in str(error.value.detail)
     assert maruf_memberships(session, person) == 1
+
+
+def test_active_member_of_this_home_cannot_be_added_again(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf is an active member of "Our Flat"
+    WHEN  the owner adds his phone again, under another name
+    THEN  it is refused with 409 "Already a member of this home.", with no
+          second membership and no notice
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+    notifier.sent.clear()
+
+    with pytest.raises(HTTPException) as error:
+        service.add_member(
+            session, notifier, owner, maruf().model_copy(update={"name": "M"}), clock()
+        )
+
+    assert (error.value.status_code, error.value.detail) == (
+        409,
+        "Already a member of this home.",
+    )
+    person = session.get_one(Person, member.person_id)
+    assert (maruf_memberships(session, person), notifier.sent) == (1, [])
 
 
 OTHER_PHONE = "+8801912345678"
@@ -967,30 +1034,32 @@ def test_active_member_cannot_be_reactivated(
     assert error.value.status_code == 409
 
 
-def test_reactivating_someone_active_in_another_home_is_refused(
+def test_member_who_joined_another_home_can_be_reactivated(
     session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
 ) -> None:
     """
     GIVEN Maruf left "Our Flat" and is now an active member of "Old Fort"
     WHEN  Our Flat's owner reactivates him
-    THEN  it is refused with 409: one active home per person (FR-85)
+    THEN  he is active in both homes
     """
     owner = sign_up_with_new_code(session, redis_client, clock)
     member = maruf_who_left(session, notifier, owner, clock)
     old_fort = homes_service.create_home(
         session, name="Old Fort", area=None, first_month=date(2026, 11, 1)
     )
-    session.add(
-        Membership(home_id=old_fort.id, person_id=member.person_id, name="Maruf")
+    in_old_fort = Membership(
+        home_id=old_fort.id, person_id=member.person_id, name="Maruf"
     )
+    session.add(in_old_fort)
     session.flush()
 
-    with pytest.raises(HTTPException) as error:
-        service.reactivate(
-            session, owner, member.id, ReactivateIn(on=date(2026, 12, 1)), clock()
-        )
+    service.reactivate(
+        session, owner, member.id, ReactivateIn(on=date(2026, 12, 1)), clock()
+    )
 
-    assert error.value.status_code == 409
+    session.refresh(in_old_fort)
+    statuses = (member.status, in_old_fort.status)
+    assert statuses == (MembershipStatus.ACTIVE, MembershipStatus.ACTIVE)
 
 
 def test_reactivating_into_a_taken_name_is_refused(
@@ -1088,3 +1157,138 @@ def test_manager_cannot_change_the_owners_details(
     session.refresh(owner)
     assert owner.name == "Rabbi Hasan"
     assert stays_of(session, owner) == [(date(2026, 11, 1), None)]
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        pytest.param(MemberUpdateIn(name="Maruf Hossain"), id="rename"),
+        pytest.param(DeactivateIn(on=date(2026, 11, 21)), id="deactivate"),
+    ],
+)
+def test_changing_a_person_in_one_home_leaves_the_other_home_unchanged(
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    change: MemberUpdateIn | DeactivateIn,
+) -> None:
+    """
+    GIVEN Maruf is an active member of "Old Flat" with an open stay, and of
+          "Our Flat"
+    WHEN  Our Flat's owner renames or deactivates him
+    THEN  his Old Flat membership keeps its name, its active status and its
+          open stay
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    person = add_maruf_to(session, "Old Flat", MembershipStatus.ACTIVE)
+    in_old_flat = session.exec(
+        select(Membership).where(Membership.person_id == person.id)
+    ).one()
+    session.add(
+        MembershipPeriod(
+            home_id=in_old_flat.home_id,
+            membership_id=in_old_flat.id,
+            starts_on=date(2026, 1, 1),
+        )
+    )
+    session.flush()
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+
+    if isinstance(change, MemberUpdateIn):
+        service.update_member(session, owner, member.id, change, clock())
+    else:
+        service.deactivate(session, owner, member.id, change, clock())
+
+    session.refresh(in_old_flat)
+    assert (in_old_flat.name, in_old_flat.status) == (
+        "Maruf",
+        MembershipStatus.ACTIVE,
+    )
+    open_stays = session.exec(
+        select(MembershipPeriod).where(
+            MembershipPeriod.membership_id == in_old_flat.id,
+            col(MembershipPeriod.ends_on).is_(None),
+        )
+    ).all()
+    assert len(open_stays) == 1
+
+
+def rabbi_in_old_fort_too(session: Session, owner: Membership) -> Membership:
+    """Make the owner of "Our Flat" an active member of "Old Fort" as well."""
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area=None, first_month=date(2026, 1, 1)
+    )
+    member = Membership(home_id=old_fort.id, person_id=owner.person_id, name="R")
+    session.add(member)
+    session.flush()
+    return member
+
+
+def test_no_home_named_with_one_home_uses_it(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN 01712 345678 owns "Our Flat" and no other home
+    WHEN  a request of theirs names no home
+    THEN  it acts in Our Flat
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    person = session.get_one(Person, owner.person_id)
+
+    assert service.membership_for(session, person, None).id == owner.id
+
+
+def test_no_home_named_with_several_homes_is_refused(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN 01712 345678 owns "Our Flat" and is a member of "Old Fort"
+    WHEN  a request of theirs names no home
+    THEN  it is refused with 409 "Choose a home.", reason choose_home
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    rabbi_in_old_fort_too(session, owner)
+    person = session.get_one(Person, owner.person_id)
+
+    with pytest.raises(AppError) as error:
+        service.membership_for(session, person, None)
+
+    assert (error.value.status_code, error.value.detail) == (409, "Choose a home.")
+    assert error.value.data == HomeRefusalOut(reason=HomeRefusalReason.CHOOSE_HOME)
+
+
+@pytest.mark.parametrize(
+    "which", ["inactive there", "another person's home", "no such home"]
+)
+def test_naming_a_home_the_person_is_not_active_in_is_refused(
+    session: Session, redis_client: Redis, clock: MovableClock, which: str
+) -> None:
+    """
+    GIVEN 01712 345678 owns "Our Flat"; they left "Old Fort"; "Green House"
+          is someone else's
+    WHEN  a request of theirs names Old Fort, Green House or an unknown id
+    THEN  each is refused with the same 403, reason not_in_home
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    old_fort = rabbi_in_old_fort_too(session, owner)
+    old_fort.status = MembershipStatus.INACTIVE
+    green_house = homes_service.create_home(
+        session, name="Green House", area=None, first_month=date(2026, 1, 1)
+    )
+    session.flush()
+    home_id = {
+        "inactive there": old_fort.home_id,
+        "another person's home": green_house.id,
+        "no such home": uuid.uuid7(),
+    }[which]
+    person = session.get_one(Person, owner.person_id)
+
+    with pytest.raises(AppError) as error:
+        service.membership_for(session, person, home_id)
+
+    assert (error.value.status_code, error.value.detail) == (
+        403,
+        "You're no longer a member of this home.",
+    )
+    assert error.value.data == HomeRefusalOut(reason=HomeRefusalReason.NOT_IN_HOME)
