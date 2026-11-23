@@ -91,9 +91,9 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 ### B13 — No home named with several homes: refused, nothing changes
 
-- [x] T13.1 unit — `test_no_home_named_with_one_home_uses_it`
-- [x] T13.2 unit — `test_no_home_named_with_several_homes_is_refused`: 409, reason `choose_home`
-- [x] T13.3 integration — `test_adding_a_member_without_naming_a_home_changes_nothing`: owner of two homes, `POST /members` without the header → 409, no member added
+- [x] T13.1 unit — `test_no_home_named_with_one_home_uses_it` ✅ _(passed on its first run: Phase 1 already used the only home; seen failing by refusing every request that names no home)_
+- [x] T13.2 unit — `test_no_home_named_with_several_homes_is_refused` ✅: 409, reason `choose_home`
+- [x] T13.3 integration — `test_adding_a_member_without_naming_a_home_changes_nothing` ✅ _(passed on its first run, after T13.2 brought the rule; seen failing with the rule removed)_: owner of two homes, `POST /members` without the header → 409, no member added
 - [x] T13.4 web acceptance — `choose-home-test.ts` › a tab with no home chosen, for a person in several homes, opens "Choose a home"
 
 ### B14 — Naming a home you're not in: 403, nothing about that home

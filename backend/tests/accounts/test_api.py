@@ -895,9 +895,6 @@ def rabbi_joins_old_fort(session: Session) -> uuid.UUID:
     return old_fort.id
 
 
-@pytest.mark.xfail(
-    strict=True, reason="acceptance: a person in several homes chooses one"
-)
 def test_person_in_two_homes_chooses_one_after_log_in(
     client: TestClient,
     session: Session,
@@ -1008,3 +1005,21 @@ def test_me_lists_the_persons_homes_for_the_switcher(
 
     homes = [home["name"] for home in response.json()["data"]["homes"]]
     assert homes == ["Old Fort", "Our Flat"]
+
+
+def test_adding_a_member_without_naming_a_home_changes_nothing(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" and is a member of "Old Fort"
+    WHEN  he adds Maruf without naming a home
+    THEN  it is refused with 409 "choose_home", and Maruf is in no home
+    """
+    sign_up_owner(client, redis_client, clock)
+    rabbi_joins_old_fort(session)
+
+    response = client.post("/api/v1/members", json=maruf_body())
+
+    assert response.status_code == 409
+    assert response.json()["data"] == {"reason": "choose_home"}
+    assert members_named(session, "Maruf") == 0

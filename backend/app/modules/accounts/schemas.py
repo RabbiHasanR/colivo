@@ -172,3 +172,18 @@ class LogInOut(BaseModel):
 
     homes: list[HomeChoiceOut]
     me: MeOut | None = None
+
+
+class HomeRefusalReason(StrEnum):
+    """Why a request was refused for the home it named (Phase 1b)."""
+
+    # The person is in several homes and the request named none.
+    CHOOSE_HOME = "choose_home"
+    # The named home isn't one the person is active in now.
+    NOT_IN_HOME = "not_in_home"
+
+
+class HomeRefusalOut(BaseModel):
+    """The ``data`` of a 409 "Choose a home" or 403 "no longer a member"."""
+
+    reason: HomeRefusalReason

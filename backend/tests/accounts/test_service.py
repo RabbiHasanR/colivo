@@ -7,6 +7,7 @@ from redis import Redis
 from sqlmodel import Session, col, func, select
 from starlette.exceptions import HTTPException
 
+from app.core.exceptions import AppError
 from app.core.notifier import Channel
 from app.modules.accounts import codes, service
 from app.modules.accounts.contact import Contact, parse_contact
@@ -19,6 +20,8 @@ from app.modules.accounts.models import (
 )
 from app.modules.accounts.schemas import (
     DeactivateIn,
+    HomeRefusalOut,
+    HomeRefusalReason,
     LogInIn,
     MemberIn,
     MemberUpdateIn,
@@ -1209,3 +1212,47 @@ def test_changing_a_person_in_one_home_leaves_the_other_home_unchanged(
         )
     ).all()
     assert len(open_stays) == 1
+
+
+def rabbi_in_old_fort_too(session: Session, owner: Membership) -> Membership:
+    """Make the owner of "Our Flat" an active member of "Old Fort" as well."""
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area=None, first_month=date(2026, 1, 1)
+    )
+    member = Membership(home_id=old_fort.id, person_id=owner.person_id, name="R")
+    session.add(member)
+    session.flush()
+    return member
+
+
+def test_no_home_named_with_one_home_uses_it(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN 01712 345678 owns "Our Flat" and no other home
+    WHEN  a request of theirs names no home
+    THEN  it acts in Our Flat
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    person = session.get_one(Person, owner.person_id)
+
+    assert service.membership_for(session, person, None).id == owner.id
+
+
+def test_no_home_named_with_several_homes_is_refused(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN 01712 345678 owns "Our Flat" and is a member of "Old Fort"
+    WHEN  a request of theirs names no home
+    THEN  it is refused with 409 "Choose a home.", reason choose_home
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    rabbi_in_old_fort_too(session, owner)
+    person = session.get_one(Person, owner.person_id)
+
+    with pytest.raises(AppError) as error:
+        service.membership_for(session, person, None)
+
+    assert (error.value.status_code, error.value.detail) == (409, "Choose a home.")
+    assert error.value.data == HomeRefusalOut(reason=HomeRefusalReason.CHOOSE_HOME)

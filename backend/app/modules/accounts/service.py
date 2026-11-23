@@ -7,6 +7,7 @@ from redis import Redis
 from sqlmodel import Session, col, func, select
 from starlette.exceptions import HTTPException
 
+from app.core.exceptions import AppError
 from app.core.notifier import Channel, Notifier
 from app.modules.accounts import codes, sessions
 from app.modules.accounts.constants import CODE_LIFETIME, CODE_RESEND_AFTER
@@ -22,6 +23,8 @@ from app.modules.accounts.schemas import (
     CodeSentOut,
     DeactivateIn,
     HomeChoiceOut,
+    HomeRefusalOut,
+    HomeRefusalReason,
     LogInIn,
     LogInOut,
     MeHomeOut,
@@ -43,6 +46,7 @@ from app.modules.homes.constants import DEFAULT_TIME_ZONE
 from app.modules.homes.models import Home
 
 ALREADY_IN_THIS_HOME = "Already a member of this home."
+CHOOSE_HOME = "Choose a home."
 PAST_MEMBER = "This person was a member of this home. Reactivate them instead."
 NAME_TAKEN = "Someone in this home already has that name."
 NO_STAY = "Only someone who lives in the home has a join date."
@@ -96,6 +100,10 @@ def membership_for(
 ) -> Membership:
     """The person's active membership of the home a request names.
 
+    A request that names no home acts in the person's only home; with
+    several, it must say which (Phase 1b), so a missing header never sends
+    a change to the wrong home.
+
     Args:
         session: The database session.
         person: The logged-in person.
@@ -105,6 +113,8 @@ def membership_for(
         The active membership.
 
     Raises:
+        AppError: 409 "Choose a home." when no home is named and the person
+            is active in several.
         HTTPException: 401 when there is none.
     """
     query = select(Membership).where(
@@ -113,10 +123,14 @@ def membership_for(
     )
     if home_id is not None:
         query = query.where(Membership.home_id == home_id)
-    membership = session.exec(query).first()
-    if membership is None:
+    memberships = session.exec(query.limit(2)).all()
+    if home_id is None and len(memberships) > 1:
+        raise AppError(
+            409, CHOOSE_HOME, HomeRefusalOut(reason=HomeRefusalReason.CHOOSE_HOME)
+        )
+    if not memberships:
         raise HTTPException(401, "Log in first.")
-    return membership
+    return memberships[0]
 
 
 def check_name_free(
