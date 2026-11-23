@@ -1266,11 +1266,18 @@ def remove_contact(
     if removed is None:
         who = "You have" if yourself else "They have"
         raise HTTPException(400, f"{who} no {kind} to remove.")
+    last = HTTPException(400, LAST_CONTACT_YOURS if yourself else LAST_CONTACT)
     if getattr(person, other_kind(kind)) is None:
-        raise HTTPException(400, LAST_CONTACT_YOURS if yourself else LAST_CONTACT)
-    setattr(person, kind, None)
-    record_log_in_change(session, person, changed_by, {kind: removed}, {kind: None})
-    session.commit()
+        raise last
+    try:
+        setattr(person, kind, None)
+        record_log_in_change(session, person, changed_by, {kind: removed}, {kind: None})
+        session.commit()
+    except IntegrityError as error:
+        # The other one was removed at the same moment, after the check above:
+        # the database's "a phone or an email" rule decides.
+        session.rollback()
+        raise last from error
     session.refresh(person)
     sessions.end_sessions(redis_client, person.id, keep_token)
     notifier.send(channel_of(kind), removed, CONTACT_REMOVED.format(kind=kind))

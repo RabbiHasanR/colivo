@@ -1802,3 +1802,47 @@ def test_your_own_change_is_kept_in_each_home_under_your_membership_there(
             membership.id,
             {"phone": "+8801912345678"},
         )
+
+
+def test_removing_both_at_the_same_moment_answers_400_for_the_second(
+    engine: Engine,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Sumi logs in with 01912 345678 and sumi@example.com
+    WHEN  her email is removed elsewhere at the moment her phone is removed
+    THEN  the phone's removal is refused with 400: she keeps one way to log in
+    """
+    sumi_id = uuid.uuid7()
+    with engine.begin() as other:
+        # Committed, so the second connection below can change it too.
+        other.execute(
+            text("INSERT INTO person (id, phone, email) VALUES (:id, :p, :e)"),
+            {"id": sumi_id, "p": "+8801912345678", "e": "sumi@example.com"},
+        )
+
+    def email_removed_elsewhere(*_: object) -> None:
+        with engine.begin() as other:
+            other.execute(
+                text("UPDATE person SET email = NULL WHERE id = :id"), {"id": sumi_id}
+            )
+
+    try:
+        sumi = session.get_one(Person, sumi_id)
+        event.listen(session, "before_flush", email_removed_elsewhere, once=True)
+        with pytest.raises(HTTPException) as refused:
+            service.remove_contact(
+                session, redis_client, notifier, sumi, ContactKind.PHONE
+            )
+    finally:
+        session.rollback()
+        with engine.begin() as other:
+            other.execute(text("DELETE FROM person WHERE id = :id"), {"id": sumi_id})
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        400,
+        "They need a phone or an email to log in.",
+    )
