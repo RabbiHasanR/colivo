@@ -26,6 +26,12 @@ const home = {
   first_month: '2026-11-01',
 };
 
+/** Rabbi's homes: he owns Our Flat and is a member of Green House. */
+const homes = [
+  { id: 'h2', name: 'Green House', area: 'Dhanmondi', role: 'member' },
+  { id: 'h1', name: 'Our Flat', area: 'Mirpur', role: 'owner' },
+];
+
 const owner = {
   person: { phone: '+8801712345678' },
   membership: {
@@ -38,6 +44,7 @@ const owner = {
     details_checked: true,
   },
   home,
+  homes,
 };
 
 function member(id, name, role, status, joinedOn) {
@@ -55,6 +62,7 @@ function member(id, name, role, status, joinedOn) {
 /** What the API answers, by path under /api/v1/. */
 const API = {
   me: owner,
+  'me/homes': homes,
   'home/setup': {
     steps: [
       { key: 'home_created', done: true },
@@ -85,6 +93,13 @@ const PAGES = [
     click: '[data-test-auth-tab="create-home"]',
   },
   { name: 'home', path: '/', loggedIn: true },
+  { name: 'choose-home', path: '/choose-home', loggedIn: true },
+  {
+    name: 'home-switcher',
+    path: '/',
+    loggedIn: true,
+    click: '[data-test-home-switcher]:visible',
+  },
   { name: 'members', path: '/members', loggedIn: true },
 ];
 
