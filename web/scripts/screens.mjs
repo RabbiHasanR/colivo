@@ -47,7 +47,7 @@ const owner = {
   homes,
 };
 
-function member(id, name, role, status, joinedOn) {
+function member(id, name, role, status, joinedOn, changes = {}) {
   return {
     id,
     name,
@@ -56,6 +56,8 @@ function member(id, name, role, status, joinedOn) {
     role,
     status,
     joined_on: joinedOn,
+    contact_editable: status === 'active',
+    ...changes,
   };
 }
 
@@ -74,8 +76,13 @@ const API = {
   },
   members: [
     member('m1', 'Rabbi Hasan', 'owner', 'active', '2026-11-01'),
-    member('m2', 'Hijam Shusil', 'manager', 'active', '2026-11-05'),
-    member('m3', 'Maruf', 'member', 'active', '2026-11-21'),
+    // Hijam is also in another home, so only he changes his log-in.
+    member('m2', 'Hijam Shusil', 'manager', 'active', '2026-11-05', {
+      contact_editable: false,
+    }),
+    member('m3', 'Maruf', 'member', 'active', '2026-11-21', {
+      email: 'maruf@example.com',
+    }),
     member('m4', 'Nafis Islam', 'member', 'inactive', '2026-09-01'),
   ],
 };
@@ -101,6 +108,18 @@ const PAGES = [
     click: '[data-test-home-switcher]:visible',
   },
   { name: 'members', path: '/members', loggedIn: true },
+  {
+    name: 'member-edit',
+    path: '/members',
+    loggedIn: true,
+    click: '[data-test-edit-member="Maruf"]',
+  },
+  {
+    name: 'member-edit-locked',
+    path: '/members',
+    loggedIn: true,
+    click: '[data-test-edit-member="Hijam Shusil"]',
+  },
 ];
 
 function json(status, body) {

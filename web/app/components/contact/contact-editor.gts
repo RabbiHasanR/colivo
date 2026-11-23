@@ -15,6 +15,7 @@ import FormError from '../ui/form-error';
 import TextInput from '../ui/text-input';
 
 interface ContactEditorSignature {
+  Element: HTMLDivElement;
   Args: {
     phone: string | null;
     email: string | null;
@@ -32,6 +33,9 @@ interface ContactEditorSignature {
 
 interface Row {
   kind: ContactKind;
+  /** "Phone" or "Email", as shown when nothing can be typed. */
+  name: string;
+  /** The field's label: "(optional)" on the one they don't have yet. */
   label: string;
   value: string;
   /** Why the API refused this row, other than its code. */
@@ -74,7 +78,7 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
     const errors = refusal?.fieldErrors['contact'] ?? [];
     const value = this.valueOf(kind);
     const changed = value.trim() !== '' && value !== (this.args[kind] ?? '');
-    return { kind, label, value, message, errors, changed };
+    return { kind, name, label, value, message, errors, changed };
   }
 
   valueOf(kind: ContactKind): string {
@@ -146,12 +150,12 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
   }
 
   <template>
-    <div class="flex flex-col gap-3" data-test-contact-editor>
+    <div class="flex flex-col gap-3" data-test-contact-editor ...attributes>
       {{#unless @editable}}
         <dl class="flex flex-col gap-2 text-sm">
           {{#each this.rows as |row|}}
             <div class="flex flex-col gap-0.5">
-              <dt class="text-xs text-muted">{{row.label}}</dt>
+              <dt class="text-xs text-muted">{{row.name}}</dt>
               <dd class="break-words" data-test-contact-value={{row.kind}}>{{if
                   row.value
                   row.value

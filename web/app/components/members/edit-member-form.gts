@@ -171,6 +171,7 @@ export default class EditMemberForm extends Component<EditMemberFormSignature> {
     </form>
     {{#each this.shownMember key="id" as |shown|}}
       <ContactEditor
+        class="mt-4 border-t border-divider pt-4"
         @phone={{shown.phone}}
         @email={{shown.email}}
         @editable={{shown.contact_editable}}
