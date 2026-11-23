@@ -1131,10 +1131,6 @@ def log_in_with(
     ).json()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="acceptance: the owner adds an email to a member with a code (Phase 1c)",
-)
 def test_owner_adds_an_email_to_a_member_with_a_code(
     client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
 ) -> None:
