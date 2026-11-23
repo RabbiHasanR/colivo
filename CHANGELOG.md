@@ -12,6 +12,16 @@ All notable changes to Colivo, grouped by date (newest first).
 - Added `make web-screens` shots of the "Create a home" tab, "Choose a home" and the home menu, and an end-to-end journey where Rabbi, added to two homes, chooses one, switches in a second tab and is told when one removes him.
 - Ran the security review of Phase 1b and of Phase 1's 22 Nov web changes: no findings.
 - Completed Phase 1b — A person in several homes.
+- In the specs, added the Phase 1c spec (change a member's phone or email): a person can have a phone and an email, every new one is confirmed with a code sent to it, and a change ends their other sessions.
+- In the API, the owner or a manager can add, change or remove a member's phone or email: a code goes to the new one and the change is saved once it is typed; the last way to log in can't be removed ("They need a phone or an email to log in."); a phone or email someone else logs in with is refused only after the right code; the one they already have is refused; a wrong code changes nothing.
+- In the API, only the person can change a log-in they also use in another home, now or in the past ("Only they can change their log-in, from My profile."); a manager can't change the owner's; another home's member is not found; a past member must be reactivated first.
+- In the API, codes for a change are kept apart from log-in codes, so neither works as the other; changing or removing a member's phone or email logs them out everywhere; they are told on their old and new phone or email; every change is kept in the home's history; two saves of the same new phone or email at once give one a "taken" answer.
+- On the web, the members' Edit tab adds, changes and removes a phone or email with a code, offers a code only for a new one, explains each refusal, and shows the log-in read-only for a member who is also in another home or has left.
+- Added My profile, opened from your name in the sidebar: it shows your name, role, "member since", phone and email; you fix your name for this home, and add, change or remove your own phone or email with a code, without choosing a home; a change applies to every home you are in and keeps this browser logged in while your other sessions end.
+- Added an end-to-end journey where the owner adds a member's email and the member changes their own phone on My profile.
+- Fixed from the manual check: the phone or email field lost focus while typing; My profile showed an old phone after a change on Members; removing both at the same moment answered 500 instead of 400; a refused name on My profile showed no message. Send code and Remove now sit beside the field.
+- Fixed from the Phase 1c security review: a request in flight could bring back a session that a log-in change had just ended.
+- Completed Phase 1c — Change a member's phone or email.
 
 ## 2026-11-22
 
