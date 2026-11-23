@@ -1625,3 +1625,55 @@ def test_removing_a_contact_ends_the_members_sessions(
     )
 
     assert sessions.read_session(redis_client, token, clock()) is None
+
+
+ADDED_NOTICE = (
+    "{shown} can now log in to your Colivo account. "
+    "If this wasn't you, tell your home's owner or a manager."
+)
+
+
+def test_a_change_tells_the_existing_contacts_and_the_new_one(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678 and maruf@example.com
+    WHEN  the owner changes his phone to 01912 345678
+    THEN  the old phone and the email are told "…678 can now log in", and the
+          new phone is told it now logs in
+    """
+    owner, member = maruf_with_both(session, redis_client, notifier, clock)
+
+    change_with_code(
+        session, redis_client, notifier, clock, owner, member, phone("+8801912345678")
+    )
+
+    notices = {(message.to, message.text) for message in notifier.sent[1:]}
+    assert notices == {
+        (MARUF_E164, ADDED_NOTICE.format(shown="…678")),
+        (MARUF_EMAIL, ADDED_NOTICE.format(shown="…678")),
+        ("+8801912345678", "You can now log in to Colivo with this phone."),
+    }
+
+
+def test_a_removal_tells_the_removed_contact(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678 and maruf@example.com
+    WHEN  the owner removes his email
+    THEN  only the email is told it no longer logs in
+    """
+    owner, member = maruf_with_both(session, redis_client, notifier, clock)
+
+    service.remove_member_contact(
+        session, redis_client, notifier, owner, member.id, ContactKind.EMAIL, clock()
+    )
+
+    assert [(message.to, message.text) for message in notifier.sent] == [
+        (
+            MARUF_EMAIL,
+            "This email no longer logs in to your Colivo account. "
+            "If this wasn't you, tell your home's owner or a manager.",
+        )
+    ]

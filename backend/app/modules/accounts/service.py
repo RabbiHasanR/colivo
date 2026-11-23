@@ -11,7 +11,7 @@ from app.core.exceptions import AppError
 from app.core.notifier import Channel, Notifier
 from app.modules.accounts import codes, sessions
 from app.modules.accounts.constants import CODE_LIFETIME, CODE_RESEND_AFTER
-from app.modules.accounts.contact import Contact
+from app.modules.accounts.contact import Contact, partly_hidden
 from app.modules.accounts.models import (
     Membership,
     MembershipPeriod,
@@ -70,6 +70,16 @@ CONTACT_TAKEN = "Someone else logs in with that phone or email."
 SAME_CONTACT = "That's already their phone or email."
 ONLY_THEY_CAN = "Only they can change their log-in, from My profile."
 REACTIVATE_FIRST = "Reactivate them first."
+# Told to a phone or email that no longer logs in.
+CONTACT_REMOVED = (
+    "This {kind} no longer logs in to your Colivo account. "
+    "If this wasn't you, tell your home's owner or a manager."
+)
+# Told to a person's other phone or email when one is added or changed.
+CONTACT_ADDED = (
+    "{shown} can now log in to your Colivo account. "
+    "If this wasn't you, tell your home's owner or a manager."
+)
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -928,6 +938,14 @@ def kind_of(contact: Contact) -> ContactKind:
     return ContactKind.EMAIL if contact.channel == Channel.EMAIL else ContactKind.PHONE
 
 
+def contacts_of(person: Person) -> list[Contact]:
+    """The phone and email ``person`` logs in with now."""
+    found = [Contact(channel=Channel.SMS, value=person.phone)] if person.phone else []
+    if person.email:
+        found.append(Contact(channel=Channel.EMAIL, value=person.email))
+    return found
+
+
 def other_kind(kind: ContactKind) -> ContactKind:
     """The other way to log in: the email for a phone, the phone for an email."""
     return ContactKind.PHONE if kind == ContactKind.EMAIL else ContactKind.EMAIL
@@ -965,6 +983,7 @@ def request_contact_code(
 def set_contact(
     session: Session,
     redis_client: Redis,
+    notifier: Notifier,
     person: Person,
     data: ContactChangeIn,
     now: datetime,
@@ -977,7 +996,8 @@ def set_contact(
 
     Args:
         session: The database session.
-        redis_client: Where codes are kept.
+        redis_client: Where codes and sessions are kept.
+        notifier: Tells the person on their old and new phone or email.
         person: Whose log-in changes.
         data: The new phone or email and its code.
         now: The current time.
@@ -996,6 +1016,7 @@ def set_contact(
     if holder is not None and holder.id != person.id:
         raise HTTPException(409, CONTACT_TAKEN)
     kind = kind_of(data.contact)
+    before = contacts_of(person)
     replaced = getattr(person, kind) is not None
     setattr(person, kind, data.contact.value)
     session.commit()
@@ -1003,6 +1024,14 @@ def set_contact(
     if replaced:
         # A way to log in was taken away: every other browser logs in again.
         sessions.end_sessions(redis_client, person.id, keep_token)
+    added = CONTACT_ADDED.format(shown=partly_hidden(data.contact))
+    for old in before:
+        notifier.send(old.channel, old.value, added)
+    notifier.send(
+        data.contact.channel,
+        data.contact.value,
+        f"You can now log in to Colivo with this {kind}.",
+    )
     return person
 
 
@@ -1131,13 +1160,16 @@ def set_member_contact(
         The member.
     """
     member, person = member_to_change(session, editor, member_id)
-    set_contact(session, redis_client, person, data, now, keep_token=keep_token)
+    set_contact(
+        session, redis_client, notifier, person, data, now, keep_token=keep_token
+    )
     return member
 
 
 def remove_contact(
     session: Session,
     redis_client: Redis,
+    notifier: Notifier,
     person: Person,
     kind: ContactKind,
     *,
@@ -1150,6 +1182,7 @@ def remove_contact(
     Args:
         session: The database session.
         redis_client: Where sessions are kept.
+        notifier: Tells the removed phone or email.
         person: Whose log-in changes.
         kind: Which one to remove.
         keep_token: The caller's session, kept when theirs ends.
@@ -1161,7 +1194,8 @@ def remove_contact(
         HTTPException: 400 when they have none of that kind, or it is the last
             way they log in.
     """
-    if getattr(person, kind) is None:
+    removed = getattr(person, kind)
+    if removed is None:
         raise HTTPException(400, f"They have no {kind} to remove.")
     if getattr(person, other_kind(kind)) is None:
         raise HTTPException(400, LAST_CONTACT)
@@ -1169,6 +1203,8 @@ def remove_contact(
     session.commit()
     session.refresh(person)
     sessions.end_sessions(redis_client, person.id, keep_token)
+    channel = Channel.EMAIL if kind == ContactKind.EMAIL else Channel.SMS
+    notifier.send(channel, removed, CONTACT_REMOVED.format(kind=kind))
     return person
 
 
@@ -1199,5 +1235,5 @@ def remove_member_contact(
         The member.
     """
     member, person = member_to_change(session, editor, member_id)
-    remove_contact(session, redis_client, person, kind, keep_token=keep_token)
+    remove_contact(session, redis_client, notifier, person, kind, keep_token=keep_token)
     return member

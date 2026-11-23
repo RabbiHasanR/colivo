@@ -102,9 +102,9 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B16 — The person is told on their old and new phone or email
 
-- [x] T16.1 unit — `test_partly_hidden_shows_only_the_end_of_a_phone_or_the_start_of_an_email` (`test_contact.py`, parametrised)
-- [x] T16.2 unit — `test_a_change_tells_the_existing_contacts_and_the_new_one` (a person with both changes the phone: the old phone and the email get the partly hidden new phone; the new phone gets "You can now log in")
-- [x] T16.3 unit — `test_a_removal_tells_the_removed_contact`
+- [x] T16.1 unit — `test_partly_hidden_shows_only_the_end_of_a_phone_or_the_start_of_an_email` (`test_contact.py`, parametrised) ✅
+- [x] T16.2 unit — `test_a_change_tells_the_existing_contacts_and_the_new_one` ✅ (a person with both changes the phone: the old phone and the email get the partly hidden new phone; the new phone gets "You can now log in")
+- [x] T16.3 unit — `test_a_removal_tells_the_removed_contact` ✅
 - [ ] T16.4 unit — nothing is sent when a change is refused _(the notices go out after the commit, so a refused code never reaches them; T6.1 shows nothing changed)_
 
 ### B17 — Every addition, change and removal is kept in the home's history
