@@ -29,3 +29,17 @@ export class ApiError extends Error {
     this.name = 'ApiError';
   }
 }
+
+/** Why the API refused the home a request named (Phase 1b). */
+export type HomeRefusalReason = 'choose_home' | 'not_in_home';
+
+/**
+ * Whether `error` refused the home a request named, and why: `choose_home`
+ * (several homes, none named) or `not_in_home` (no longer a member).
+ */
+export function refusalReason(error: unknown): HomeRefusalReason | null {
+  if (!(error instanceof ApiError)) return null;
+  const reason = (error.data as { reason?: unknown } | null | undefined)
+    ?.reason;
+  return reason === 'choose_home' || reason === 'not_in_home' ? reason : null;
+}
