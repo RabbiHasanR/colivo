@@ -1059,3 +1059,22 @@ def test_not_in_home_answer_is_the_same_for_any_home(
     assert (other.status_code, unknown.status_code) == (403, 403)
     assert other.json() == unknown.json()
     assert "Old Fort" not in other.text
+
+
+def test_my_homes_answers_401_with_no_active_home(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Hijam is logged in, and his only home deactivates him
+    WHEN  his open page asks for his homes
+    THEN  it answers 401: he is logged out at once
+    """
+    sign_up_owner(client, redis_client, clock)
+    log_in_as_new(client, session, redis_client, clock, role=Role.MEMBER)
+    hijam = session.exec(select(Membership).where(Membership.name == "Hijam")).one()
+    hijam.status = MembershipStatus.INACTIVE
+    session.flush()
+
+    response = client.get("/api/v1/me/homes")
+
+    assert response.status_code == 401

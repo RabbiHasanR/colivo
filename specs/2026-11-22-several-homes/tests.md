@@ -108,7 +108,7 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 ### B16 — Removed from the last home: logged out at once
 
-- [x] T16.1 integration — `test_my_homes_answers_401_with_no_active_home`: session alive, no active home → 401
+- [x] T16.1 integration — `test_my_homes_answers_401_with_no_active_home` ✅ _(passed on its first run: `current_person` got the check in B8; seen failing without it)_: session alive, no active home → 401
 - [ ] T16.2 web — _(skipped: 401 → log-in is Phase 1's `session-end` handling, already tested)_
 
 ### B17 — The role follows the chosen home
