@@ -1,5 +1,7 @@
 import Component from '@glimmer/component';
+import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
+import { on } from '@ember/modifier';
 import { service } from '@ember/service';
 import type { ContactKind } from '../../services/members';
 import type ProfileService from '../../services/profile';
@@ -8,7 +10,10 @@ import { formatMonth } from '../../utils/months';
 import { roleLabel } from '../../utils/roles';
 import ContactEditor from '../contact/contact-editor';
 import Avatar from '../ui/avatar';
+import Button from '../ui/button';
 import Card from '../ui/card';
+import Field from '../ui/field';
+import TextInput from '../ui/text-input';
 
 /**
  * My profile (colivo-design/web/WebProfile.html): who you are in this home,
@@ -18,8 +23,27 @@ export default class ProfilePage extends Component {
   @service declare session: SessionService;
   @service declare profile: ProfileService;
 
+  /** The name being typed, until it is saved. */
+  @tracked typedName: string | null = null;
+
   get name(): string {
     return this.session.me?.membership.name ?? '';
+  }
+
+  get nameValue(): string {
+    return this.typedName ?? this.name;
+  }
+
+  @action setName(value: string): void {
+    this.typedName = value;
+  }
+
+  /** Fix your own name in this home (FR-86, `PATCH /me`). */
+  @action
+  async saveName(event: SubmitEvent): Promise<void> {
+    event.preventDefault();
+    await this.session.updateMe(this.nameValue);
+    this.typedName = null;
   }
 
   get phone(): string | null {
@@ -77,6 +101,20 @@ export default class ProfilePage extends Component {
           >{{this.subtitle}}</span>
         </div>
       </div>
+      <form
+        class="flex flex-wrap items-end gap-2"
+        {{on "submit" this.saveName}}
+      >
+        <Field @label="Name" class="min-w-0 flex-1" as |id|>
+          <TextInput
+            id={{id}}
+            @value={{this.nameValue}}
+            @onInput={{this.setName}}
+            data-test-profile-name-input
+          />
+        </Field>
+        <Button type="submit" data-test-profile-name-save>Save</Button>
+      </form>
       <ContactEditor
         @phone={{this.phone}}
         @email={{this.email}}

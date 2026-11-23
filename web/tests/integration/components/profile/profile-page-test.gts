@@ -1,8 +1,9 @@
 import { module, test } from 'qunit';
-import { render } from '@ember/test-helpers';
+import { click, fillIn, render } from '@ember/test-helpers';
+import { http, HttpResponse } from 'msw';
 import { setupRenderingTest } from 'colivo-web/tests/helpers';
-import { setupMsw } from 'colivo-web/tests/helpers/msw';
-import { me } from 'colivo-web/tests/helpers/accounts';
+import { setupMsw, worker } from 'colivo-web/tests/helpers/msw';
+import { me, meBody } from 'colivo-web/tests/helpers/accounts';
 import ProfilePage from 'colivo-web/components/profile/profile-page';
 
 module('Integration | Component | profile/profile-page', function (hooks) {
@@ -44,5 +45,26 @@ module('Integration | Component | profile/profile-page', function (hooks) {
     await render(<template><ProfilePage /></template>);
 
     assert.dom('[data-test-profile-subtitle]').hasText('Owner');
+  });
+
+  test('saves your new name and shows it', async function (assert) {
+    // GIVEN Rabbi Hasan on My profile; the API saves names
+    // WHEN  he changes his name to "Rabbi H." and presses Save
+    // THEN  the new name is sent, and My profile shows it
+    const sent: unknown[] = [];
+    worker.use(
+      http.patch('*/api/v1/me', async ({ request }) => {
+        sent.push(await request.json());
+        return HttpResponse.json(meBody('owner', { name: 'Rabbi H.' }));
+      }),
+    );
+    this.owner.lookup('service:session').me = me('owner');
+
+    await render(<template><ProfilePage /></template>);
+    await fillIn('[data-test-profile-name-input]', 'Rabbi H.');
+    await click('[data-test-profile-name-save]');
+
+    assert.deepEqual(sent, [{ name: 'Rabbi H.' }]);
+    assert.dom('[data-test-profile-name]').hasText('Rabbi H.');
   });
 });

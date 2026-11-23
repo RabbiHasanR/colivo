@@ -136,7 +136,7 @@ Web acceptance: `web/tests/acceptance/profile-test.ts` › person changes their 
 ### B21 — On My profile a person fixes their own name, for this home only
 
 - [ ] T21.1 integration — `PATCH /me` changes the name in this home only _(Phase 1's `test_member_fixes_their_name_and_checks_their_details` and 1b's per-home tests already pin it)_
-- [x] T21.2 web integration — profile page: Save sends the new name and shows it
+- [x] T21.2 web integration — profile page: Save sends the new name and shows it ✅
 
 ### B22 — A person adds, changes or removes their own phone or email, with a code
 
