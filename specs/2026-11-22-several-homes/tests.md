@@ -66,7 +66,7 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 ### B9 — First log-in check per home
 
-- [x] T9.1 integration — `test_me_shows_the_chosen_homes_first_log_in_check`: checked in Our Flat, not yet in Old Fort; `GET /me` answers for the home the header names
+- [x] T9.1 integration — `test_me_shows_the_chosen_homes_first_log_in_check` ✅: checked in Our Flat, not yet in Old Fort; `GET /me` answers for the home the header names
 - [ ] T9.2 web — _(skipped: the guard already sends an unchecked membership to the check, from `me`; covered by Phase 1's `first-log-in-test.ts`)_
 
 ### B10 — Switch homes from the shell

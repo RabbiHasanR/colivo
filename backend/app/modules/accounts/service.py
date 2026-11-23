@@ -91,25 +91,32 @@ def new_person(contact: Contact) -> Person:
     return Person(phone=contact.value)
 
 
-def active_membership(session: Session, person: Person) -> Membership | None:
-    """Return one of the person's active memberships.
-
-    A person can be active in several homes since Phase 1b; until log-in asks
-    which home (Phase 1b group 3), this returns any one of them.
+def membership_for(
+    session: Session, person: Person, home_id: uuid.UUID | None
+) -> Membership:
+    """The person's active membership of the home a request names.
 
     Args:
         session: The database session.
-        person: The person.
+        person: The logged-in person.
+        home_id: The home named in the ``X-Colivo-Home`` header, if any.
 
     Returns:
-        The membership, or None when they are active nowhere.
+        The active membership.
+
+    Raises:
+        HTTPException: 401 when there is none.
     """
-    return session.exec(
-        select(Membership).where(
-            Membership.person_id == person.id,
-            Membership.status == MembershipStatus.ACTIVE,
-        )
-    ).first()
+    query = select(Membership).where(
+        Membership.person_id == person.id,
+        Membership.status == MembershipStatus.ACTIVE,
+    )
+    if home_id is not None:
+        query = query.where(Membership.home_id == home_id)
+    membership = session.exec(query).first()
+    if membership is None:
+        raise HTTPException(401, "Log in first.")
+    return membership
 
 
 def check_name_free(

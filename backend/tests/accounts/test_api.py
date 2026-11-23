@@ -11,7 +11,7 @@ from sqlmodel import Session, func, select
 from app.core.config import settings
 from app.core.notifier import Channel
 from app.modules.accounts import codes, sessions
-from app.modules.accounts.constants import SESSION_COOKIE
+from app.modules.accounts.constants import HOME_HEADER, SESSION_COOKIE
 from app.modules.accounts.contact import Contact
 from app.modules.accounts.models import (
     Membership,
@@ -963,3 +963,30 @@ def test_my_homes_lists_active_homes_without_a_header(
     assert response.status_code == 200
     homes = [(home["name"], home["role"]) for home in response.json()["data"]]
     assert homes == [("Old Fort", "member"), ("Our Flat", "owner")]
+
+
+def test_me_shows_the_chosen_homes_first_log_in_check(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" (details checked at sign-up) and was just
+          added to "Old Fort" (not checked yet)
+    WHEN  he asks who he is, naming Old Fort, then Our Flat
+    THEN  Old Fort's answer shows its check still to do; Our Flat's is done
+    """
+    sign_up_owner(client, redis_client, clock)
+    our_flat_id = owner_home_id(client)
+    old_fort_id = rabbi_joins_old_fort(session)
+
+    in_old_fort = client.get("/api/v1/me", headers={HOME_HEADER: str(old_fort_id)})
+    in_our_flat = client.get("/api/v1/me", headers={HOME_HEADER: str(our_flat_id)})
+
+    old_fort, our_flat = in_old_fort.json()["data"], in_our_flat.json()["data"]
+    assert (old_fort["home"]["name"], old_fort["membership"]["details_checked"]) == (
+        "Old Fort",
+        False,
+    )
+    assert (our_flat["home"]["name"], our_flat["membership"]["details_checked"]) == (
+        "Our Flat",
+        True,
+    )

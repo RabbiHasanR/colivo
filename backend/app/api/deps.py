@@ -1,14 +1,15 @@
+import uuid
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import Depends, Request
+from fastapi import Depends, Header, Request
 from starlette.exceptions import HTTPException
 
 from app.core.clock import ClockDep
 from app.core.database import SessionDep
 from app.core.redis import RedisDep
 from app.modules.accounts import service, sessions
-from app.modules.accounts.constants import SESSION_COOKIE
+from app.modules.accounts.constants import HOME_HEADER, SESSION_COOKIE
 from app.modules.accounts.models import Membership, Person, Role
 
 NOT_LOGGED_IN = "Log in first."
@@ -48,32 +49,26 @@ CurrentPersonDep = Annotated[Person, Depends(current_person)]
 
 
 def current_membership(
-    request: Request, session: SessionDep, redis_client: RedisDep, clock: ClockDep
+    person: CurrentPersonDep,
+    session: SessionDep,
+    home_id: Annotated[uuid.UUID | None, Header(alias=HOME_HEADER)] = None,
 ) -> Membership:
-    """Return the logged-in person's active membership (a FastAPI dependency).
+    """Return the logged-in person's membership of the home they act in.
 
-    The membership is read from the database on every request, so a member
-    who is deactivated is logged out at once (FR-80).
+    The home comes from the ``X-Colivo-Home`` header (Phase 1b); it only
+    chooses among the person's own homes. The membership is read from the
+    database on every request, so a deactivated member is refused at once
+    (FR-80).
 
     Args:
-        request: The request, carrying the session cookie.
+        person: The logged-in person.
         session: The database session.
-        redis_client: Where sessions are kept.
-        clock: The app's clock.
+        home_id: The home the request names, if any.
 
     Returns:
         The active membership.
-
-    Raises:
-        HTTPException: 401 without a live session or an active membership.
     """
-    token = request.cookies.get(SESSION_COOKIE)
-    person_id = token and sessions.read_session(redis_client, token, clock())
-    person = person_id and session.get(Person, person_id)
-    membership = person and service.active_membership(session, person)
-    if not membership:
-        raise HTTPException(401, NOT_LOGGED_IN)
-    return membership
+    return service.membership_for(session, person, home_id)
 
 
 # The logged-in member for an endpoint: `membership: CurrentMemberDep`.
