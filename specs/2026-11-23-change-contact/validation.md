@@ -87,6 +87,11 @@ recorded in this phase. Phase 1 and 1b behaviours still hold.
 Filled in after the `/security-review` in group 4: each finding the user
 accepts as a fix becomes a behaviour here, built test-first.
 
+- B25 — A request that is reading a session at the moment that person's
+  sessions are ended can't bring the session back. [backend] _(added on
+  23 Nov 2026 from the security review: the refresh re-wrote a session key
+  that `end_sessions` had just deleted)_
+
 ## Automated checks
 
 | Check                     | Command                                                                                           | Pass criteria                                                                                  |

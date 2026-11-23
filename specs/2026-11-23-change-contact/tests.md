@@ -169,3 +169,12 @@ as regression tests ([testing.md → Workflow](../testing.md#workflow)).
 - [x] F2 web acceptance — My profile shows a phone you changed on Members ✅ (the page showed `session.me`, read once at start; the profile route now reads `GET /me` again)
 - [x] F3 unit — `test_removing_both_at_the_same_moment_answers_400_for_the_second` ✅ (the database's "a phone or an email" CHECK refused it as a 500; now the same 400 as the early check)
 - [x] F4 web integration — My profile says why a name was refused: taken (409) or not valid (422) ✅ (the refusal escaped as an uncaught error)
+
+## Group 4 — Security review follow-ups
+
+From the `/security-review` of the branch (23 Nov 2026). Backend only, no
+acceptance test of its own: the behaviour is one rule in `sessions.py`.
+
+### B25 — A session ended while a request is reading it stays ended
+
+- [x] T25.1 unit — `test_a_session_ended_while_it_is_being_read_stays_ended` ✅ (a wrapper around the real test Redis ends the sessions right after the read's `get`, so the race happens every run)

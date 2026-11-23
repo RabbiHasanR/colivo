@@ -20,13 +20,29 @@ def person_sessions_key(person_id: uuid.UUID) -> str:
 
 
 def save_session(
-    redis_client: Redis, token: str, person_id: uuid.UUID, now: datetime
-) -> None:
+    redis_client: Redis,
+    token: str,
+    person_id: uuid.UUID,
+    now: datetime,
+    *,
+    only_if_live: bool = False,
+) -> bool:
     """Keep a session alive until ``SESSION_LIFETIME`` after ``now``.
 
     The end time is compared with the app's clock; the Redis expiry only
     clears old keys away. The session is also listed under its person, so a
     change to their log-in can end all their sessions.
+
+    Args:
+        redis_client: Where sessions are kept.
+        token: The token from the session cookie.
+        person_id: Whose session it is.
+        now: The current time.
+        only_if_live: Write only if the session still exists, so a refresh
+            can't bring back a session ended since it was read (B25).
+
+    Returns:
+        Whether the session was saved.
     """
     value = {
         "person_id": str(person_id),
@@ -34,10 +50,15 @@ def save_session(
     }
     listed = person_sessions_key(person_id)
     with redis_client.pipeline(transaction=True) as pipe:
-        pipe.set(session_key(token), json.dumps(value), ex=SESSION_LIFETIME)
+        pipe.set(
+            session_key(token), json.dumps(value), ex=SESSION_LIFETIME, xx=only_if_live
+        )
+        # Listed even when the set is skipped: a key that no longer exists in
+        # the list is harmless, since deleting it does nothing.
         pipe.sadd(listed, session_key(token))
         pipe.expire(listed, SESSION_LIFETIME)
-        pipe.execute()
+        saved, *_ = pipe.execute()
+    return bool(saved)
 
 
 def create_session(redis_client: Redis, person_id: uuid.UUID, now: datetime) -> str:
@@ -75,7 +96,8 @@ def read_session(redis_client: Redis, token: str, now: datetime) -> uuid.UUID | 
         redis_client.delete(session_key(token))
         return None
     person_id = uuid.UUID(value["person_id"])
-    save_session(redis_client, token, person_id, now)
+    if not save_session(redis_client, token, person_id, now, only_if_live=True):
+        return None
     return person_id
 
 
