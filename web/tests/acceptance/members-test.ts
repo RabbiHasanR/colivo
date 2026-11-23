@@ -189,4 +189,33 @@ module('Acceptance | members', function (hooks) {
 
     assert.strictEqual(currentURL(), '/');
   });
+
+  test.todo(
+    'acceptance: owner adds an email to a member with a code',
+    async function (assert) {
+      // GIVEN the owner of "Our Flat" and Maruf, who logs in with a phone
+      // WHEN  the owner opens Edit on Maruf, types his email, sends a code,
+      //       types it and saves
+      // THEN  the Edit tab shows Maruf's phone and his new email
+      worker.use(loggedInAs('owner'), ...membersApi([owner, member()]));
+
+      await visit('/members');
+      await click('[data-test-edit-member="Maruf"]');
+      await fillIn('[data-test-contact-input="email"]', 'maruf@example.com');
+      await click('[data-test-contact-send-code="email"]');
+      await fillIn(
+        '[data-test-contact-row="email"] [data-test-code-field]',
+        '123456',
+      );
+      await click('[data-test-contact-save="email"]');
+
+      assert.dom('[data-test-member-form-tab="edit"]').hasText('Edit Maruf');
+      assert
+        .dom('[data-test-contact-input="phone"]')
+        .hasValue('+8801812345678');
+      assert
+        .dom('[data-test-contact-input="email"]')
+        .hasValue('maruf@example.com');
+    },
+  );
 });
