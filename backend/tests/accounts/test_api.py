@@ -1114,3 +1114,55 @@ def test_home_header_that_is_not_an_id_answers_422(
 
     assert response.status_code == 422
     assert "x-colivo-home" in response.json()["errors"][0].lower()
+
+
+MARUF_EMAIL = "maruf@example.com"
+
+
+def log_in_with(
+    client: TestClient, notifier: FakeNotifier, contact: str, to: str
+) -> dict[str, Any]:
+    """Log out, then log in with ``contact`` and the code sent to ``to``."""
+    client.post("/api/v1/auth/log-out")
+    client.post("/api/v1/auth/codes", json={"contact": contact})
+    return client.post(
+        "/api/v1/auth/log-in",
+        json={"contact": contact, "code": notifier.last_code_to(to)},
+    ).json()
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="acceptance: the owner adds an email to a member with a code (Phase 1c)",
+)
+def test_owner_adds_an_email_to_a_member_with_a_code(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat" and added Maruf by phone
+    WHEN  he asks for a code to Maruf's email and saves it with that code
+    THEN  Maruf has both, and logs in with the email and with the phone
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+
+    sent = client.post(
+        f"/api/v1/members/{member_id}/contact/code", json={"contact": MARUF_EMAIL}
+    )
+    saved = client.put(
+        f"/api/v1/members/{member_id}/contact",
+        json={"contact": MARUF_EMAIL, "code": notifier.last_code_to(MARUF_EMAIL)},
+    )
+    # The change code to the email used this minute's send (FR-94).
+    clock.advance(timedelta(minutes=1))
+    by_email = log_in_with(client, notifier, MARUF_EMAIL, MARUF_EMAIL)
+    by_phone = log_in_with(client, notifier, MARUF_PHONE, MARUF_E164)
+
+    assert sent.status_code == 200
+    assert saved.status_code == 200
+    assert (saved.json()["data"]["phone"], saved.json()["data"]["email"]) == (
+        MARUF_E164,
+        MARUF_EMAIL,
+    )
+    assert by_email["data"]["me"]["membership"]["name"] == "Maruf"
+    assert by_phone["data"]["me"]["membership"]["name"] == "Maruf"
