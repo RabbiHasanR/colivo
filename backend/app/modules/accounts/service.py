@@ -939,12 +939,18 @@ def kind_of(contact: Contact) -> ContactKind:
     return ContactKind.EMAIL if contact.channel == Channel.EMAIL else ContactKind.PHONE
 
 
+def channel_of(kind: ContactKind) -> Channel:
+    """How a phone or an email is reached: by SMS or by email."""
+    return Channel.EMAIL if kind == ContactKind.EMAIL else Channel.SMS
+
+
 def contacts_of(person: Person) -> list[Contact]:
     """The phone and email ``person`` logs in with now."""
-    found = [Contact(channel=Channel.SMS, value=person.phone)] if person.phone else []
-    if person.email:
-        found.append(Contact(channel=Channel.EMAIL, value=person.email))
-    return found
+    return [
+        Contact(channel=channel_of(kind), value=value)
+        for kind in ContactKind
+        if (value := getattr(person, kind)) is not None
+    ]
 
 
 def record_log_in_change(
@@ -975,7 +981,7 @@ def record_log_in_change(
         record_member_change(
             session,
             member,
-            changed_by=changed_by if changed_by and editor_here else member,
+            changed_by=changed_by if changed_by is not None and editor_here else member,
             action=ChangeAction.UPDATE,
             old_values=old_values,
             new_values=new_values,
@@ -1259,8 +1265,7 @@ def remove_contact(
     session.commit()
     session.refresh(person)
     sessions.end_sessions(redis_client, person.id, keep_token)
-    channel = Channel.EMAIL if kind == ContactKind.EMAIL else Channel.SMS
-    notifier.send(channel, removed, CONTACT_REMOVED.format(kind=kind))
+    notifier.send(channel_of(kind), removed, CONTACT_REMOVED.format(kind=kind))
     return person
 
 
