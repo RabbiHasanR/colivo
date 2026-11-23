@@ -119,3 +119,43 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 ### B19 — The members list shows the phone with the email under it _(dropped)_
 
 - [ ] T19.1 web integration — a member with both shows the phone, then the email under it _(B19 dropped on 23 Nov 2026: the members list shows no phone or email in `WebMembers.html`; they are on the Edit tab)_
+
+## Group 3 — My profile
+
+Backend acceptance: `backend/tests/accounts/test_api.py::test_person_changes_their_own_phone_with_a_code`
+Web acceptance: `web/tests/acceptance/profile-test.ts` › person changes their own phone on My profile
+
+### B20 — Anyone opens My profile and sees their name, role, "member since", phone and email
+
+- [x] T20.1 integration — `GET /me` answers the person's phone and email
+- [x] T20.2 web unit — `formatMonth('2026-11-21')` is "November 2026"
+- [x] T20.3 web integration — app shell: the name card links to My profile
+- [x] T20.4 web integration — profile page shows the name, "Owner · member since November 2026", the phone and the email
+- [x] T20.5 web integration — profile page shows just "Owner" for an owner who doesn't live in the home (no join date)
+
+### B21 — On My profile a person fixes their own name, for this home only
+
+- [ ] T21.1 integration — `PATCH /me` changes the name in this home only _(Phase 1's `test_member_fixes_their_name_and_checks_their_details` and 1b's per-home tests already pin it)_
+- [x] T21.2 web integration — profile page: Save sends the new name and shows it
+
+### B22 — A person adds, changes or removes their own phone or email, with a code
+
+- [x] T22.1 integration — `POST /me/contact/code` sends the code to the new email, not to the phone
+- [x] T22.2 integration — `PUT /me/contact` with the code answers 200 with the person's phone and new email
+- [x] T22.3 integration — `DELETE /me/contact/email` answers 200 with only the phone
+- [x] T22.4 integration — refusals speak to the person: "That's already your phone or email.", "You need a phone or an email to log in.", "You have no email to remove." (parametrised)
+- [x] T22.5 integration — 422 for "hello" on the code and the save, and for `DELETE /me/contact/fax` (parametrised)
+- [x] T22.6 integration — the three endpoints answer 401 without a log-in (parametrised)
+- [ ] T22.7 integration — wrong code, someone else's phone, limits, scoped codes _(same service code as group 2's T6.1, T7.1–T7.2, T14.1–T14.4; rule 7)_
+- [ ] T22.8 web integration — the editor's code, refusal and Remove states _(the same `ContactEditor`, tested in group 2; rule 7)_
+
+### B23 — A person in several homes changes their own log-in without choosing a home
+
+- [x] T23.1 integration — a person in two homes changes their phone with no `X-Colivo-Home` header and gets 200, not "Choose a home"
+- [x] T23.2 unit — `test_your_own_change_is_kept_in_each_home_under_your_membership_there`
+
+### B24 — After changing or removing your own, other sessions end and this browser stays
+
+- [x] T24.1 integration — logged in on two browsers, a person changes their phone in one: that one still works, the other answers 401
+- [x] T24.2 integration — removing your own email keeps this browser logged in
+- [ ] T24.3 web — anything on the web _(nothing changes on screen; the web acceptance test shows the page still works after the change)_
