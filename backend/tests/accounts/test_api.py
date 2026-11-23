@@ -1257,3 +1257,50 @@ def test_saving_a_contact_with_a_wrong_code_answers_400_and_changes_nothing(
     assert response.json()["data"] == {"reason": "wrong", "tries_left": 4}
     listed = client.get("/api/v1/members").json()["data"]
     assert [each["email"] for each in listed if each["id"] == member_id] == [None]
+
+
+def test_saving_someone_elses_phone_answers_409_and_changes_nothing(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678 and added Maruf
+    WHEN  he saves 01712 345678 for Maruf with the right code
+    THEN  it answers 409, and Maruf keeps his own phone
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    # Rabbi's sign-up code used this minute's send to his phone (FR-94).
+    clock.advance(timedelta(minutes=1))
+    client.post(f"/api/v1/members/{member_id}/contact/code", json={"contact": PHONE})
+
+    response = client.put(
+        f"/api/v1/members/{member_id}/contact",
+        json={"contact": PHONE, "code": notifier.last_code_to(PHONE_E164)},
+    )
+
+    assert response.status_code == 409
+    assert (
+        response.json()["message"] == "Someone else logs in with that phone or email."
+    )
+    listed = client.get("/api/v1/members").json()["data"]
+    assert [each["phone"] for each in listed if each["id"] == member_id] == [MARUF_E164]
+
+
+def test_contact_code_answers_the_same_for_someone_elses_phone(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678 and added Maruf
+    WHEN  codes are asked for Maruf to 01712 345678 (taken) and 01912 345678 (free)
+    THEN  both answer 200 with the same body
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    clock.advance(timedelta(minutes=1))
+    url = f"/api/v1/members/{member_id}/contact/code"
+
+    taken = client.post(url, json={"contact": PHONE})
+    free = client.post(url, json={"contact": "01912 345678"})
+
+    assert (taken.status_code, free.status_code) == (200, 200)
+    assert taken.json() == free.json()

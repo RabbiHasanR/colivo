@@ -66,6 +66,7 @@ REACTIVATE_TOO_EARLY = "Charges can start again only after their last stay ended
 ALREADY_ACTIVE = "This member is already active."
 DEACTIVATE_BEFORE_STAY = "Deactivation can't start before their stay began."
 LAST_CONTACT = "They need a phone or an email to log in."
+CONTACT_TAKEN = "Someone else logs in with that phone or email."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -962,8 +963,15 @@ def set_contact(
 
     Returns:
         The changed person.
+
+    Raises:
+        HTTPException: 409 when someone else logs in with it; checked only
+            after the right code, so nobody learns who has an account.
     """
     codes.use_code(redis_client, data.contact, data.code, now)
+    holder = find_person(session, data.contact)
+    if holder is not None and holder.id != person.id:
+        raise HTTPException(409, CONTACT_TAKEN)
     setattr(person, kind_of(data.contact), data.contact.value)
     session.commit()
     session.refresh(person)
