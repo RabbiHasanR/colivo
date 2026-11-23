@@ -86,10 +86,10 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B14 — Change codes and log-in codes can't stand in for each other
 
-- [x] T14.1 unit — `test_a_change_code_cannot_log_in`
-- [x] T14.2 unit — `test_a_log_in_code_cannot_confirm_a_change`
-- [x] T14.3 unit — `test_log_in_and_change_codes_share_the_send_limit` (a change code within a minute of a log-in code to the same phone is "too soon")
-- [x] T14.4 unit — `test_wrong_change_codes_do_not_lock_log_in`
+- [x] T14.1 unit — `test_a_change_code_cannot_log_in` ✅
+- [x] T14.2 unit — `test_a_log_in_code_cannot_confirm_a_change` ✅
+- [x] T14.3 unit — `test_log_in_and_change_codes_share_the_send_limit` (a change code within a minute of a log-in code to the same phone is "too soon") ✅ _(passed on its first run: T14.1's scoped keys leave `sent_key` shared and give each scope its own lock; kept to pin the agreed rule)_
+- [x] T14.4 unit — `test_wrong_change_codes_do_not_lock_log_in` ✅ _(passed on its first run: T14.1's scoped keys leave `sent_key` shared and give each scope its own lock; kept to pin the agreed rule)_
 
 ### B15 — A change or removal ends the member's sessions; adding one doesn't
 

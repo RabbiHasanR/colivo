@@ -286,7 +286,11 @@ def get_me(session: Session, membership: Membership) -> MeOut:
 
 
 def request_code(
-    redis_client: Redis, notifier: Notifier, contact: Contact, now: datetime
+    redis_client: Redis,
+    notifier: Notifier,
+    contact: Contact,
+    now: datetime,
+    scope: str = codes.LOG_IN_SCOPE,
 ) -> CodeSentOut:
     """Send a one-time code to ``contact`` by SMS or email (FR-94).
 
@@ -298,11 +302,12 @@ def request_code(
         notifier: Sends the SMS or email.
         contact: The phone or email to send it to.
         now: The current time.
+        scope: What the code is for: logging in, or one person's change.
 
     Returns:
         How it was sent, how long it works and when a new one can be sent.
     """
-    code = codes.issue_code(redis_client, contact, now)
+    code = codes.issue_code(redis_client, contact, now, scope)
     minutes = int(CODE_LIFETIME.total_seconds() // 60)
     notifier.send(
         contact.channel,
@@ -953,7 +958,8 @@ def request_contact_code(
     """
     if getattr(person, kind_of(contact)) == contact.value:
         raise HTTPException(400, SAME_CONTACT)
-    return request_code(redis_client, notifier, contact, now)
+    scope = codes.change_scope(person.id)
+    return request_code(redis_client, notifier, contact, now, scope)
 
 
 def set_contact(
@@ -981,7 +987,8 @@ def set_contact(
         HTTPException: 409 when someone else logs in with it; checked only
             after the right code, so nobody learns who has an account.
     """
-    codes.use_code(redis_client, data.contact, data.code, now)
+    scope = codes.change_scope(person.id)
+    codes.use_code(redis_client, data.contact, data.code, now, scope)
     holder = find_person(session, data.contact)
     if holder is not None and holder.id != person.id:
         raise HTTPException(409, CONTACT_TAKEN)

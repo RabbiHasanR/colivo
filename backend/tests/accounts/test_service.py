@@ -19,6 +19,8 @@ from app.modules.accounts.models import (
     Role,
 )
 from app.modules.accounts.schemas import (
+    CodeErrorOut,
+    CodeErrorReason,
     ContactChangeIn,
     ContactKind,
     DeactivateIn,
@@ -1578,3 +1580,30 @@ def test_a_past_members_log_in_cant_be_changed(
         "Reactivate them first.",
     )
     assert notifier.sent == []
+
+
+def test_a_log_in_code_cannot_confirm_a_change(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN a log-in code was sent to maruf@example.com
+    WHEN  the owner saves that email for Maruf with the log-in code
+    THEN  it is refused as expired, and Maruf has no email
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+    log_in_code = codes.issue_code(redis_client, email(), clock())
+
+    with pytest.raises(AppError) as refused:
+        service.set_member_contact(
+            session,
+            redis_client,
+            notifier,
+            owner,
+            member.id,
+            ContactChangeIn(contact=email(), code=log_in_code),
+            clock(),
+        )
+
+    assert refused.value.status_code == 400
+    assert refused.value.data == CodeErrorOut(reason=CodeErrorReason.EXPIRED)
+    assert person_of(session, member).email is None
