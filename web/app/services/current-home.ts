@@ -1,4 +1,5 @@
 import Service, { service } from '@ember/service';
+import { tracked } from '@glimmer/tracking';
 import { getSetup, type Setup } from '../data/builders/home';
 import type Store from './store';
 
@@ -10,9 +11,50 @@ export const LAST_HOME_KEY = 'colivo:last-home';
 // For components, which don't import the data layer.
 export type { Setup, SetupStep } from '../data/builders/home';
 
-/** The logged-in member's home: its setup checklist. */
+/** Reads a stored home id; storage can be refused (a private window). */
+function readHome(storage: () => Storage, key: string): string | null {
+  try {
+    return storage().getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+/** Stores (or, for null, removes) a home id; a refused storage is ignored. */
+function writeHome(
+  storage: () => Storage,
+  key: string,
+  homeId: string | null,
+): void {
+  try {
+    if (homeId === null) storage().removeItem(key);
+    else storage().setItem(key, homeId);
+  } catch {
+    // Storage refused (a private window): the home stays for this page only.
+  }
+}
+
+/**
+ * The home this tab acts in (Phase 1b), and that home's setup checklist.
+ *
+ * Each tab keeps its own home in sessionStorage, so switching in one tab
+ * never moves another; a new tab starts from the last home chosen in this
+ * browser (localStorage). The data layer sends it as `X-Colivo-Home`.
+ */
 export default class CurrentHomeService extends Service {
   @service declare store: Store;
+
+  /** The home this tab acts in; null until one is chosen. */
+  @tracked homeId: string | null =
+    readHome(() => sessionStorage, TAB_HOME_KEY) ??
+    readHome(() => localStorage, LAST_HOME_KEY);
+
+  /** Act in `homeId` in this tab; new tabs start from it too. */
+  choose(homeId: string): void {
+    this.homeId = homeId;
+    writeHome(() => sessionStorage, TAB_HOME_KEY, homeId);
+    writeHome(() => localStorage, LAST_HOME_KEY, homeId);
+  }
 
   /** The setup checklist (owner and managers only; members get 403). */
   async loadSetup(): Promise<Setup> {

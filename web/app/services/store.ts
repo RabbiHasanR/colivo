@@ -8,6 +8,7 @@ import { createEnvelopeHandler } from '../data/handlers/api-envelope';
 import { createErrorWatchHandler } from '../data/handlers/error-watch';
 import type { Handler } from '../data/handlers/types';
 import type SessionService from './session';
+import type CurrentHomeService from './current-home';
 
 /**
  * Our handlers use the small structural types in data/handlers/types.ts, so
@@ -23,6 +24,7 @@ function asWarpDriveHandler(handler: Handler): WarpDriveHandler {
 /** Set by the store once it exists, so the handlers can reach the session. */
 let onSessionEnded: () => void = () => {};
 let onForbidden: () => void = () => {};
+let homeId: () => string | null = () => null;
 
 /**
  * Requests go through: session end -> role check -> errors -> auth -> envelope -> fetch
@@ -35,7 +37,7 @@ const BaseStore = useLegacyStore({
     createErrorWatchHandler('unauthorized', () => onSessionEnded()),
     createErrorWatchHandler('forbidden', () => onForbidden()),
     ErrorHandler,
-    createAuthHandler(),
+    createAuthHandler(() => homeId()),
     createEnvelopeHandler(),
   ].map(asWarpDriveHandler),
   schemas: [],
@@ -48,10 +50,12 @@ const BaseStore = useLegacyStore({
  */
 export default class Store extends BaseStore {
   @service declare session: SessionService;
+  @service declare currentHome: CurrentHomeService;
 
   constructor(...args: ConstructorParameters<typeof BaseStore>) {
     super(...args);
     onSessionEnded = () => this.session.expire();
     onForbidden = () => void this.session.recheckRole();
+    homeId = () => this.currentHome.homeId;
   }
 }

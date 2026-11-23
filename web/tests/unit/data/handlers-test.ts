@@ -136,6 +136,29 @@ module('Unit | Data | handlers', function () {
     );
   });
 
+  for (const [name, homeId] of [
+    ['a home is chosen', 'green-house-id'],
+    ['no home is chosen', null],
+  ] as const) {
+    test(`auth handler names the tab's home in X-Colivo-Home when ${name}`, async function (assert) {
+      // GIVEN this tab acts in Green House, or in no home yet
+      // WHEN  a request passes through the auth handler
+      // THEN  it names that home in X-Colivo-Home, or sends no such header
+      let sent: AppRequest | undefined;
+
+      await createAuthHandler(() => homeId).request(
+        { request: { url: '/api/v1/me' } },
+        (request) => {
+          sent = request;
+          return Promise.resolve({ content: null });
+        },
+      );
+
+      const named = sent?.headers?.get('X-Colivo-Home') ?? null;
+      assert.strictEqual(named, homeId);
+    });
+  }
+
   test('error handler maps 429 to too-many and keeps its data', async function (assert) {
     // GIVEN the API refuses a new code: asked again too soon
     // WHEN  the request fails with that 429

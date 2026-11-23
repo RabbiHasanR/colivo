@@ -78,10 +78,10 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 ### B11 — Each tab keeps its own home
 
-- [x] T11.1 web unit — `services/current-home-test.ts` › a tab starts from its own home, else the last home chosen
-- [x] T11.2 web unit — `services/current-home-test.ts` › choosing a home keeps it for this tab and as the last home
-- [x] T11.3 web unit — `services/current-home-test.ts` › refused storage (private window) never throws; the home is kept for the page
-- [x] T11.4 web unit — `data/handlers-test.ts` › the auth handler sends `X-Colivo-Home` when a home is chosen, and none otherwise
+- [x] T11.1 web unit — `services/current-home-test.ts` › a tab starts from its own home, else the last home chosen ✅
+- [x] T11.2 web unit — `services/current-home-test.ts` › choosing a home keeps it for this tab and as the last home ✅
+- [x] T11.3 web unit — `services/current-home-test.ts` › refused storage (private window) never throws; the home is kept for the page ✅ _(passed on its first run: storage was already read and written in `try`; seen failing without the `catch`)_
+- [x] T11.4 web unit — `data/handlers-test.ts` › the auth handler sends `X-Colivo-Home` when a home is chosen, and none otherwise ✅
 
 ### B12 — Log-out logs out every tab and forgets the home
 
