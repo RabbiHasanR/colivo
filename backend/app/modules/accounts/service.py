@@ -252,6 +252,7 @@ def get_me(session: Session, membership: Membership) -> MeOut:
             details_checked=membership.details_checked_at is not None,
         ),
         home=MeHomeOut.model_validate(home, from_attributes=True),
+        homes=active_homes(session, person),
     )
 
 

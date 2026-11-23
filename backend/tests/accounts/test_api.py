@@ -990,3 +990,21 @@ def test_me_shows_the_chosen_homes_first_log_in_check(
         "Our Flat",
         True,
     )
+
+
+def test_me_lists_the_persons_homes_for_the_switcher(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" and is a member of "Old Fort"
+    WHEN  he asks who he is in Our Flat
+    THEN  the answer lists both his homes, for switching
+    """
+    sign_up_owner(client, redis_client, clock)
+    our_flat_id = owner_home_id(client)
+    rabbi_joins_old_fort(session)
+
+    response = client.get("/api/v1/me", headers={HOME_HEADER: str(our_flat_id)})
+
+    homes = [home["name"] for home in response.json()["data"]["homes"]]
+    assert homes == ["Old Fort", "Our Flat"]

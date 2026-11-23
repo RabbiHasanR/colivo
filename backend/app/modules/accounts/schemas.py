@@ -145,14 +145,6 @@ class MeHomeOut(BaseModel):
     first_month: date
 
 
-class MeOut(BaseModel):
-    """Who is logged in, and in which home."""
-
-    person: MePersonOut
-    membership: MeMembershipOut
-    home: MeHomeOut
-
-
 class HomeChoiceOut(BaseModel):
     """One of the person's active homes, for choosing or switching homes."""
 
@@ -161,6 +153,15 @@ class HomeChoiceOut(BaseModel):
     area: str | None
     # The person's role in that home.
     role: Role
+
+
+class MeOut(BaseModel):
+    """Who is logged in, and in which home; ``homes`` for switching homes."""
+
+    person: MePersonOut
+    membership: MeMembershipOut
+    home: MeHomeOut
+    homes: list[HomeChoiceOut]
 
 
 class LogInOut(BaseModel):
