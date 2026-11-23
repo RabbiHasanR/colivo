@@ -210,7 +210,7 @@ module('Acceptance | members', function (hooks) {
     assert.dom('[data-test-contact-input="phone"]').hasValue('+8801912345678');
   });
 
-  test.todo('acceptance: owner adds an email to a member with a code', async function (assert) {
+  test('owner adds an email to a member with a code', async function (assert) {
     // GIVEN the owner of "Our Flat" and Maruf, who logs in with a phone
     // WHEN  the owner opens Edit on Maruf, types his email, sends a code,
     //       types it and saves
