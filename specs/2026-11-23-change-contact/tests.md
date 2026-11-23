@@ -168,3 +168,4 @@ as regression tests ([testing.md → Workflow](../testing.md#workflow)).
 - [x] F1 web integration — contact editor keeps the field focused while you type ✅ (`{{#each}}` had no key, so every keystroke rebuilt the row)
 - [x] F2 web acceptance — My profile shows a phone you changed on Members ✅ (the page showed `session.me`, read once at start; the profile route now reads `GET /me` again)
 - [x] F3 unit — `test_removing_both_at_the_same_moment_answers_400_for_the_second` ✅ (the database's "a phone or an email" CHECK refused it as a 500; now the same 400 as the early check)
+- [x] F4 web integration — My profile says why a name was refused: taken (409) or not valid (422) ✅ (the refusal escaped as an uncaught error)

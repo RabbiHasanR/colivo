@@ -67,4 +67,39 @@ module('Integration | Component | profile/profile-page', function (hooks) {
     assert.deepEqual(sent, [{ name: 'Rabbi H.' }]);
     assert.dom('[data-test-profile-name]').hasText('Rabbi H.');
   });
+
+  test('says why a name was refused', async function (assert) {
+    // GIVEN Rabbi Hasan on My profile (gap found after the manual check)
+    // WHEN  the API refuses his new name: taken (409), or blank (422)
+    // THEN  My profile says why: the message, or under the Name field
+    const taken = 'Someone in this home already has that name.';
+    const blank = 'Value error, String should have at least 1 character';
+    const answers = [
+      HttpResponse.json(
+        { success: false, message: taken, errors: [taken] },
+        { status: 409 },
+      ),
+      HttpResponse.json(
+        {
+          success: false,
+          message: 'Validation Error',
+          errors: [`body.name: ${blank}`],
+        },
+        { status: 422 },
+      ),
+    ];
+    worker.use(http.patch('*/api/v1/me', () => answers.shift()));
+    this.owner.lookup('service:session').me = me('owner');
+    await render(<template><ProfilePage /></template>);
+
+    await fillIn('[data-test-profile-name-input]', 'Maruf');
+    await click('[data-test-profile-name-save]');
+    assert.dom('[data-test-profile-name-error]').hasText(taken);
+
+    await fillIn('[data-test-profile-name-input]', ' ');
+    await click('[data-test-profile-name-save]');
+    assert
+      .dom('[data-test-profile-name-field] [data-test-field-error]')
+      .hasText(blank);
+  });
 });

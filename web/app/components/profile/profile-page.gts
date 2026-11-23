@@ -7,12 +7,14 @@ import type { ContactKind } from '../../services/members';
 import type ProfileService from '../../services/profile';
 import type SessionService from '../../services/session';
 import { formatMonth } from '../../utils/months';
+import { refusalFrom, type Refusal } from '../../utils/refusal';
 import { roleLabel } from '../../utils/roles';
 import ContactEditor from '../contact/contact-editor';
 import Avatar from '../ui/avatar';
 import Button from '../ui/button';
 import Card from '../ui/card';
 import Field from '../ui/field';
+import FormError from '../ui/form-error';
 import TextInput from '../ui/text-input';
 
 /**
@@ -25,6 +27,12 @@ export default class ProfilePage extends Component {
 
   /** The name being typed, until it is saved. */
   @tracked typedName: string | null = null;
+  /** Why the API refused the name (409 taken, 422 not valid), if it did. */
+  @tracked nameRefusal: Refusal | null = null;
+
+  get nameErrors(): string[] {
+    return this.nameRefusal?.fieldErrors['name'] ?? [];
+  }
 
   get name(): string {
     return this.session.me?.membership.name ?? '';
@@ -42,7 +50,14 @@ export default class ProfilePage extends Component {
   @action
   async saveName(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    await this.session.updateMe(this.nameValue);
+    this.nameRefusal = null;
+    try {
+      await this.session.updateMe(this.nameValue);
+    } catch (error) {
+      this.nameRefusal = refusalFrom(error);
+      if (!this.nameRefusal) throw error;
+      return;
+    }
     this.typedName = null;
   }
 
@@ -105,7 +120,13 @@ export default class ProfilePage extends Component {
         class="flex flex-wrap items-end gap-2"
         {{on "submit" this.saveName}}
       >
-        <Field @label="Name" class="min-w-0 flex-1" as |id|>
+        <Field
+          @label="Name"
+          @errors={{this.nameErrors}}
+          class="min-w-0 flex-1"
+          data-test-profile-name-field
+          as |id|
+        >
           <TextInput
             id={{id}}
             @value={{this.nameValue}}
@@ -115,6 +136,11 @@ export default class ProfilePage extends Component {
         </Field>
         <Button type="submit" data-test-profile-name-save>Save</Button>
       </form>
+      {{#if this.nameRefusal.message}}
+        <FormError data-test-profile-name-error>
+          {{this.nameRefusal.message}}
+        </FormError>
+      {{/if}}
       <ContactEditor
         @phone={{this.phone}}
         @email={{this.email}}
