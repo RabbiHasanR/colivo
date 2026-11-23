@@ -9,7 +9,7 @@ from starlette.exceptions import HTTPException
 
 from app.core.exceptions import AppError
 from app.core.notifier import Channel
-from app.modules.accounts import codes, service
+from app.modules.accounts import codes, service, sessions
 from app.modules.accounts.contact import Contact, parse_contact
 from app.modules.accounts.models import (
     Membership,
@@ -1607,3 +1607,21 @@ def test_a_log_in_code_cannot_confirm_a_change(
     assert refused.value.status_code == 400
     assert refused.value.data == CodeErrorOut(reason=CodeErrorReason.EXPIRED)
     assert person_of(session, member).email is None
+
+
+def test_removing_a_contact_ends_the_members_sessions(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with a phone and an email, and is logged in
+    WHEN  the owner removes his email
+    THEN  Maruf's open session ends
+    """
+    owner, member = maruf_with_both(session, redis_client, notifier, clock)
+    token = sessions.create_session(redis_client, member.person_id, clock())
+
+    service.remove_member_contact(
+        session, redis_client, notifier, owner, member.id, ContactKind.EMAIL, clock()
+    )
+
+    assert sessions.read_session(redis_client, token, clock()) is None

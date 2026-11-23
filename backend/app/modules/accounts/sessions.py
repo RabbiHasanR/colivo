@@ -6,12 +6,17 @@ from datetime import datetime
 
 from redis import Redis
 
-from app.modules.accounts.constants import SESSION_LIFETIME
+from app.modules.accounts.constants import PERSON_SESSIONS_PREFIX, SESSION_LIFETIME
 
 
 def session_key(token: str) -> str:
     """The Redis key of a session: the token's hash, never the token itself."""
     return f"session:{hashlib.sha256(token.encode()).hexdigest()}"
+
+
+def person_sessions_key(person_id: uuid.UUID) -> str:
+    """The Redis key of the set of ``person_id``'s session keys (Phase 1c)."""
+    return f"{PERSON_SESSIONS_PREFIX}:{person_id}"
 
 
 def save_session(
@@ -20,13 +25,19 @@ def save_session(
     """Keep a session alive until ``SESSION_LIFETIME`` after ``now``.
 
     The end time is compared with the app's clock; the Redis expiry only
-    clears old keys away.
+    clears old keys away. The session is also listed under its person, so a
+    change to their log-in can end all their sessions.
     """
     value = {
         "person_id": str(person_id),
         "expires_at": (now + SESSION_LIFETIME).isoformat(),
     }
-    redis_client.set(session_key(token), json.dumps(value), ex=SESSION_LIFETIME)
+    listed = person_sessions_key(person_id)
+    with redis_client.pipeline(transaction=True) as pipe:
+        pipe.set(session_key(token), json.dumps(value), ex=SESSION_LIFETIME)
+        pipe.sadd(listed, session_key(token))
+        pipe.expire(listed, SESSION_LIFETIME)
+        pipe.execute()
 
 
 def create_session(redis_client: Redis, person_id: uuid.UUID, now: datetime) -> str:
@@ -76,3 +87,27 @@ def end_session(redis_client: Redis, token: str) -> None:
         token: The token from the session cookie.
     """
     redis_client.delete(session_key(token))
+
+
+def end_sessions(
+    redis_client: Redis, person_id: uuid.UUID, keep_token: str | None = None
+) -> None:
+    """End the sessions of ``person_id``, all but ``keep_token``'s if given.
+
+    Used when their log-in changes: the browser that made the change can stay
+    logged in, every other one logs in again.
+
+    Args:
+        redis_client: Where sessions are kept.
+        person_id: Whose sessions end.
+        keep_token: The token of a session to keep, if any; one that isn't
+            theirs keeps nothing.
+    """
+    listed = person_sessions_key(person_id)
+    kept = session_key(keep_token).encode() if keep_token else None
+    ended = [key for key in redis_client.smembers(listed) if key != kept]
+    with redis_client.pipeline(transaction=True) as pipe:
+        if ended:
+            pipe.delete(*ended)
+            pipe.srem(listed, *ended)
+        pipe.execute()

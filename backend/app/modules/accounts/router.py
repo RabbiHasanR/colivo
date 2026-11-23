@@ -326,7 +326,14 @@ def set_member_contact(
 ) -> MemberOut:
     """Save a member's new phone or email with the code sent to it."""
     member = service.set_member_contact(
-        session, redis_client, notifier, editor, member_id, data, clock()
+        session,
+        redis_client,
+        notifier,
+        editor,
+        member_id,
+        data,
+        clock(),
+        keep_token=request.cookies[SESSION_COOKIE],
     )
     set_response_message(request, "Log-in changed")
     response.status_code = 200
@@ -347,7 +354,14 @@ def remove_member_contact(
 ) -> MemberOut:
     """Stop a member logging in with their phone or their email."""
     member = service.remove_member_contact(
-        session, redis_client, notifier, editor, member_id, channel, clock()
+        session,
+        redis_client,
+        notifier,
+        editor,
+        member_id,
+        channel,
+        clock(),
+        keep_token=request.cookies[SESSION_COOKIE],
     )
     set_response_message(request, "Log-in changed")
     response.status_code = 200

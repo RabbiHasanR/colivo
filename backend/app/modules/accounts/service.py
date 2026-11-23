@@ -968,6 +968,8 @@ def set_contact(
     person: Person,
     data: ContactChangeIn,
     now: datetime,
+    *,
+    keep_token: str | None = None,
 ) -> Person:
     """Save a new phone or email for ``person``, with the code sent to it.
 
@@ -979,6 +981,7 @@ def set_contact(
         person: Whose log-in changes.
         data: The new phone or email and its code.
         now: The current time.
+        keep_token: The caller's session, kept when theirs ends.
 
     Returns:
         The changed person.
@@ -992,9 +995,14 @@ def set_contact(
     holder = find_person(session, data.contact)
     if holder is not None and holder.id != person.id:
         raise HTTPException(409, CONTACT_TAKEN)
-    setattr(person, kind_of(data.contact), data.contact.value)
+    kind = kind_of(data.contact)
+    replaced = getattr(person, kind) is not None
+    setattr(person, kind, data.contact.value)
     session.commit()
     session.refresh(person)
+    if replaced:
+        # A way to log in was taken away: every other browser logs in again.
+        sessions.end_sessions(redis_client, person.id, keep_token)
     return person
 
 
@@ -1104,6 +1112,8 @@ def set_member_contact(
     member_id: uuid.UUID,
     data: ContactChangeIn,
     now: datetime,
+    *,
+    keep_token: str | None = None,
 ) -> Membership:
     """Save a member's new phone or email with its code (owner or manager).
 
@@ -1115,22 +1125,34 @@ def set_member_contact(
         member_id: The member whose log-in changes.
         data: The new phone or email and its code.
         now: The current time.
+        keep_token: The editor's session, kept if they change their own row.
 
     Returns:
         The member.
     """
     member, person = member_to_change(session, editor, member_id)
-    set_contact(session, redis_client, person, data, now)
+    set_contact(session, redis_client, person, data, now, keep_token=keep_token)
     return member
 
 
-def remove_contact(session: Session, person: Person, kind: ContactKind) -> Person:
+def remove_contact(
+    session: Session,
+    redis_client: Redis,
+    person: Person,
+    kind: ContactKind,
+    *,
+    keep_token: str | None = None,
+) -> Person:
     """Stop ``person`` logging in with their phone or their email.
+
+    Their sessions end, except the caller's.
 
     Args:
         session: The database session.
+        redis_client: Where sessions are kept.
         person: Whose log-in changes.
         kind: Which one to remove.
+        keep_token: The caller's session, kept when theirs ends.
 
     Returns:
         The changed person.
@@ -1146,6 +1168,7 @@ def remove_contact(session: Session, person: Person, kind: ContactKind) -> Perso
     setattr(person, kind, None)
     session.commit()
     session.refresh(person)
+    sessions.end_sessions(redis_client, person.id, keep_token)
     return person
 
 
@@ -1157,6 +1180,8 @@ def remove_member_contact(
     member_id: uuid.UUID,
     kind: ContactKind,
     now: datetime,
+    *,
+    keep_token: str | None = None,
 ) -> Membership:
     """Remove a member's phone or email, for the owner or a manager.
 
@@ -1168,10 +1193,11 @@ def remove_member_contact(
         member_id: The member whose log-in changes.
         kind: Which one to remove.
         now: The current time.
+        keep_token: The editor's session, kept if they change their own row.
 
     Returns:
         The member.
     """
     member, person = member_to_change(session, editor, member_id)
-    remove_contact(session, person, kind)
+    remove_contact(session, redis_client, person, kind, keep_token=keep_token)
     return member

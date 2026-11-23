@@ -1486,3 +1486,85 @@ def test_a_new_contact_in_the_wrong_form_answers_422(
 
     assert response.status_code == 422
     assert "Enter a phone number or an email." in response.json()["errors"][0]
+
+
+def maruf_session(session: Session, redis_client: Redis, clock: MovableClock) -> str:
+    """An open session for Maruf (01812 345678), as if he logged in elsewhere."""
+    person = session.exec(select(Person).where(Person.phone == MARUF_E164)).one()
+    return sessions.create_session(redis_client, person.id, clock())
+
+
+def change_marufs_contact(
+    client: TestClient, notifier: FakeNotifier, member_id: str, contact: str, to: str
+) -> None:
+    """The logged-in owner saves ``contact`` for Maruf with the code sent to ``to``."""
+    client.post(f"/api/v1/members/{member_id}/contact/code", json={"contact": contact})
+    client.put(
+        f"/api/v1/members/{member_id}/contact",
+        json={"contact": contact, "code": notifier.last_code_to(to)},
+    )
+
+
+def me_with(client: TestClient, token: str) -> int:
+    """The status of GET /api/v1/me for the session ``token``."""
+    client.cookies.clear()
+    client.cookies.set(SESSION_COOKIE, token)
+    return client.get("/api/v1/me").status_code
+
+
+def test_changing_a_members_phone_logs_them_out(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Maruf is logged in on his phone
+    WHEN  the owner changes Maruf's phone to 01912 345678
+    THEN  Maruf's open session answers 401: he logs in again with the new one
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    token = maruf_session(session, redis_client, clock)
+
+    change_marufs_contact(client, notifier, member_id, "01912 345678", "+8801912345678")
+
+    assert me_with(client, token) == 401
+
+
+def test_adding_an_email_leaves_the_member_logged_in(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Maruf is logged in on his phone
+    WHEN  the owner adds maruf@example.com to Maruf
+    THEN  Maruf's open session still works: nothing was taken away
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    token = maruf_session(session, redis_client, clock)
+
+    change_marufs_contact(client, notifier, member_id, MARUF_EMAIL, MARUF_EMAIL)
+
+    assert me_with(client, token) == 200
+
+
+def test_the_owner_changing_their_own_phone_stays_logged_in(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan, the owner, logs in with 01712 345678
+    WHEN  he changes his own phone to 01912 345678 on Members
+    THEN  this browser stays logged in
+    """
+    sign_up_owner(client, redis_client, clock)
+    owner_id = owner_membership_id(client)
+
+    change_marufs_contact(client, notifier, owner_id, "01912 345678", "+8801912345678")
+
+    assert client.get("/api/v1/me").status_code == 200

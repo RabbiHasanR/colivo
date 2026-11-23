@@ -93,12 +93,12 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B15 — A change or removal ends the member's sessions; adding one doesn't
 
-- [x] T15.1 unit — `test_ending_a_persons_sessions_ends_every_one` (`test_sessions.py`)
-- [x] T15.2 unit — `test_ending_a_persons_sessions_can_keep_one`
-- [x] T15.3 integration — after the owner changes a member's phone, the member's open session answers 401
-- [x] T15.4 integration — after the owner adds an email, the member's open session still works
-- [x] T15.5 unit — `test_removing_a_contact_ends_the_members_sessions`
-- [x] T15.6 integration — the owner changing their own phone on Members stays logged in
+- [x] T15.1 unit — `test_ending_a_persons_sessions_ends_every_one` (`test_sessions.py`) ✅
+- [x] T15.2 unit — `test_ending_a_persons_sessions_can_keep_one` ✅
+- [x] T15.3 integration — after the owner changes a member's phone, the member's open session answers 401 ✅
+- [x] T15.4 integration — after the owner adds an email, the member's open session still works ✅ _(passed on its first run, because T15.3's code already had the `if replaced` guard; seen failing with the guard removed)_
+- [x] T15.5 unit — `test_removing_a_contact_ends_the_members_sessions` ✅
+- [x] T15.6 integration — the owner changing their own phone on Members stays logged in ✅ _(passed on its first run, because the router already passed the cookie as `keep_token`; seen failing with `keep_token=None`)_
 
 ### B16 — The person is told on their old and new phone or email
 
