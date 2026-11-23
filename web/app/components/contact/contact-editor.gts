@@ -19,6 +19,8 @@ interface ContactEditorSignature {
     phone: string | null;
     email: string | null;
     editable: boolean;
+    /** Why they can't be changed here, shown when not ``editable``. */
+    note?: string;
     /** Send a code to the new phone or email. */
     onSendCode: (contact: string) => Promise<unknown>;
     /** Save the new phone or email with the code typed. */
@@ -55,6 +57,11 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
 
   get rows(): Row[] {
     return [this.row('phone', 'Phone'), this.row('email', 'Email')];
+  }
+
+  /** The rows to change, only when this page may change them. */
+  get editableRows(): Row[] {
+    return this.args.editable ? this.rows : [];
   }
 
   /** A row; the one they don't have yet is "(optional)", as in the design. */
@@ -137,7 +144,24 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
 
   <template>
     <div class="flex flex-col gap-3" data-test-contact-editor>
-      {{#each this.rows as |row|}}
+      {{#unless @editable}}
+        <dl class="flex flex-col gap-2 text-sm">
+          {{#each this.rows as |row|}}
+            <div class="flex flex-col gap-0.5">
+              <dt class="text-xs text-muted">{{row.label}}</dt>
+              <dd class="break-words" data-test-contact-value={{row.kind}}>{{if
+                  row.value
+                  row.value
+                  "—"
+                }}</dd>
+            </div>
+          {{/each}}
+        </dl>
+        {{#if @note}}
+          <p class="text-xs text-muted" data-test-contact-note>{{@note}}</p>
+        {{/if}}
+      {{/unless}}
+      {{#each this.editableRows as |row|}}
         <form
           class="flex flex-col gap-2"
           data-test-contact-row={{row.kind}}

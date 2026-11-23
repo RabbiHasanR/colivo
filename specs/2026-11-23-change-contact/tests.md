@@ -63,7 +63,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 - [x] T9.2 unit — `test_a_past_membership_in_another_home_also_blocks_the_change` ✅
 - [x] T9.3 unit — `test_your_own_row_is_not_blocked_by_your_other_home` ✅
 - [x] T9.4 integration — `GET /members` says `contact_editable` false for a member in another home and true for one only here, with nothing about the other home ✅
-- [x] T9.5 web integration — Edit tab shows the phone and email read-only with "Only they can change their log-in, from My profile." when not editable
+- [x] T9.5 web integration — Edit tab shows the phone and email read-only with "Only they can change their log-in, from My profile." when not editable ✅
 
 ### B10 — A manager can't change the owner's, a member can't change anyone's
 

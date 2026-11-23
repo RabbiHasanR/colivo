@@ -72,6 +72,13 @@ export default class EditMemberForm extends Component<EditMemberFormSignature> {
     };
   }
 
+  /** Why this home can't change the member's log-in, when it can't. */
+  get contactNote(): string {
+    return this.args.member.status === 'active'
+      ? 'Only they can change their log-in, from My profile.'
+      : 'Reactivate them to change their log-in.';
+  }
+
   /** The member, as a list of one: the contact editor starts afresh per member. */
   get shownMember(): Member[] {
     return [this.args.member];
@@ -167,6 +174,7 @@ export default class EditMemberForm extends Component<EditMemberFormSignature> {
         @phone={{shown.phone}}
         @email={{shown.email}}
         @editable={{shown.contact_editable}}
+        @note={{this.contactNote}}
         @onSendCode={{this.sendContactCode}}
         @onSave={{this.saveContact}}
         @onRemove={{this.removeContact}}
