@@ -27,6 +27,8 @@ test, and T1.2 replaces one (deleted).
 - [x] T3.2 unit — `test_email_in_any_letter_case_is_the_same_person` ✅ _(changed: it proved "same person" through the old 409; now the second sign-up, in another letter case, creates its home under the same single person, `rabbi@example.com`)_
 - [x] T3.3 web integration — `sign-up-form-test.gts` › shows the API's refusal above the button ✅ _(changed, not deleted as first agreed: on 23 Nov 2026 the user chose to keep the form's error display covered, since sign-up still answers 400 and 429. The old "already in a home" 409 case became a 400 first-month refusal; no web code changes)_
 
+- [x] T3.4 web acceptance — `sign-up-test.ts` › signing up for another home opens the new home ✅ _(added on 23 Nov 2026 while building group 3: once requests name a home, a sign-up must choose the new one, or someone already in a home got "Choose a home" on the new home's first request)_
+
 ### B4 — A past member who joined another home can be reactivated
 
 - [x] T4.1 unit — `test_member_who_joined_another_home_can_be_reactivated` ✅ _(changed from `test_reactivating_someone_active_in_another_home_is_refused`)_: Maruf left Our Flat and is active in Old Fort; Our Flat reactivates him; both memberships are active

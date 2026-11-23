@@ -82,8 +82,10 @@ export default class SessionService extends Service {
     return content;
   }
 
+  /** Create a home; this tab then acts in it, even for someone in others. */
   async signUp(fields: SignUpFields): Promise<Me> {
     const { content } = await this.store.request<Me>(signUp(fields));
+    this.currentHome.choose(content.home.id);
     this.me = content;
     return content;
   }
