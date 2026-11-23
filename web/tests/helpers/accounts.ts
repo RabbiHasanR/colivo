@@ -105,10 +105,18 @@ export type LogInBody = Schemas['StandardResponse_LogInOut_'];
 
 export const GREEN_HOUSE_ID = '01a1fd00-0000-7000-8000-0000000000a2';
 
+/** "Our Flat" as a home to choose, where Rabbi is the owner. */
+export const ourFlat: HomeChoice = {
+  id: OUR_FLAT_ID,
+  name: 'Our Flat',
+  area: 'Mirpur',
+  role: 'owner',
+};
+
 /** Rabbi's homes: owner of "Our Flat", member of "Green House". */
 export const twoHomes: HomeChoice[] = [
   { id: GREEN_HOUSE_ID, name: 'Green House', area: null, role: 'member' },
-  { id: OUR_FLAT_ID, name: 'Our Flat', area: 'Mirpur', role: 'owner' },
+  ourFlat,
 ];
 
 /** Who Rabbi is in one of `twoHomes`. */

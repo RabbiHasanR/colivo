@@ -6,6 +6,7 @@ import {
   requestCode,
   signUp,
   type CodeSent,
+  type LogInAnswer,
   type SignUpFields,
 } from '../data/builders/auth';
 import { getMe, updateMe, type Me } from '../data/builders/me';
@@ -15,6 +16,7 @@ import { ApiError } from '../utils/api-error';
 export type { Me, Role } from '../data/builders/me';
 import type RouterService from '@ember/routing/router-service';
 import type Store from './store';
+import type CurrentHomeService from './current-home';
 
 /**
  * Who is logged in. The log-in itself is an httpOnly cookie the browser
@@ -23,6 +25,7 @@ import type Store from './store';
 export default class SessionService extends Service {
   @service declare store: Store;
   @service declare router: RouterService;
+  @service declare currentHome: CurrentHomeService;
 
   @tracked me: Me | null = null;
 
@@ -75,10 +78,18 @@ export default class SessionService extends Service {
     return content;
   }
 
-  /** Log in with a one-time code; the API sets the session cookie. */
-  async logIn(contact: string, code: string): Promise<Me> {
-    const { content } = await this.store.request<Me>(logIn(contact, code));
-    this.me = content;
+  /**
+   * Log in with a one-time code; the API sets the session cookie. A person
+   * in one home acts in it at once (Phase 1b).
+   */
+  async logIn(contact: string, code: string): Promise<LogInAnswer> {
+    const { content } = await this.store.request<LogInAnswer>(
+      logIn(contact, code),
+    );
+    if (content.me) {
+      this.currentHome.choose(content.me.home.id);
+      this.me = content.me;
+    }
     return content;
   }
 

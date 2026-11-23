@@ -3,7 +3,12 @@ import { click, fillIn, render } from '@ember/test-helpers';
 import { http, HttpResponse } from 'msw';
 import { setupRenderingTest } from 'colivo-web/tests/helpers';
 import { setupMsw, worker } from 'colivo-web/tests/helpers/msw';
-import { codeSentBody, meBody } from 'colivo-web/tests/helpers/accounts';
+import {
+  codeSentBody,
+  logInBody,
+  me,
+  ourFlat,
+} from 'colivo-web/tests/helpers/accounts';
 import LogInForm from 'colivo-web/components/auth/log-in-form';
 
 /** Ask for a code for 01712 345678 and type `code`. */
@@ -27,7 +32,7 @@ module('Integration | Component | auth/log-in-form', function (hooks) {
       http.post('*/api/v1/auth/codes', () => HttpResponse.json(codeSentBody)),
       http.post('*/api/v1/auth/log-in', async ({ request }) => {
         sent.push(await request.json());
-        return HttpResponse.json(meBody('owner'));
+        return HttpResponse.json(logInBody([ourFlat], me('owner')));
       }),
     );
     let loggedIn = false;
