@@ -4,6 +4,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from redis import Redis
+from sqlalchemy import Engine, event, text
 from sqlmodel import Session, col, func, select
 from starlette.exceptions import HTTPException
 
@@ -1724,4 +1725,52 @@ def test_a_removal_is_kept_in_the_history(
         owner.id,
         {"email": MARUF_EMAIL},
         {"email": None},
+    )
+
+
+def test_a_phone_taken_while_saving_answers_409(
+    engine: Engine,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN the owner has the right code to give Maruf 01912 345678
+    WHEN  someone else takes 01912 345678 at the moment Maruf's change is saved
+    THEN  it is refused with 409, as if it had been taken before
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+    new_phone = phone("+8801912345678")
+    service.request_member_contact_code(
+        session, redis_client, notifier, owner, member.id, new_phone, clock()
+    )
+    data = ContactChangeIn(
+        contact=new_phone, code=notifier.last_code_to(new_phone.value)
+    )
+
+    def rival_takes_the_phone(*_: object) -> None:
+        # Committed from another connection, after the check and before the save.
+        with engine.begin() as other:
+            other.execute(
+                text("INSERT INTO person (id, phone) VALUES (:id, :phone)"),
+                {"id": uuid.uuid7(), "phone": new_phone.value},
+            )
+
+    event.listen(session, "before_flush", rival_takes_the_phone, once=True)
+    try:
+        with pytest.raises(HTTPException) as refused:
+            service.set_member_contact(
+                session, redis_client, notifier, owner, member.id, data, clock()
+            )
+    finally:
+        with engine.begin() as other:
+            other.execute(
+                text("DELETE FROM person WHERE phone = :phone"),
+                {"phone": new_phone.value},
+            )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        409,
+        "Someone else logs in with that phone or email.",
     )

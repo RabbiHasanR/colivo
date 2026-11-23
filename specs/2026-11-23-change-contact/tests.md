@@ -114,7 +114,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B18 — Two changes to the same new phone or email at once: one wins
 
-- [x] T18.1 unit — `test_a_phone_taken_while_saving_answers_409` (a `before_flush` hook on the test session commits a rival person with that phone from a second connection; the test deletes the rival afterwards)
+- [x] T18.1 unit — `test_a_phone_taken_while_saving_answers_409` ✅ (a `before_flush` hook on the test session commits a rival person with that phone from a second connection; the test deletes the rival afterwards)
 
 ### B19 — The members list shows the phone with the email under it
 

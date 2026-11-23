@@ -4,6 +4,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from redis import Redis
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, func, select
 from starlette.exceptions import HTTPException
 
@@ -1055,11 +1056,16 @@ def set_contact(
     kind = kind_of(data.contact)
     before = contacts_of(person)
     old_value = getattr(person, kind)
-    setattr(person, kind, data.contact.value)
-    record_log_in_change(
-        session, person, changed_by, {kind: old_value}, {kind: data.contact.value}
-    )
-    session.commit()
+    try:
+        setattr(person, kind, data.contact.value)
+        record_log_in_change(
+            session, person, changed_by, {kind: old_value}, {kind: data.contact.value}
+        )
+        session.commit()
+    except IntegrityError as error:
+        # Taken by someone else after the check above: the unique index decides.
+        session.rollback()
+        raise HTTPException(409, CONTACT_TAKEN) from error
     session.refresh(person)
     if old_value is not None:
         # A way to log in was taken away: every other browser logs in again.
