@@ -1,3 +1,4 @@
+import uuid
 from contextlib import AbstractContextManager, nullcontext
 from datetime import datetime, timedelta
 
@@ -229,3 +230,57 @@ def test_new_code_replaces_the_old_one(
     codes.use_code(redis_client, PHONE, new_code, clock())
 
     assert code_error(old) == (400, CodeErrorOut(reason=CodeErrorReason.EXPIRED))
+
+
+# Phase 1c: codes that confirm a new phone or email for one person.
+CHANGE = codes.change_scope(uuid.UUID("01a1fd00-0000-7000-8000-000000000010"))
+
+
+def test_a_change_code_cannot_log_in(redis_client: Redis, clock: MovableClock) -> None:
+    """
+    GIVEN a code was sent to 01712 345678 to confirm it as someone's new phone
+    WHEN  that code is used to log in with 01712 345678
+    THEN  it is refused as expired: no log-in code is waiting
+    """
+    code = codes.issue_code(redis_client, PHONE, clock(), scope=CHANGE)
+
+    with pytest.raises(HTTPException) as error:
+        codes.use_code(redis_client, PHONE, code, clock())
+
+    assert code_error(error) == (400, CodeErrorOut(reason=CodeErrorReason.EXPIRED))
+
+
+def test_log_in_and_change_codes_share_the_send_limit(
+    redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN a log-in code was just sent to 01712 345678
+    WHEN  a change code is asked for the same phone within the minute
+    THEN  it is refused as too soon: one phone, one limit
+    """
+    codes.issue_code(redis_client, PHONE, clock())
+
+    with pytest.raises(HTTPException) as error:
+        codes.issue_code(redis_client, PHONE, clock(), scope=CHANGE)
+
+    status, data = code_error(error)
+    assert (status, getattr(data, "reason", None)) == (429, CodeErrorReason.TOO_SOON)
+
+
+def test_wrong_change_codes_do_not_lock_log_in(
+    redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN 5 wrong codes were typed for a change to 01712 345678 (now locked)
+    WHEN  01712 345678 logs in with a log-in code a minute later
+    THEN  the log-in code works: each kind of code has its own lock
+    """
+    change_code = codes.issue_code(redis_client, PHONE, clock(), scope=CHANGE)
+    wrong = "000000" if change_code != "000000" else "111111"
+    for _ in range(5):
+        with pytest.raises(HTTPException):
+            codes.use_code(redis_client, PHONE, wrong, clock(), scope=CHANGE)
+    clock.advance(timedelta(minutes=1))
+
+    log_in_code = codes.issue_code(redis_client, PHONE, clock())
+    codes.use_code(redis_client, PHONE, log_in_code, clock())

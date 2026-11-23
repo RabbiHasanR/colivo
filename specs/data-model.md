@@ -381,6 +381,51 @@ request reads the active membership from PostgreSQL, so deactivating a
 member logs them out at once. Rejected: a `session` table (one more table
 and a clean-up job; losing Redis only logs people out).
 
+_Phase 1c, built:_ each session's key is also kept in the set
+`person_sessions:{person_id}` (refreshed with the session), so a change to
+the person's log-in can end all their sessions, or all but one. The refresh
+writes the session only while it still exists (`SET … XX`), so a request
+reading a session as it is ended can't bring it back (B25, from the
+security review). See
+[Log-in contacts](#log-in-contacts-agreed-23-nov-2026).
+
+### Log-in contacts _(agreed 23 Nov 2026)_
+
+From the Phase 1c spec, Gate 0 (FR-84, FR-86, FR-94).
+
+- **A person has a phone, an email, or both,** and logs in with either. No
+  column change: `person.phone` and `person.email` already exist, and the
+  existing `CHECK phone IS NOT NULL OR email IS NOT NULL` is the "last way
+  to log in can't be removed" rule. Sign-up and adding a member still take
+  one; the other is added later.
+- **Every added or changed phone or email is proven with a code sent to
+  it,** for the owner or manager and for the person themselves. A new phone
+  replaces the old phone, a new email the old email. Removing one needs no
+  code. "Someone else has it" (the unique rules) is answered only after the
+  right code, so nobody can probe which numbers have an account.
+- **Only the person may change the log-in of someone also in another home**
+  (any membership there, active or past); this home's owner or manager is
+  refused. Otherwise one home's owner could set a member's phone to their
+  own and log in as them in every other home. Served by
+  `ix_membership_person_id`.
+- **Change codes are Redis keys of their own:** `otp:change:{person_id}:{contact}`
+  with its wrong count and lock, bound to whose log-in changes and to what,
+  so a change code can't log in and a log-in code can't confirm a change.
+  The send limit `otp:sent:{contact}` is shared with log-in codes.
+- **A change or removal ends the person's other sessions** through
+  `person_sessions:{person_id}`; adding one ends none.
+- **History:** one `change_log` row per home the person is in
+  (`entity = membership`, under their membership there), with
+  `old_values` / `new_values` like `{"email": null}` → `{"email": "…"}`. A
+  self-change by someone in two homes is proof in both; the entity CHECK
+  needs no new value.
+
+Rejected: a new `person` entity in `change_log` (only one home would see the
+change), a pending change confirmed at the member's next log-in (a pending
+column, and the old value works meanwhile), the old contact confirming the
+change (doesn't help someone who lost their number), and keeping sessions
+after a change (a lost phone stays logged in).
+
 ### Who made a record _(agreed 21 Nov 2026)_
 
 - **No `updated_by` anywhere.** `change_log` keeps every change with who,
@@ -593,13 +638,18 @@ table also has `created_at` and `updated_at` (`timestamptz`, default
 
 A log-in identity, shared across homes. Nothing about life in a home.
 
+_Phase 1c, built: no column change. A person may have both a phone and an
+email; adding, changing and removing them follows
+[Log-in contacts](#log-in-contacts-agreed-23-nov-2026)._
+
 | Column | Type | Null | Default | Constraint                           | Why                                                                              |
 | ------ | ---- | ---- | ------- | ------------------------------------ | -------------------------------------------------------------------------------- |
 | id     | uuid | no   | UUIDv7  | PK                                   | Convention                                                                       |
 | phone  | text | yes  | —       | UNIQUE; CHECK `^\+[1-9][0-9]{7,14}$` | E.164 (`01712 345678` → `+8801712345678`), so one number can't become two people |
 | email  | text | yes  | —       | UNIQUE; CHECK `email = lower(email)` | Log-in by email, stored in lower case                                            |
 
-CHECK `phone IS NOT NULL OR email IS NOT NULL`.
+CHECK `phone IS NOT NULL OR email IS NOT NULL`: at least one way to log in,
+so the last one can't be removed (Phase 1c).
 
 | Index                  | Serves                                   |
 | ---------------------- | ---------------------------------------- |
@@ -626,6 +676,7 @@ The tenant. Every home-owned table points here.
 ### membership _(Phase 1, built)_
 
 _Phase 1b, built: one index change, no column change (below), in `a8f729dfae84_several_homes`._
+_Phase 1c, built: one more index change, no column change (below), in `1c59687c8639_change_contact`._
 
 A person in one home. Everything in a home points here, never to `person`.
 
@@ -643,13 +694,14 @@ A person in one home. Everything in a home points here, never to `person`.
 CHECK `role <> 'owner' OR status = 'active'`: the owner can't be
 deactivated.
 
-| Index                                                             | Serves                                                                                                                                          |
-| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `membership(home_id, person_id)` UNIQUE                           | The members list per home; one membership per person per home, so a returning member is reactivated                                             |
-| `membership(person_id) WHERE status = 'active'` UNIQUE            | One active home per person (FR-85). _(Phase 1b, built: dropped, `uq_membership_active_person_id`)_                                              |
-| `membership(person_id) WHERE status = 'active'`                   | A person's active homes: log-in, the home picker and switcher, the `X-Colivo-Home` check. _(Phase 1b, built: `ix_membership_active_person_id`)_ |
-| `membership(home_id) WHERE role = 'owner'` UNIQUE                 | Exactly one owner per home (FR-63)                                                                                                              |
-| `membership(home_id, lower(name)) WHERE status = 'active'` UNIQUE | Names unique among active members, ignoring case (FR-04)                                                                                        |
+| Index                                                             | Serves                                                                                                                                                                                                |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `membership(home_id, person_id)` UNIQUE                           | The members list per home; one membership per person per home, so a returning member is reactivated                                                                                                   |
+| `membership(person_id) WHERE status = 'active'` UNIQUE            | One active home per person (FR-85). _(Phase 1b, built: dropped, `uq_membership_active_person_id`)_                                                                                                    |
+| `membership(person_id) WHERE status = 'active'`                   | A person's active homes: log-in, the home picker and switcher, the `X-Colivo-Home` check. _(Phase 1b, built: `ix_membership_active_person_id`; Phase 1c, built: dropped, replaced by the next one)_ |
+| `membership(person_id)`                                           | "Is this person in any other home, active or past?" (Phase 1c's log-in change rule), and a person's active homes as above. _(Phase 1c, built: `ix_membership_person_id`)_                           |
+| `membership(home_id) WHERE role = 'owner'` UNIQUE                 | Exactly one owner per home (FR-63)                                                                                                                                                                    |
+| `membership(home_id, lower(name)) WHERE status = 'active'` UNIQUE | Names unique among active members, ignoring case (FR-04)                                                                                                                                              |
 
 ### membership_period _(Phase 1, built)_
 
@@ -693,7 +745,8 @@ migration.
 | `change_log(home_id, entity, entity_id, created_at)` | The history of one record |
 
 Redis, not tables (Phase 1): one-time codes, wrong-code counts, locks, send
-limits and sessions; see
+limits and sessions (Phase 1c adds change codes and `person_sessions`; see
+[Log-in contacts](#log-in-contacts-agreed-23-nov-2026)); see
 [Phase 1 requirements → API](2026-11-21-accounts-and-login/requirements.md#api).
 
 ## Change log
@@ -714,3 +767,5 @@ limits and sessions; see
 | Phase 1 (21 Nov 2026)  | Phase 1b planned: a person in several homes replaces "one active home per person" (FR-85), after the security review                                                                                                                                          |
 | Phase 1b (22 Nov 2026) | Planned: drop the unique index on active `membership(person_id)`, add a plain one; the current home travels per request in `X-Colivo-Home`, sessions unchanged. Settles the open question on several homes                                                    |
 | Phase 1b (built)       | Built in `a8f729dfae84_several_homes`: `uq_membership_active_person_id` dropped, `ix_membership_active_person_id` (partial, not unique) added; Phase 1 data migrates unchanged                                                                                |
+| Phase 1c (23 Nov 2026) | Planned: a person may have a phone and an email, each added or changed with a code; `ix_membership_person_id` replaces `ix_membership_active_person_id`; change codes and `person_sessions` in Redis; one `change_log` row per home for a log-in change       |
+| Phase 1c (built)       | Built in `1c59687c8639_change_contact`: `ix_membership_active_person_id` dropped, `ix_membership_person_id` added; Redis keys `otp:change:{person_id}:{contact}` (with `:wrong:`, `:lock:`, `:old:`) and `person_sessions:{person_id}`; Phase 1b data migrates unchanged |

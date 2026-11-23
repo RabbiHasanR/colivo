@@ -85,3 +85,21 @@ ContactIn = Annotated[
     BeforeValidator(parse_contact),
     WithJsonSchema({"type": "string", "description": "A phone number or an email"}),
 ]
+
+
+def partly_hidden(contact: Contact) -> str:
+    """Show only enough of a phone or email for its owner to recognise it.
+
+    Used in the notice to a person's old phone or email (Phase 1c), in case
+    that phone is in the wrong hands.
+
+    Args:
+        contact: A phone (E.164) or an email.
+
+    Returns:
+        ``…678`` for a phone, ``m…@example.com`` for an email.
+    """
+    if contact.channel == Channel.EMAIL:
+        name, domain = contact.value.split("@", 1)
+        return f"{name[0]}…@{domain}"
+    return f"…{contact.value[-3:]}"

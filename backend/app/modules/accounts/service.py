@@ -4,6 +4,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from redis import Redis
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, col, func, select
 from starlette.exceptions import HTTPException
 
@@ -11,7 +12,7 @@ from app.core.exceptions import AppError
 from app.core.notifier import Channel, Notifier
 from app.modules.accounts import codes, sessions
 from app.modules.accounts.constants import CODE_LIFETIME, CODE_RESEND_AFTER
-from app.modules.accounts.contact import Contact
+from app.modules.accounts.contact import Contact, partly_hidden
 from app.modules.accounts.models import (
     Membership,
     MembershipPeriod,
@@ -21,6 +22,8 @@ from app.modules.accounts.models import (
 )
 from app.modules.accounts.schemas import (
     CodeSentOut,
+    ContactChangeIn,
+    ContactKind,
     DeactivateIn,
     HomeChoiceOut,
     HomeRefusalOut,
@@ -63,6 +66,23 @@ OWNER_DETAILS_FOR_OWNER = "Only the owner can change the owner's details."
 REACTIVATE_TOO_EARLY = "Charges can start again only after their last stay ended."
 ALREADY_ACTIVE = "This member is already active."
 DEACTIVATE_BEFORE_STAY = "Deactivation can't start before their stay began."
+LAST_CONTACT = "They need a phone or an email to log in."
+LAST_CONTACT_YOURS = "You need a phone or an email to log in."
+CONTACT_TAKEN = "Someone else logs in with that phone or email."
+SAME_CONTACT = "That's already their phone or email."
+SAME_CONTACT_YOURS = "That's already your phone or email."
+ONLY_THEY_CAN = "Only they can change their log-in, from My profile."
+REACTIVATE_FIRST = "Reactivate them first."
+# Told to a phone or email that no longer logs in.
+CONTACT_REMOVED = (
+    "This {kind} no longer logs in to your Colivo account. "
+    "If this wasn't you, tell your home's owner or a manager."
+)
+# Told to a person's other phone or email when one is added or changed.
+CONTACT_ADDED = (
+    "{shown} can now log in to your Colivo account. "
+    "If this wasn't you, tell your home's owner or a manager."
+)
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -279,7 +299,11 @@ def get_me(session: Session, membership: Membership) -> MeOut:
 
 
 def request_code(
-    redis_client: Redis, notifier: Notifier, contact: Contact, now: datetime
+    redis_client: Redis,
+    notifier: Notifier,
+    contact: Contact,
+    now: datetime,
+    scope: str = codes.LOG_IN_SCOPE,
 ) -> CodeSentOut:
     """Send a one-time code to ``contact`` by SMS or email (FR-94).
 
@@ -291,11 +315,12 @@ def request_code(
         notifier: Sends the SMS or email.
         contact: The phone or email to send it to.
         now: The current time.
+        scope: What the code is for: logging in, or one person's change.
 
     Returns:
         How it was sent, how long it works and when a new one can be sent.
     """
-    code = codes.issue_code(redis_client, contact, now)
+    code = codes.issue_code(redis_client, contact, now, scope)
     minutes = int(CODE_LIFETIME.total_seconds() // 60)
     notifier.send(
         contact.channel,
@@ -472,15 +497,19 @@ def joined_on(session: Session, membership: Membership) -> date | None:
     ).one()
 
 
-def member_out(session: Session, membership: Membership) -> MemberOut:
+def member_out(
+    session: Session, membership: Membership, viewer: Membership
+) -> MemberOut:
     """Describe a member for the members list.
 
     Args:
         session: The database session.
         membership: The member.
+        viewer: The owner or manager reading it, for ``contact_editable``.
 
     Returns:
-        Their name, phone or email, role, status and join date.
+        Their name, phone and email, role, status, join date, and whether
+        ``viewer`` may change their log-in.
     """
     person = session.get_one(Person, membership.person_id)
     return MemberOut(
@@ -491,25 +520,26 @@ def member_out(session: Session, membership: Membership) -> MemberOut:
         role=membership.role,
         status=membership.status,
         joined_on=joined_on(session, membership),
+        contact_editable=contact_refusal(session, viewer, membership) is None,
     )
 
 
-def list_members(session: Session, home_id: uuid.UUID) -> list[MemberOut]:
-    """Everyone in a home, A to Z, for the owner and managers.
+def list_members(session: Session, viewer: Membership) -> list[MemberOut]:
+    """Everyone in the viewer's home, A to Z, for the owner and managers.
 
     Args:
         session: The database session.
-        home_id: The home.
+        viewer: The owner or manager reading it.
 
     Returns:
         The members, active and deactivated.
     """
     members = session.exec(
         select(Membership)
-        .where(Membership.home_id == home_id)
+        .where(Membership.home_id == viewer.home_id)
         .order_by(func.lower(Membership.name))
     ).all()
-    return [member_out(session, member) for member in members]
+    return [member_out(session, member, viewer) for member in members]
 
 
 def update_member(
@@ -901,3 +931,393 @@ def last_stay_end(session: Session, member: Membership) -> date | None:
             MembershipPeriod.membership_id == member.id
         )
     ).one()
+
+
+# Phase 1c: the phone or email a person logs in with.
+
+
+def kind_of(contact: Contact) -> ContactKind:
+    """Whether ``contact`` is a phone or an email; also its ``person`` column."""
+    return ContactKind.EMAIL if contact.channel == Channel.EMAIL else ContactKind.PHONE
+
+
+def channel_of(kind: ContactKind) -> Channel:
+    """How a phone or an email is reached: by SMS or by email."""
+    return Channel.EMAIL if kind == ContactKind.EMAIL else Channel.SMS
+
+
+def contacts_of(person: Person) -> list[Contact]:
+    """The phone and email ``person`` logs in with now."""
+    return [
+        Contact(channel=channel_of(kind), value=value)
+        for kind in ContactKind
+        if (value := getattr(person, kind)) is not None
+    ]
+
+
+def record_log_in_change(
+    session: Session,
+    person: Person,
+    changed_by: Membership | None,
+    old_values: dict[str, Any],
+    new_values: dict[str, Any],
+) -> None:
+    """Keep a change to ``person``'s log-in in every home they are in (FR-27).
+
+    A log-in is the same in every home, so each home keeps its own proof,
+    under the person's membership there. The editor is named in their own
+    home; elsewhere (and for the person's own change) the person is.
+
+    Args:
+        session: The database session the change is made in.
+        person: Whose log-in changed.
+        changed_by: The owner or manager who changed it; None for the person.
+        old_values: The phone or email before, e.g. ``{"email": None}``.
+        new_values: The phone or email after.
+    """
+    memberships = session.exec(
+        select(Membership).where(Membership.person_id == person.id)
+    ).all()
+    for member in memberships:
+        editor_here = changed_by is not None and changed_by.home_id == member.home_id
+        record_member_change(
+            session,
+            member,
+            changed_by=changed_by if changed_by is not None and editor_here else member,
+            action=ChangeAction.UPDATE,
+            old_values=old_values,
+            new_values=new_values,
+        )
+
+
+def other_kind(kind: ContactKind) -> ContactKind:
+    """The other way to log in: the email for a phone, the phone for an email."""
+    return ContactKind.PHONE if kind == ContactKind.EMAIL else ContactKind.EMAIL
+
+
+def request_contact_code(
+    redis_client: Redis,
+    notifier: Notifier,
+    person: Person,
+    contact: Contact,
+    now: datetime,
+    *,
+    yourself: bool = False,
+) -> CodeSentOut:
+    """Send a code to a new phone or email for ``person`` to log in with.
+
+    Args:
+        redis_client: Where codes are kept.
+        notifier: Sends the SMS or email.
+        person: Whose log-in changes.
+        contact: The new phone or email.
+        now: The current time.
+        yourself: The person asks on My profile: refusals say "your".
+
+    Returns:
+        How the code was sent, how long it works and when a new one can be
+        sent.
+
+    Raises:
+        HTTPException: 400 when it is the one they already have.
+    """
+    if getattr(person, kind_of(contact)) == contact.value:
+        raise HTTPException(400, SAME_CONTACT_YOURS if yourself else SAME_CONTACT)
+    scope = codes.change_scope(person.id)
+    return request_code(redis_client, notifier, contact, now, scope)
+
+
+def set_contact(
+    session: Session,
+    redis_client: Redis,
+    notifier: Notifier,
+    person: Person,
+    data: ContactChangeIn,
+    now: datetime,
+    *,
+    changed_by: Membership | None = None,
+    keep_token: str | None = None,
+) -> Person:
+    """Save a new phone or email for ``person``, with the code sent to it.
+
+    A phone replaces their phone and an email their email.
+
+    Args:
+        session: The database session.
+        redis_client: Where codes and sessions are kept.
+        notifier: Tells the person on their old and new phone or email.
+        person: Whose log-in changes.
+        data: The new phone or email and its code.
+        now: The current time.
+        changed_by: The owner or manager making it; None for the person.
+        keep_token: The caller's session, kept when theirs ends.
+
+    Returns:
+        The changed person.
+
+    Raises:
+        HTTPException: 409 when someone else logs in with it; checked only
+            after the right code, so nobody learns who has an account.
+    """
+    scope = codes.change_scope(person.id)
+    codes.use_code(redis_client, data.contact, data.code, now, scope)
+    holder = find_person(session, data.contact)
+    if holder is not None and holder.id != person.id:
+        raise HTTPException(409, CONTACT_TAKEN)
+    kind = kind_of(data.contact)
+    before = contacts_of(person)
+    old_value = getattr(person, kind)
+    try:
+        setattr(person, kind, data.contact.value)
+        record_log_in_change(
+            session, person, changed_by, {kind: old_value}, {kind: data.contact.value}
+        )
+        session.commit()
+    except IntegrityError as error:
+        # Taken by someone else after the check above: the unique index decides.
+        session.rollback()
+        raise HTTPException(409, CONTACT_TAKEN) from error
+    session.refresh(person)
+    if old_value is not None:
+        # A way to log in was taken away: every other browser logs in again.
+        sessions.end_sessions(redis_client, person.id, keep_token)
+    added = CONTACT_ADDED.format(shown=partly_hidden(data.contact))
+    for old in before:
+        notifier.send(old.channel, old.value, added)
+    notifier.send(
+        data.contact.channel,
+        data.contact.value,
+        f"You can now log in to Colivo with this {kind}.",
+    )
+    return person
+
+
+def in_another_home(session: Session, member: Membership) -> bool:
+    """Whether ``member``'s person is also a member of another home.
+
+    Args:
+        session: The database session.
+        member: The member.
+
+    Returns:
+        True when they have a membership in another home, active or past:
+        a past one can be reactivated, and would then log in with it.
+    """
+    other = session.exec(
+        select(Membership.id).where(
+            Membership.person_id == member.person_id,
+            Membership.home_id != member.home_id,
+        )
+    ).first()
+    return other is not None
+
+
+def contact_refusal(
+    session: Session, editor: Membership, member: Membership
+) -> HTTPException | None:
+    """Why ``editor`` may not change ``member``'s log-in, or None if they may.
+
+    A log-in belongs to the person in every home, so for someone also in
+    another home only they may change it; otherwise one home's owner could
+    take over their log-in everywhere.
+
+    Args:
+        session: The database session.
+        editor: The owner or manager.
+        member: The member whose log-in would change.
+
+    Returns:
+        The refusal to raise, or None.
+    """
+    if member.status != MembershipStatus.ACTIVE:
+        return HTTPException(400, REACTIVATE_FIRST)
+    if member.role == Role.OWNER and editor.role != Role.OWNER:
+        return HTTPException(403, OWNER_DETAILS_FOR_OWNER)
+    yourself = editor.person_id == member.person_id
+    if not yourself and in_another_home(session, member):
+        return HTTPException(403, ONLY_THEY_CAN)
+    return None
+
+
+def member_to_change(
+    session: Session, editor: Membership, member_id: uuid.UUID
+) -> tuple[Membership, Person]:
+    """The member whose log-in ``editor`` changes, and their person.
+
+    Args:
+        session: The database session.
+        editor: The owner or manager.
+        member_id: The member asked for.
+
+    Returns:
+        The member and the person behind them.
+
+    Raises:
+        HTTPException: 404 for another home's member; the refusal from
+            ``contact_refusal``.
+    """
+    member = get_member(session, editor.home_id, member_id)
+    refusal = contact_refusal(session, editor, member)
+    if refusal is not None:
+        raise refusal
+    return member, session.get_one(Person, member.person_id)
+
+
+def request_member_contact_code(
+    session: Session,
+    redis_client: Redis,
+    notifier: Notifier,
+    editor: Membership,
+    member_id: uuid.UUID,
+    contact: Contact,
+    now: datetime,
+) -> CodeSentOut:
+    """Send a code to a member's new phone or email, for the owner or a manager.
+
+    Args:
+        session: The database session.
+        redis_client: Where codes are kept.
+        notifier: Sends the SMS or email.
+        editor: The owner or manager making the change.
+        member_id: The member whose log-in changes.
+        contact: The new phone or email.
+        now: The current time.
+
+    Returns:
+        How the code was sent.
+    """
+    _, person = member_to_change(session, editor, member_id)
+    return request_contact_code(redis_client, notifier, person, contact, now)
+
+
+def set_member_contact(
+    session: Session,
+    redis_client: Redis,
+    notifier: Notifier,
+    editor: Membership,
+    member_id: uuid.UUID,
+    data: ContactChangeIn,
+    now: datetime,
+    *,
+    keep_token: str | None = None,
+) -> Membership:
+    """Save a member's new phone or email with its code (owner or manager).
+
+    Args:
+        session: The database session.
+        redis_client: Where codes are kept.
+        notifier: Sends the notices.
+        editor: The owner or manager making the change.
+        member_id: The member whose log-in changes.
+        data: The new phone or email and its code.
+        now: The current time.
+        keep_token: The editor's session, kept if they change their own row.
+
+    Returns:
+        The member.
+    """
+    member, person = member_to_change(session, editor, member_id)
+    set_contact(
+        session,
+        redis_client,
+        notifier,
+        person,
+        data,
+        now,
+        changed_by=editor,
+        keep_token=keep_token,
+    )
+    return member
+
+
+def remove_contact(
+    session: Session,
+    redis_client: Redis,
+    notifier: Notifier,
+    person: Person,
+    kind: ContactKind,
+    *,
+    changed_by: Membership | None = None,
+    keep_token: str | None = None,
+    yourself: bool = False,
+) -> Person:
+    """Stop ``person`` logging in with their phone or their email.
+
+    Their sessions end, except the caller's.
+
+    Args:
+        session: The database session.
+        redis_client: Where sessions are kept.
+        notifier: Tells the removed phone or email.
+        person: Whose log-in changes.
+        kind: Which one to remove.
+        changed_by: The owner or manager removing it; None for the person.
+        keep_token: The caller's session, kept when theirs ends.
+        yourself: The person removes their own: refusals say "you".
+
+    Returns:
+        The changed person.
+
+    Raises:
+        HTTPException: 400 when they have none of that kind, or it is the last
+            way they log in.
+    """
+    removed = getattr(person, kind)
+    if removed is None:
+        who = "You have" if yourself else "They have"
+        raise HTTPException(400, f"{who} no {kind} to remove.")
+    last = HTTPException(400, LAST_CONTACT_YOURS if yourself else LAST_CONTACT)
+    if getattr(person, other_kind(kind)) is None:
+        raise last
+    try:
+        setattr(person, kind, None)
+        record_log_in_change(session, person, changed_by, {kind: removed}, {kind: None})
+        session.commit()
+    except IntegrityError as error:
+        # The other one was removed at the same moment, after the check above:
+        # the database's "a phone or an email" rule decides.
+        session.rollback()
+        raise last from error
+    session.refresh(person)
+    sessions.end_sessions(redis_client, person.id, keep_token)
+    notifier.send(channel_of(kind), removed, CONTACT_REMOVED.format(kind=kind))
+    return person
+
+
+def remove_member_contact(
+    session: Session,
+    redis_client: Redis,
+    notifier: Notifier,
+    editor: Membership,
+    member_id: uuid.UUID,
+    kind: ContactKind,
+    now: datetime,
+    *,
+    keep_token: str | None = None,
+) -> Membership:
+    """Remove a member's phone or email, for the owner or a manager.
+
+    Args:
+        session: The database session.
+        redis_client: Where sessions are kept.
+        notifier: Sends the notice.
+        editor: The owner or manager making the change.
+        member_id: The member whose log-in changes.
+        kind: Which one to remove.
+        now: The current time.
+        keep_token: The editor's session, kept if they change their own row.
+
+    Returns:
+        The member.
+    """
+    member, person = member_to_change(session, editor, member_id)
+    remove_contact(
+        session,
+        redis_client,
+        notifier,
+        person,
+        kind,
+        changed_by=editor,
+        keep_token=keep_token,
+    )
+    return member

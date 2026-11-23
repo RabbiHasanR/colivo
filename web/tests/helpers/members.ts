@@ -1,10 +1,12 @@
 import { http, HttpResponse } from 'msw';
 import type { components } from 'colivo-web/data/types/api.generated';
+import { codeSentBody } from './accounts';
 
 /** Typed API bodies for the members list, shared by web tests. */
 type Schemas = components['schemas'];
 export type Member = Schemas['MemberOut'];
 export type MemberFields = Schemas['MemberIn'];
+type ContactChange = Schemas['ContactChangeIn'];
 
 /** A member of "Our Flat", with any field changed. */
 export function member(fields: Partial<Member> = {}): Member {
@@ -16,6 +18,7 @@ export function member(fields: Partial<Member> = {}): Member {
     role: 'member',
     status: 'active',
     joined_on: '2026-11-21',
+    contact_editable: true,
     ...fields,
   };
 }
@@ -61,15 +64,32 @@ export function membersApi(members: Member[] = [owner]) {
     changeIn(list, 'post', 'reactivate', (found) => {
       found.status = 'active';
     }),
+    // Phase 1c: any code is accepted; a contact with "@" is an email.
+    http.post('*/api/v1/members/:id/contact/code', () =>
+      HttpResponse.json(codeSentBody),
+    ),
+    changeIn(list, 'put', 'contact', (found, body) => {
+      const { contact } = body as ContactChange;
+      if (contact.includes('@')) found.email = contact;
+      else found.phone = contact;
+    }),
+    changeIn(list, 'delete', 'contact/:channel', (found, _body, params) => {
+      if (params['channel'] === 'email') found.email = null;
+      else found.phone = null;
+    }),
   ];
 }
 
 /** A change to one member of the in-memory list, answered with the member. */
 function changeIn(
   list: Member[],
-  method: 'put' | 'post',
+  method: 'put' | 'post' | 'delete',
   action: string,
-  apply: (member: Member, body: unknown) => void,
+  apply: (
+    member: Member,
+    body: unknown,
+    params: Record<string, unknown>,
+  ) => void,
 ) {
   return http[method](
     `*/api/v1/members/:id/${action}`,
@@ -81,7 +101,8 @@ function changeIn(
           { status: 404 },
         );
       }
-      apply(found, await request.json());
+      const body = method === 'delete' ? null : await request.json();
+      apply(found, body, params);
       return HttpResponse.json({
         success: true,
         message: 'Changed',

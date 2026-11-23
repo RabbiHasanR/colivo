@@ -4,12 +4,13 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from redis import Redis
+from sqlalchemy import Engine, event, text
 from sqlmodel import Session, col, func, select
 from starlette.exceptions import HTTPException
 
 from app.core.exceptions import AppError
 from app.core.notifier import Channel
-from app.modules.accounts import codes, service
+from app.modules.accounts import codes, service, sessions
 from app.modules.accounts.contact import Contact, parse_contact
 from app.modules.accounts.models import (
     Membership,
@@ -19,6 +20,10 @@ from app.modules.accounts.models import (
     Role,
 )
 from app.modules.accounts.schemas import (
+    CodeErrorOut,
+    CodeErrorReason,
+    ContactChangeIn,
+    ContactKind,
     DeactivateIn,
     HomeRefusalOut,
     HomeRefusalReason,
@@ -30,7 +35,7 @@ from app.modules.accounts.schemas import (
     RoleIn,
     SignUpIn,
 )
-from app.modules.history.models import ChangeLog
+from app.modules.history.models import ChangeAction, ChangeLog
 from app.modules.homes import service as homes_service
 from app.modules.homes.models import Home
 from tests.conftest import FakeNotifier, MovableClock
@@ -1292,3 +1297,552 @@ def test_naming_a_home_the_person_is_not_active_in_is_refused(
         "You're no longer a member of this home.",
     )
     assert error.value.data == HomeRefusalOut(reason=HomeRefusalReason.NOT_IN_HOME)
+
+
+# Phase 1c: changing the phone or email a member logs in with.
+
+MARUF_EMAIL = "maruf@example.com"
+
+
+def email(value: str = MARUF_EMAIL) -> Contact:
+    """An email to log in with."""
+    return Contact(channel=Channel.EMAIL, value=value)
+
+
+def phone(value: str) -> Contact:
+    """A phone (E.164) to log in with."""
+    return Contact(channel=Channel.SMS, value=value)
+
+
+def owner_and_maruf(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> tuple[Membership, Membership]:
+    """Rabbi Hasan owns "Our Flat" and has added Maruf by phone; no messages yet."""
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    member = service.add_member(session, notifier, owner, maruf(), clock())
+    notifier.sent.clear()
+    return owner, member
+
+
+def change_with_code(
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    editor: Membership,
+    member: Membership,
+    contact: Contact,
+) -> Membership:
+    """``editor`` asks for a code to ``contact`` and saves it for ``member``."""
+    service.request_member_contact_code(
+        session, redis_client, notifier, editor, member.id, contact, clock()
+    )
+    data = ContactChangeIn(contact=contact, code=notifier.last_code_to(contact.value))
+    return service.set_member_contact(
+        session, redis_client, notifier, editor, member.id, data, clock()
+    )
+
+
+def person_of(session: Session, member: Membership) -> Person:
+    """The person behind ``member``, read again from the database."""
+    person = session.get_one(Person, member.person_id)
+    session.refresh(person)
+    return person
+
+
+def test_adding_an_email_keeps_the_phone(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678
+    WHEN  the owner adds maruf@example.com with the code sent to it
+    THEN  Maruf has both the phone and the email
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    change_with_code(session, redis_client, notifier, clock, owner, member, email())
+
+    person = person_of(session, member)
+    assert (person.phone, person.email) == (MARUF_E164, MARUF_EMAIL)
+
+
+def test_changing_the_phone_replaces_the_old_one(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678
+    WHEN  the owner changes it to 01912 345678 with the code sent to it
+    THEN  the old phone finds nobody, and the new one finds Maruf
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    change_with_code(
+        session, redis_client, notifier, clock, owner, member, phone("+8801912345678")
+    )
+
+    assert service.find_person(session, phone(MARUF_E164)) is None
+    found = service.find_person(session, phone("+8801912345678"))
+    assert found is not None and found.id == member.person_id
+
+
+def maruf_with_both(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> tuple[Membership, Membership]:
+    """Maruf logs in with 01812 345678 and maruf@example.com; no messages yet."""
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+    change_with_code(session, redis_client, notifier, clock, owner, member, email())
+    notifier.sent.clear()
+    return owner, member
+
+
+def test_removing_the_email_keeps_only_the_phone(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with a phone and an email
+    WHEN  the owner removes the email
+    THEN  Maruf has only the phone, and the email finds nobody
+    """
+    owner, member = maruf_with_both(session, redis_client, notifier, clock)
+
+    service.remove_member_contact(
+        session, redis_client, notifier, owner, member.id, ContactKind.EMAIL, clock()
+    )
+
+    person = person_of(session, member)
+    assert (person.phone, person.email) == (MARUF_E164, None)
+    assert service.find_person(session, email()) is None
+
+
+def test_the_last_way_to_log_in_cant_be_removed(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with only 01812 345678
+    WHEN  the owner removes the phone
+    THEN  it is refused with 400, and Maruf keeps his phone
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    with pytest.raises(HTTPException) as refused:
+        service.remove_member_contact(
+            session,
+            redis_client,
+            notifier,
+            owner,
+            member.id,
+            ContactKind.PHONE,
+            clock(),
+        )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        400,
+        "They need a phone or an email to log in.",
+    )
+    assert person_of(session, member).phone == MARUF_E164
+
+
+def test_removing_one_they_dont_have_is_refused(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with only 01812 345678
+    WHEN  the owner removes his email
+    THEN  it is refused with 400, saying there is no email
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    with pytest.raises(HTTPException) as refused:
+        service.remove_member_contact(
+            session,
+            redis_client,
+            notifier,
+            owner,
+            member.id,
+            ContactKind.EMAIL,
+            clock(),
+        )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        400,
+        "They have no email to remove.",
+    )
+
+
+def test_a_code_for_the_phone_they_already_have_is_refused(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678
+    WHEN  the owner asks for a code to change it to 01812 345678
+    THEN  it is refused with 400, and no code is sent
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    with pytest.raises(HTTPException) as refused:
+        service.request_member_contact_code(
+            session,
+            redis_client,
+            notifier,
+            owner,
+            member.id,
+            phone(MARUF_E164),
+            clock(),
+        )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        400,
+        "That's already their phone or email.",
+    )
+    assert notifier.sent == []
+
+
+def also_in_old_fort(
+    session: Session, member: Membership, status: MembershipStatus
+) -> Membership:
+    """Make ``member``'s person a member of another home, "Old Fort", too."""
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area=None, first_month=date(2026, 1, 1)
+    )
+    there = Membership(
+        home_id=old_fort.id, person_id=member.person_id, name="Maruf", status=status
+    )
+    session.add(there)
+    session.flush()
+    return there
+
+
+def test_a_past_membership_in_another_home_also_blocks_the_change(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf, a member of "Our Flat", was once a member of "Old Fort"
+    WHEN  the owner of Our Flat asks for a code to change his log-in
+    THEN  it is refused with 403: Old Fort could reactivate him with it
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+    also_in_old_fort(session, member, MembershipStatus.INACTIVE)
+
+    with pytest.raises(HTTPException) as refused:
+        service.request_member_contact_code(
+            session, redis_client, notifier, owner, member.id, email(), clock()
+        )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        403,
+        "Only they can change their log-in, from My profile.",
+    )
+
+
+def test_your_own_row_is_not_blocked_by_your_other_home(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat" and is also a member of "Old Fort"
+    WHEN  he asks for a code to add an email to his own row on Members
+    THEN  the code is sent: he is the person whose log-in it is
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    also_in_old_fort(session, owner, MembershipStatus.ACTIVE)
+
+    service.request_member_contact_code(
+        session,
+        redis_client,
+        notifier,
+        owner,
+        owner.id,
+        email("rabbi@example.com"),
+        clock(),
+    )
+
+    assert [message.to for message in notifier.sent] == ["rabbi@example.com"]
+
+
+def test_a_past_members_log_in_cant_be_changed(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf was deactivated from "Our Flat"
+    WHEN  the owner asks for a code to change his log-in
+    THEN  it is refused with 400 "Reactivate them first.", and nothing is sent
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+    service.deactivate(
+        session, owner, member.id, DeactivateIn(on=date(2026, 11, 21)), clock()
+    )
+
+    with pytest.raises(HTTPException) as refused:
+        service.request_member_contact_code(
+            session, redis_client, notifier, owner, member.id, email(), clock()
+        )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        400,
+        "Reactivate them first.",
+    )
+    assert notifier.sent == []
+
+
+def test_a_log_in_code_cannot_confirm_a_change(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN a log-in code was sent to maruf@example.com
+    WHEN  the owner saves that email for Maruf with the log-in code
+    THEN  it is refused as expired, and Maruf has no email
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+    log_in_code = codes.issue_code(redis_client, email(), clock())
+
+    with pytest.raises(AppError) as refused:
+        service.set_member_contact(
+            session,
+            redis_client,
+            notifier,
+            owner,
+            member.id,
+            ContactChangeIn(contact=email(), code=log_in_code),
+            clock(),
+        )
+
+    assert refused.value.status_code == 400
+    assert refused.value.data == CodeErrorOut(reason=CodeErrorReason.EXPIRED)
+    assert person_of(session, member).email is None
+
+
+def test_removing_a_contact_ends_the_members_sessions(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with a phone and an email, and is logged in
+    WHEN  the owner removes his email
+    THEN  Maruf's open session ends
+    """
+    owner, member = maruf_with_both(session, redis_client, notifier, clock)
+    token = sessions.create_session(redis_client, member.person_id, clock())
+
+    service.remove_member_contact(
+        session, redis_client, notifier, owner, member.id, ContactKind.EMAIL, clock()
+    )
+
+    assert sessions.read_session(redis_client, token, clock()) is None
+
+
+ADDED_NOTICE = (
+    "{shown} can now log in to your Colivo account. "
+    "If this wasn't you, tell your home's owner or a manager."
+)
+
+
+def test_a_change_tells_the_existing_contacts_and_the_new_one(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678 and maruf@example.com
+    WHEN  the owner changes his phone to 01912 345678
+    THEN  the old phone and the email are told "…678 can now log in", and the
+          new phone is told it now logs in
+    """
+    owner, member = maruf_with_both(session, redis_client, notifier, clock)
+
+    change_with_code(
+        session, redis_client, notifier, clock, owner, member, phone("+8801912345678")
+    )
+
+    notices = {(message.to, message.text) for message in notifier.sent[1:]}
+    assert notices == {
+        (MARUF_E164, ADDED_NOTICE.format(shown="…678")),
+        (MARUF_EMAIL, ADDED_NOTICE.format(shown="…678")),
+        ("+8801912345678", "You can now log in to Colivo with this phone."),
+    }
+
+
+def test_a_removal_tells_the_removed_contact(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678 and maruf@example.com
+    WHEN  the owner removes his email
+    THEN  only the email is told it no longer logs in
+    """
+    owner, member = maruf_with_both(session, redis_client, notifier, clock)
+
+    service.remove_member_contact(
+        session, redis_client, notifier, owner, member.id, ContactKind.EMAIL, clock()
+    )
+
+    assert [(message.to, message.text) for message in notifier.sent] == [
+        (
+            MARUF_EMAIL,
+            "This email no longer logs in to your Colivo account. "
+            "If this wasn't you, tell your home's owner or a manager.",
+        )
+    ]
+
+
+def test_a_change_is_kept_with_who_and_the_old_and_new_value(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678
+    WHEN  the owner changes it to 01912 345678
+    THEN  Our Flat's history of Maruf has the change, by the owner, old and new
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    change_with_code(
+        session, redis_client, notifier, clock, owner, member, phone("+8801912345678")
+    )
+
+    last = history_of(session, member)[-1]
+    assert (last.home_id, last.changed_by, last.action) == (
+        owner.home_id,
+        owner.id,
+        ChangeAction.UPDATE,
+    )
+    assert (last.old_values, last.new_values) == (
+        {"phone": MARUF_E164},
+        {"phone": "+8801912345678"},
+    )
+
+
+def test_a_removal_is_kept_in_the_history(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with a phone and maruf@example.com
+    WHEN  the owner removes his email
+    THEN  the history keeps it: the email before, none after, by the owner
+    """
+    owner, member = maruf_with_both(session, redis_client, notifier, clock)
+
+    service.remove_member_contact(
+        session, redis_client, notifier, owner, member.id, ContactKind.EMAIL, clock()
+    )
+
+    last = history_of(session, member)[-1]
+    assert (last.changed_by, last.old_values, last.new_values) == (
+        owner.id,
+        {"email": MARUF_EMAIL},
+        {"email": None},
+    )
+
+
+def test_a_phone_taken_while_saving_answers_409(
+    engine: Engine,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN the owner has the right code to give Maruf 01912 345678
+    WHEN  someone else takes 01912 345678 at the moment Maruf's change is saved
+    THEN  it is refused with 409, as if it had been taken before
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+    new_phone = phone("+8801912345678")
+    service.request_member_contact_code(
+        session, redis_client, notifier, owner, member.id, new_phone, clock()
+    )
+    data = ContactChangeIn(
+        contact=new_phone, code=notifier.last_code_to(new_phone.value)
+    )
+
+    def rival_takes_the_phone(*_: object) -> None:
+        # Committed from another connection, after the check and before the save.
+        with engine.begin() as other:
+            other.execute(
+                text("INSERT INTO person (id, phone) VALUES (:id, :phone)"),
+                {"id": uuid.uuid7(), "phone": new_phone.value},
+            )
+
+    event.listen(session, "before_flush", rival_takes_the_phone, once=True)
+    try:
+        with pytest.raises(HTTPException) as refused:
+            service.set_member_contact(
+                session, redis_client, notifier, owner, member.id, data, clock()
+            )
+    finally:
+        with engine.begin() as other:
+            other.execute(
+                text("DELETE FROM person WHERE phone = :phone"),
+                {"phone": new_phone.value},
+            )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        409,
+        "Someone else logs in with that phone or email.",
+    )
+
+
+def test_your_own_change_is_kept_in_each_home_under_your_membership_there(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan is in "Our Flat" and "Old Fort"
+    WHEN  he changes his own phone to 01912 345678
+    THEN  each home's history has the change, made by his membership there
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    there = also_in_old_fort(session, owner, MembershipStatus.ACTIVE)
+    person = person_of(session, owner)
+    new_phone = phone("+8801912345678")
+    service.request_contact_code(redis_client, notifier, person, new_phone, clock())
+    data = ContactChangeIn(
+        contact=new_phone, code=notifier.last_code_to(new_phone.value)
+    )
+
+    service.set_contact(session, redis_client, notifier, person, data, clock())
+
+    for membership in (owner, there):
+        last = history_of(session, membership)[-1]
+        assert (last.home_id, last.changed_by, last.new_values) == (
+            membership.home_id,
+            membership.id,
+            {"phone": "+8801912345678"},
+        )
+
+
+def test_removing_both_at_the_same_moment_answers_400_for_the_second(
+    engine: Engine,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Sumi logs in with 01912 345678 and sumi@example.com
+    WHEN  her email is removed elsewhere at the moment her phone is removed
+    THEN  the phone's removal is refused with 400: she keeps one way to log in
+    """
+    sumi_id = uuid.uuid7()
+    with engine.begin() as other:
+        # Committed, so the second connection below can change it too.
+        other.execute(
+            text("INSERT INTO person (id, phone, email) VALUES (:id, :p, :e)"),
+            {"id": sumi_id, "p": "+8801912345678", "e": "sumi@example.com"},
+        )
+
+    def email_removed_elsewhere(*_: object) -> None:
+        with engine.begin() as other:
+            other.execute(
+                text("UPDATE person SET email = NULL WHERE id = :id"), {"id": sumi_id}
+            )
+
+    try:
+        sumi = session.get_one(Person, sumi_id)
+        event.listen(session, "before_flush", email_removed_elsewhere, once=True)
+        with pytest.raises(HTTPException) as refused:
+            service.remove_contact(
+                session, redis_client, notifier, sumi, ContactKind.PHONE
+            )
+    finally:
+        session.rollback()
+        with engine.begin() as other:
+            other.execute(text("DELETE FROM person WHERE id = :id"), {"id": sumi_id})
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        400,
+        "They need a phone or an email to log in.",
+    )

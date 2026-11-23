@@ -88,14 +88,17 @@ export async function signUp(
   await expect(page).toHaveURL(/\/$/);
 }
 
-export async function logIn(page: Page, phone: Phone) {
+/** Log in with a phone, or an email (stored as typed, in lower case). */
+export async function logIn(page: Page, contact: Phone | string) {
+  const [typed, to] =
+    typeof contact === 'string'
+      ? [contact, contact]
+      : [contact.local, contact.e164];
   await page.goto('/log-in');
   const form = page.locator('[data-test-log-in-form]');
-  await form.locator('[data-test-log-in-contact]').fill(phone.local);
+  await form.locator('[data-test-log-in-contact]').fill(typed);
   await form.locator('[data-test-log-in-send-code]').click();
-  await form
-    .locator('[data-test-code-field]')
-    .fill(await codeSentTo(phone.e164));
+  await form.locator('[data-test-code-field]').fill(await codeSentTo(to));
   await form.locator('[data-test-log-in-submit]').click();
 }
 

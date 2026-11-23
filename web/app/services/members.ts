@@ -5,7 +5,11 @@ import {
   deactivateMember,
   listMembers,
   reactivateMember,
+  removeMemberContact,
+  requestMemberContactCode,
+  setMemberContact,
   updateMember,
+  type ContactKind,
   type Member,
   type MemberChanges,
   type MemberFields,
@@ -15,6 +19,7 @@ import type Store from './store';
 
 // For components, which don't import the data layer.
 export type {
+  ContactKind,
   Member,
   MemberChanges,
   MemberFields,
@@ -56,6 +61,27 @@ export default class MembersService extends Service {
   async update(id: string, changes: MemberChanges): Promise<Member> {
     const { content } = await this.store.request<Member>(
       updateMember(id, changes),
+    );
+    return content;
+  }
+
+  /** Send a code to a member's new phone or email (Phase 1c). */
+  async sendContactCode(id: string, contact: string): Promise<void> {
+    await this.store.request(requestMemberContactCode(id, contact));
+  }
+
+  /** Save a member's new phone or email with its code. */
+  async setContact(id: string, contact: string, code: string): Promise<Member> {
+    const { content } = await this.store.request<Member>(
+      setMemberContact(id, contact, code),
+    );
+    return content;
+  }
+
+  /** Stop a member logging in with their phone or their email. */
+  async removeContact(id: string, kind: ContactKind): Promise<Member> {
+    const { content } = await this.store.request<Member>(
+      removeMemberContact(id, kind),
     );
     return content;
   }

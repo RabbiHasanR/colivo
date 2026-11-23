@@ -46,4 +46,49 @@ module('Integration | Component | members/edit-member-form', function (hooks) {
     ]);
     assert.strictEqual((saved as Member | null)?.name, 'Maruf Hossain');
   });
+
+  test('shows the log-in read-only for a member who is also in another home', async function (assert) {
+    // GIVEN Maruf, whose log-in this home may not change (he is in another home)
+    // WHEN  the owner opens his Edit tab
+    // THEN  his phone and email are shown as text with "Only they can …",
+    //       and there is nothing to type in or send
+    const maruf = member({
+      email: 'maruf@example.com',
+      contact_editable: false,
+    });
+    const onSaved = () => {};
+    await render(
+      <template>
+        <EditMemberForm @member={{maruf}} @onSaved={{onSaved}} />
+      </template>,
+    );
+
+    assert.dom('[data-test-contact-value="phone"]').hasText('+8801812345678');
+    assert
+      .dom('[data-test-contact-value="email"]')
+      .hasText('maruf@example.com');
+    assert
+      .dom('[data-test-contact-note]')
+      .hasText('Only they can change their log-in, from My profile.');
+    assert.dom('[data-test-contact-input]').doesNotExist();
+    assert.dom('[data-test-contact-remove]').doesNotExist();
+  });
+
+  test('tells the owner to reactivate a past member to change their log-in', async function (assert) {
+    // GIVEN Maruf was deactivated, so his log-in can't be changed
+    // WHEN  the owner opens his Edit tab
+    // THEN  his phone shows as text with "Reactivate them to change their log-in."
+    const maruf = member({ status: 'inactive', contact_editable: false });
+    const onSaved = () => {};
+    await render(
+      <template>
+        <EditMemberForm @member={{maruf}} @onSaved={{onSaved}} />
+      </template>,
+    );
+
+    assert.dom('[data-test-contact-value="phone"]').hasText('+8801812345678');
+    assert
+      .dom('[data-test-contact-note]')
+      .hasText('Reactivate them to change their log-in.');
+  });
 });

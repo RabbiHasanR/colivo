@@ -1114,3 +1114,763 @@ def test_home_header_that_is_not_an_id_answers_422(
 
     assert response.status_code == 422
     assert "x-colivo-home" in response.json()["errors"][0].lower()
+
+
+MARUF_EMAIL = "maruf@example.com"
+
+
+def log_in_with(
+    client: TestClient, notifier: FakeNotifier, contact: str, to: str
+) -> dict[str, Any]:
+    """Log out, then log in with ``contact`` and the code sent to ``to``."""
+    client.post("/api/v1/auth/log-out")
+    client.post("/api/v1/auth/codes", json={"contact": contact})
+    return client.post(
+        "/api/v1/auth/log-in",
+        json={"contact": contact, "code": notifier.last_code_to(to)},
+    ).json()
+
+
+def test_owner_adds_an_email_to_a_member_with_a_code(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat" and added Maruf by phone
+    WHEN  he asks for a code to Maruf's email and saves it with that code
+    THEN  Maruf has both, and logs in with the email and with the phone
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+
+    sent = client.post(
+        f"/api/v1/members/{member_id}/contact/code", json={"contact": MARUF_EMAIL}
+    )
+    saved = client.put(
+        f"/api/v1/members/{member_id}/contact",
+        json={"contact": MARUF_EMAIL, "code": notifier.last_code_to(MARUF_EMAIL)},
+    )
+    # The change code to the email used this minute's send (FR-94).
+    clock.advance(timedelta(minutes=1))
+    by_email = log_in_with(client, notifier, MARUF_EMAIL, MARUF_EMAIL)
+    by_phone = log_in_with(client, notifier, MARUF_PHONE, MARUF_E164)
+
+    assert sent.status_code == 200
+    assert saved.status_code == 200
+    assert (saved.json()["data"]["phone"], saved.json()["data"]["email"]) == (
+        MARUF_E164,
+        MARUF_EMAIL,
+    )
+    assert by_email["data"]["me"]["membership"]["name"] == "Maruf"
+    assert by_phone["data"]["me"]["membership"]["name"] == "Maruf"
+
+
+def test_member_contact_code_goes_to_the_new_contact(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf by phone
+    WHEN  POST /api/v1/members/{id}/contact/code is sent for maruf@example.com
+    THEN  it answers 200, and the code goes to the email, not to Maruf's phone
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    notifier.sent.clear()
+
+    response = client.post(
+        f"/api/v1/members/{member_id}/contact/code", json={"contact": MARUF_EMAIL}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"]["channel"] == "email"
+    assert [message.to for message in notifier.sent] == [MARUF_EMAIL]
+
+
+def give_maruf_an_email(
+    client: TestClient, notifier: FakeNotifier, member_id: str
+) -> None:
+    """The logged-in owner adds maruf@example.com to Maruf, with its code."""
+    client.post(
+        f"/api/v1/members/{member_id}/contact/code", json={"contact": MARUF_EMAIL}
+    )
+    client.put(
+        f"/api/v1/members/{member_id}/contact",
+        json={"contact": MARUF_EMAIL, "code": notifier.last_code_to(MARUF_EMAIL)},
+    )
+
+
+def test_removing_a_members_email_answers_200_with_the_member(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with a phone and an email
+    WHEN  DELETE /api/v1/members/{id}/contact/email is sent
+    THEN  it answers 200 with Maruf, who has only his phone now
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    give_maruf_an_email(client, notifier, member_id)
+
+    response = client.delete(f"/api/v1/members/{member_id}/contact/email")
+
+    assert response.status_code == 200
+    member = response.json()["data"]
+    assert (member["phone"], member["email"]) == (MARUF_E164, None)
+
+
+def test_removing_an_unknown_kind_of_contact_answers_422(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf
+    WHEN  DELETE /api/v1/members/{id}/contact/fax is sent
+    THEN  it answers 422
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+
+    response = client.delete(f"/api/v1/members/{member_id}/contact/fax")
+
+    assert response.status_code == 422
+
+
+def test_saving_a_contact_with_a_wrong_code_answers_400_and_changes_nothing(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN a code was sent to maruf@example.com for Maruf
+    WHEN  PUT /api/v1/members/{id}/contact is sent with another code
+    THEN  it answers 400 "wrong" with 4 tries left, and Maruf has no email
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    client.post(
+        f"/api/v1/members/{member_id}/contact/code", json={"contact": MARUF_EMAIL}
+    )
+    wrong = "000000" if notifier.last_code_to(MARUF_EMAIL) != "000000" else "111111"
+
+    response = client.put(
+        f"/api/v1/members/{member_id}/contact",
+        json={"contact": MARUF_EMAIL, "code": wrong},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["data"] == {"reason": "wrong", "tries_left": 4}
+    listed = client.get("/api/v1/members").json()["data"]
+    assert [each["email"] for each in listed if each["id"] == member_id] == [None]
+
+
+def test_saving_someone_elses_phone_answers_409_and_changes_nothing(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678 and added Maruf
+    WHEN  he saves 01712 345678 for Maruf with the right code
+    THEN  it answers 409, and Maruf keeps his own phone
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    # Rabbi's sign-up code used this minute's send to his phone (FR-94).
+    clock.advance(timedelta(minutes=1))
+    client.post(f"/api/v1/members/{member_id}/contact/code", json={"contact": PHONE})
+
+    response = client.put(
+        f"/api/v1/members/{member_id}/contact",
+        json={"contact": PHONE, "code": notifier.last_code_to(PHONE_E164)},
+    )
+
+    assert response.status_code == 409
+    assert (
+        response.json()["message"] == "Someone else logs in with that phone or email."
+    )
+    listed = client.get("/api/v1/members").json()["data"]
+    assert [each["phone"] for each in listed if each["id"] == member_id] == [MARUF_E164]
+
+
+def test_contact_code_answers_the_same_for_someone_elses_phone(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678 and added Maruf
+    WHEN  codes are asked for Maruf to 01712 345678 (taken) and 01912 345678 (free)
+    THEN  both answer 200 with the same body
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    clock.advance(timedelta(minutes=1))
+    url = f"/api/v1/members/{member_id}/contact/code"
+
+    taken = client.post(url, json={"contact": PHONE})
+    free = client.post(url, json={"contact": "01912 345678"})
+
+    assert (taken.status_code, free.status_code) == (200, 200)
+    assert taken.json() == free.json()
+
+
+def maruf_joins_old_fort(
+    session: Session, status: MembershipStatus = MembershipStatus.ACTIVE
+) -> None:
+    """Make Maruf (01812 345678) a member of another home, "Old Fort"."""
+    person = session.exec(select(Person).where(Person.phone == MARUF_E164)).one()
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area="Dhanmondi", first_month=date(2026, 1, 1)
+    )
+    session.add(
+        Membership(
+            home_id=old_fort.id, person_id=person.id, name="Maruf", status=status
+        )
+    )
+    session.flush()
+
+
+# The three ways the owner or a manager changes a member's log-in: method,
+# path after /members/{id}, and body.
+CONTACT_CALLS = [
+    pytest.param("POST", "contact/code", {"contact": MARUF_EMAIL}, id="code"),
+    pytest.param(
+        "PUT", "contact", {"contact": MARUF_EMAIL, "code": "123456"}, id="save"
+    ),
+    pytest.param("DELETE", "contact/phone", None, id="remove"),
+]
+
+
+@pytest.mark.parametrize(("method", "path", "body"), CONTACT_CALLS)
+def test_a_member_in_another_home_is_refused_403(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    method: str,
+    path: str,
+    body: dict[str, Any] | None,
+) -> None:
+    """
+    GIVEN Maruf, a member of "Our Flat", is also active in "Old Fort"
+    WHEN  the owner of Our Flat asks for a code, saves or removes his log-in
+    THEN  it answers 403 "Only they can change …", and nothing is sent
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    maruf_joins_old_fort(session)
+    notifier.sent.clear()
+
+    response = client.request(method, f"/api/v1/members/{member_id}/{path}", json=body)
+
+    assert response.status_code == 403
+    assert response.json()["message"] == (
+        "Only they can change their log-in, from My profile."
+    )
+    assert notifier.sent == []
+
+
+def test_members_list_says_whose_log_in_can_be_changed(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf is also in "Old Fort", and Sumi is only in "Our Flat"
+    WHEN  the owner of Our Flat reads the members list
+    THEN  Maruf's log-in can't be changed and Sumi's can, and nothing in the
+          list is about Old Fort
+    """
+    sign_up_owner(client, redis_client, clock)
+    add_maruf(client)
+    client.post("/api/v1/members", json=maruf_body(name="Sumi", contact="01912 345678"))
+    maruf_joins_old_fort(session)
+
+    listed = client.get("/api/v1/members").json()["data"]
+
+    editable = {each["name"]: each["contact_editable"] for each in listed}
+    assert (editable["Maruf"], editable["Sumi"]) == (False, True)
+    assert set(listed[0]) == {
+        "id",
+        "name",
+        "phone",
+        "email",
+        "role",
+        "status",
+        "joined_on",
+        "contact_editable",
+    }
+
+
+def owner_membership_id(client: TestClient) -> str:
+    """The logged-in owner's own member id."""
+    return client.get("/api/v1/me").json()["data"]["membership"]["id"]
+
+
+@pytest.mark.parametrize("caller", [Role.MANAGER, Role.MEMBER])
+@pytest.mark.parametrize(("method", "path", "body"), CONTACT_CALLS)
+def test_a_manager_cant_change_the_owners_log_in_nor_a_member_anyones(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    caller: Role,
+    method: str,
+    path: str,
+    body: dict[str, Any] | None,
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat"
+    WHEN  a manager or a member asks for a code, saves or removes his log-in
+    THEN  it answers 403, and nothing is sent
+    """
+    sign_up_owner(client, redis_client, clock)
+    owner_id = owner_membership_id(client)
+    log_in_as_new(client, session, redis_client, clock, role=caller)
+    notifier.sent.clear()
+
+    response = client.request(method, f"/api/v1/members/{owner_id}/{path}", json=body)
+
+    assert response.status_code == 403
+    assert notifier.sent == []
+
+
+@pytest.mark.parametrize("whose", ["another home's", "nobody's"])
+@pytest.mark.parametrize(("method", "path", "body"), CONTACT_CALLS)
+def test_changing_another_homes_members_log_in_answers_404(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    whose: str,
+    method: str,
+    path: str,
+    body: dict[str, Any] | None,
+) -> None:
+    """
+    GIVEN Karim is a member of "Old Fort", not of "Our Flat"
+    WHEN  the owner of Our Flat changes the log-in of Karim, or of an unknown id
+    THEN  it answers 404 "Member not found.", and nothing is sent
+    """
+    sign_up_owner(client, redis_client, clock)
+    karim = member_of_old_fort(session)
+    target = karim.id if whose == "another home's" else uuid.uuid7()
+    notifier.sent.clear()
+
+    response = client.request(method, f"/api/v1/members/{target}/{path}", json=body)
+
+    assert response.status_code == 404
+    assert response.json()["message"] == "Member not found."
+    assert notifier.sent == []
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "body"),
+    [
+        pytest.param("POST", "contact/code", {"contact": "hello"}, id="code"),
+        pytest.param(
+            "PUT", "contact", {"contact": "hello", "code": "123456"}, id="save"
+        ),
+    ],
+)
+def test_a_new_contact_in_the_wrong_form_answers_422(
+    client: TestClient,
+    redis_client: Redis,
+    clock: MovableClock,
+    method: str,
+    path: str,
+    body: dict[str, Any],
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf
+    WHEN  a code is asked for, or a change saved, with "hello" as the contact
+    THEN  it answers 422 with "Enter a phone number or an email."
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+
+    response = client.request(method, f"/api/v1/members/{member_id}/{path}", json=body)
+
+    assert response.status_code == 422
+    assert "Enter a phone number or an email." in response.json()["errors"][0]
+
+
+def maruf_session(session: Session, redis_client: Redis, clock: MovableClock) -> str:
+    """An open session for Maruf (01812 345678), as if he logged in elsewhere."""
+    person = session.exec(select(Person).where(Person.phone == MARUF_E164)).one()
+    return sessions.create_session(redis_client, person.id, clock())
+
+
+def change_marufs_contact(
+    client: TestClient, notifier: FakeNotifier, member_id: str, contact: str, to: str
+) -> None:
+    """The logged-in owner saves ``contact`` for Maruf with the code sent to ``to``."""
+    client.post(f"/api/v1/members/{member_id}/contact/code", json={"contact": contact})
+    client.put(
+        f"/api/v1/members/{member_id}/contact",
+        json={"contact": contact, "code": notifier.last_code_to(to)},
+    )
+
+
+def me_with(client: TestClient, token: str) -> int:
+    """The status of GET /api/v1/me for the session ``token``."""
+    client.cookies.clear()
+    client.cookies.set(SESSION_COOKIE, token)
+    return client.get("/api/v1/me").status_code
+
+
+def test_changing_a_members_phone_logs_them_out(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Maruf is logged in on his phone
+    WHEN  the owner changes Maruf's phone to 01912 345678
+    THEN  Maruf's open session answers 401: he logs in again with the new one
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    token = maruf_session(session, redis_client, clock)
+
+    change_marufs_contact(client, notifier, member_id, "01912 345678", "+8801912345678")
+
+    assert me_with(client, token) == 401
+
+
+def test_adding_an_email_leaves_the_member_logged_in(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Maruf is logged in on his phone
+    WHEN  the owner adds maruf@example.com to Maruf
+    THEN  Maruf's open session still works: nothing was taken away
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    token = maruf_session(session, redis_client, clock)
+
+    change_marufs_contact(client, notifier, member_id, MARUF_EMAIL, MARUF_EMAIL)
+
+    assert me_with(client, token) == 200
+
+
+def test_the_owner_changing_their_own_phone_stays_logged_in(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan, the owner, logs in with 01712 345678
+    WHEN  he changes his own phone to 01912 345678 on Members
+    THEN  this browser stays logged in
+    """
+    sign_up_owner(client, redis_client, clock)
+    owner_id = owner_membership_id(client)
+
+    change_marufs_contact(client, notifier, owner_id, "01912 345678", "+8801912345678")
+
+    assert client.get("/api/v1/me").status_code == 200
+
+
+def test_person_changes_their_own_phone_with_a_code(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678
+    WHEN  he asks for a code to 01912 345678 on My profile and saves it with it
+    THEN  he logs in with the new phone, and the old one is "Not added yet"
+    """
+    sign_up_owner(client, redis_client, clock)
+
+    sent = client.post("/api/v1/me/contact/code", json={"contact": "01912 345678"})
+    saved = client.put(
+        "/api/v1/me/contact",
+        json={
+            "contact": "01912 345678",
+            "code": notifier.last_code_to("+8801912345678"),
+        },
+    )
+    clock.advance(timedelta(minutes=1))
+    by_new = log_in_with(client, notifier, "01912 345678", "+8801912345678")
+    client.post("/api/v1/auth/log-out")
+    client.post("/api/v1/auth/codes", json={"contact": PHONE})
+    by_old = client.post(
+        "/api/v1/auth/log-in",
+        json={"contact": PHONE, "code": notifier.last_code_to(PHONE_E164)},
+    )
+
+    assert (sent.status_code, saved.status_code) == (200, 200)
+    assert saved.json()["data"]["phone"] == "+8801912345678"
+    assert by_new["data"]["me"]["membership"]["name"] == "Rabbi Hasan"
+    assert by_old.status_code == 404
+
+
+def test_me_answers_the_persons_phone_and_email(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678 and added rabbi@example.com
+    WHEN  GET /api/v1/me is read
+    THEN  its person has both the phone and the email
+    """
+    sign_up_owner(client, redis_client, clock)
+    owner_id = owner_membership_id(client)
+    change_marufs_contact(
+        client, notifier, owner_id, "rabbi@example.com", "rabbi@example.com"
+    )
+
+    me = client.get("/api/v1/me").json()["data"]
+
+    assert me["person"] == {"phone": PHONE_E164, "email": "rabbi@example.com"}
+
+
+def test_my_contact_code_goes_to_the_new_email(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678
+    WHEN  POST /api/v1/me/contact/code is sent for rabbi@example.com
+    THEN  it answers 200, and the code goes to the email, not to his phone
+    """
+    sign_up_owner(client, redis_client, clock)
+    notifier.sent.clear()
+
+    response = client.post(
+        "/api/v1/me/contact/code", json={"contact": "rabbi@example.com"}
+    )
+
+    assert response.status_code == 200
+    assert [message.to for message in notifier.sent] == ["rabbi@example.com"]
+
+
+def add_my_email(
+    client: TestClient, notifier: FakeNotifier
+) -> tuple[int, dict[str, Any]]:
+    """The logged-in person adds rabbi@example.com on My profile.
+
+    Returns:
+        The answer's status and body.
+    """
+    client.post("/api/v1/me/contact/code", json={"contact": "rabbi@example.com"})
+    response = client.put(
+        "/api/v1/me/contact",
+        json={
+            "contact": "rabbi@example.com",
+            "code": notifier.last_code_to("rabbi@example.com"),
+        },
+    )
+    return response.status_code, response.json()
+
+
+def test_saving_my_new_email_answers_200_with_both(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678 and has a code for his email
+    WHEN  PUT /api/v1/me/contact is sent with rabbi@example.com and the code
+    THEN  it answers 200 with his phone and his new email
+    """
+    sign_up_owner(client, redis_client, clock)
+
+    status, body = add_my_email(client, notifier)
+
+    assert status == 200
+    assert body["data"] == {
+        "phone": PHONE_E164,
+        "email": "rabbi@example.com",
+    }
+
+
+def test_removing_my_email_answers_200_with_only_the_phone(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678 and rabbi@example.com
+    WHEN  DELETE /api/v1/me/contact/email is sent
+    THEN  it answers 200 with only his phone
+    """
+    sign_up_owner(client, redis_client, clock)
+    add_my_email(client, notifier)
+
+    response = client.delete("/api/v1/me/contact/email")
+
+    assert response.status_code == 200
+    assert response.json()["data"] == {"phone": PHONE_E164, "email": None}
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "body", "message"),
+    [
+        pytest.param(
+            "POST",
+            "/api/v1/me/contact/code",
+            {"contact": PHONE},
+            "That's already your phone or email.",
+            id="same phone",
+        ),
+        pytest.param(
+            "DELETE",
+            "/api/v1/me/contact/phone",
+            None,
+            "You need a phone or an email to log in.",
+            id="last one",
+        ),
+        pytest.param(
+            "DELETE",
+            "/api/v1/me/contact/email",
+            None,
+            "You have no email to remove.",
+            id="none to remove",
+        ),
+    ],
+)
+def test_my_log_in_refusals_speak_to_me(
+    client: TestClient,
+    redis_client: Redis,
+    clock: MovableClock,
+    method: str,
+    path: str,
+    body: dict[str, Any] | None,
+    message: str,
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with only 01712 345678
+    WHEN  he asks for a code to it, removes it, or removes an email he lacks
+    THEN  it answers 400, worded to him
+    """
+    sign_up_owner(client, redis_client, clock)
+    clock.advance(timedelta(minutes=1))
+
+    response = client.request(method, path, json=body)
+
+    assert (response.status_code, response.json()["message"]) == (400, message)
+
+
+MY_CONTACT_CALLS = [
+    pytest.param("POST", "/api/v1/me/contact/code", {"contact": "hello"}, id="code"),
+    pytest.param(
+        "PUT", "/api/v1/me/contact", {"contact": "hello", "code": "123456"}, id="save"
+    ),
+    pytest.param("DELETE", "/api/v1/me/contact/fax", None, id="remove"),
+]
+
+
+@pytest.mark.parametrize(("method", "path", "body"), MY_CONTACT_CALLS)
+def test_my_log_in_answers_422_for_what_is_not_a_phone_or_email(
+    client: TestClient,
+    redis_client: Redis,
+    clock: MovableClock,
+    method: str,
+    path: str,
+    body: dict[str, Any] | None,
+) -> None:
+    """
+    GIVEN Rabbi Hasan is logged in
+    WHEN  he sends "hello" as a new contact, or removes a "fax"
+    THEN  it answers 422
+    """
+    sign_up_owner(client, redis_client, clock)
+
+    response = client.request(method, path, json=body)
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(("method", "path", "body"), MY_CONTACT_CALLS)
+def test_my_log_in_needs_a_log_in(
+    client: TestClient, method: str, path: str, body: dict[str, Any] | None
+) -> None:
+    """
+    GIVEN nobody is logged in
+    WHEN  any of the My profile log-in calls is sent
+    THEN  it answers 401
+    """
+    path = path.replace("/fax", "/email")
+    body = body and {"contact": "rabbi@example.com", "code": "123456"}
+
+    response = client.request(method, path, json=body)
+
+    assert response.status_code == 401
+
+
+def test_a_person_in_two_homes_changes_their_phone_without_choosing_a_home(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Rabbi Hasan is active in "Our Flat" and "Old Fort"
+    WHEN  he changes his phone on My profile, naming no home
+    THEN  it answers 200, not "Choose a home": a log-in belongs to no one home
+    """
+    sign_up_owner(client, redis_client, clock)
+    rabbi_joins_old_fort(session)
+    client.post("/api/v1/me/contact/code", json={"contact": "01912 345678"})
+
+    response = client.put(
+        "/api/v1/me/contact",
+        json={
+            "contact": "01912 345678",
+            "code": notifier.last_code_to("+8801912345678"),
+        },
+    )
+
+    assert response.status_code == 200
+
+
+def rabbi_on_another_browser(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> str:
+    """A second open session for Rabbi (01712 345678), as on his phone."""
+    person = session.exec(select(Person).where(Person.phone == PHONE_E164)).one()
+    return sessions.create_session(redis_client, person.id, clock())
+
+
+def test_changing_my_phone_logs_out_my_other_browsers_only(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Rabbi Hasan is logged in on his laptop and his phone
+    WHEN  he changes his phone on My profile on the laptop
+    THEN  the laptop stays logged in, and the phone's session answers 401
+    """
+    sign_up_owner(client, redis_client, clock)
+    laptop = client.cookies[SESSION_COOKIE]
+    other = rabbi_on_another_browser(session, redis_client, clock)
+    client.post("/api/v1/me/contact/code", json={"contact": "01912 345678"})
+
+    client.put(
+        "/api/v1/me/contact",
+        json={
+            "contact": "01912 345678",
+            "code": notifier.last_code_to("+8801912345678"),
+        },
+    )
+
+    assert (me_with(client, laptop), me_with(client, other)) == (200, 401)
+
+
+def test_removing_my_email_keeps_this_browser_logged_in(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with a phone and an email, on two browsers
+    WHEN  he removes his email on My profile on the laptop
+    THEN  the laptop stays logged in, and the other browser answers 401
+    """
+    sign_up_owner(client, redis_client, clock)
+    add_my_email(client, notifier)
+    laptop = client.cookies[SESSION_COOKIE]
+    other = rabbi_on_another_browser(session, redis_client, clock)
+
+    client.delete("/api/v1/me/contact/email")
+
+    assert (me_with(client, laptop), me_with(client, other)) == (200, 401)

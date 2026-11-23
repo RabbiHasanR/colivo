@@ -84,7 +84,7 @@ FR-85).
   and how a session keeps its current home
   ([data-model.md → Open questions](data-model.md#open-questions)).
 
-## Phase 1c — Change a member's phone or email ⏳ Not started
+## Phase 1c — Change a member's phone or email ✅ Complete
 
 `[backend] [web]`
 

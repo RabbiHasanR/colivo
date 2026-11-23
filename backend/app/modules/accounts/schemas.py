@@ -50,6 +50,20 @@ class LogInIn(BaseModel):
     code: str
 
 
+class ContactKind(StrEnum):
+    """Which way to log in a change is about: the phone or the email."""
+
+    PHONE = "phone"
+    EMAIL = "email"
+
+
+class ContactChangeIn(BaseModel):
+    """A new phone or email to log in with, and the code sent to it (Phase 1c)."""
+
+    contact: ContactIn
+    code: str
+
+
 class SignUpIn(BaseModel):
     """The owner's sign-up: who they are, their code and their new home."""
 
@@ -113,12 +127,16 @@ class MemberOut(BaseModel):
     role: Role
     status: MembershipStatus
     joined_on: date | None
+    # Whether the owner or manager reading it may change their phone or email
+    # (Phase 1c); never says why, so no other home is revealed.
+    contact_editable: bool
 
 
 class MePersonOut(BaseModel):
-    """The logged-in person's log-in identity."""
+    """The logged-in person's log-in identity: their phone and email."""
 
     phone: str | None
+    email: str | None
 
 
 class MeMembershipOut(BaseModel):

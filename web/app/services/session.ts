@@ -63,6 +63,17 @@ export default class SessionService extends Service {
   }
 
   /**
+   * Read who is logged in again (`GET /me`), for a page that must show what
+   * the API has now: a phone or email can change elsewhere, on Members or in
+   * another browser (Phase 1c). Errors go to the error handlers as usual.
+   */
+  async reloadMe(): Promise<Me> {
+    const { content } = await this.store.request<Me>(getMe());
+    this.me = content;
+    return content;
+  }
+
+  /**
    * Open `homeId` in this tab, from "Choose a home" or the home switcher:
    * who they are there is read again, and its home page opens. The
    * `authenticated` route is refreshed so its guard runs for the new home
