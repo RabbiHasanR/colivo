@@ -1568,3 +1568,40 @@ def test_the_owner_changing_their_own_phone_stays_logged_in(
     change_marufs_contact(client, notifier, owner_id, "01912 345678", "+8801912345678")
 
     assert client.get("/api/v1/me").status_code == 200
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="acceptance: a person changes their own phone with a code (Phase 1c)",
+)
+def test_person_changes_their_own_phone_with_a_code(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678
+    WHEN  he asks for a code to 01912 345678 on My profile and saves it with it
+    THEN  he logs in with the new phone, and the old one is "Not added yet"
+    """
+    sign_up_owner(client, redis_client, clock)
+
+    sent = client.post("/api/v1/me/contact/code", json={"contact": "01912 345678"})
+    saved = client.put(
+        "/api/v1/me/contact",
+        json={
+            "contact": "01912 345678",
+            "code": notifier.last_code_to("+8801912345678"),
+        },
+    )
+    clock.advance(timedelta(minutes=1))
+    by_new = log_in_with(client, notifier, "01912 345678", "+8801912345678")
+    client.post("/api/v1/auth/log-out")
+    client.post("/api/v1/auth/codes", json={"contact": PHONE})
+    by_old = client.post(
+        "/api/v1/auth/log-in",
+        json={"contact": PHONE, "code": notifier.last_code_to(PHONE_E164)},
+    )
+
+    assert (sent.status_code, saved.status_code) == (200, 200)
+    assert saved.json()["data"]["phone"] == "+8801912345678"
+    assert by_new["data"]["me"]["membership"]["name"] == "Rabbi Hasan"
+    assert by_old.status_code == 404
