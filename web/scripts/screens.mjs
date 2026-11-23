@@ -114,6 +114,7 @@ const PAGES = [
     loggedIn: true,
     click: '[data-test-edit-member="Maruf"]',
   },
+  { name: 'profile', path: '/profile', loggedIn: true },
   {
     name: 'member-edit-locked',
     path: '/members',

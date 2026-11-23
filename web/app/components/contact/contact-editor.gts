@@ -44,7 +44,15 @@ interface Row {
   errors: string[];
   /** Something new was typed, so a code can be sent to it. */
   changed: boolean;
+  /** The design's hint in an empty field. */
+  placeholder: string;
 }
+
+// The placeholders colivo-design uses (WebMembers.html, WebProfile.html).
+const PLACEHOLDERS: Record<ContactKind, string> = {
+  phone: '01XXXXXXXXX',
+  email: 'name@email.com',
+};
 
 /**
  * The phone and email someone logs in with (Phase 1c). A new one is saved
@@ -78,7 +86,8 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
     const errors = refusal?.fieldErrors['contact'] ?? [];
     const value = this.valueOf(kind);
     const changed = value.trim() !== '' && value !== (this.args[kind] ?? '');
-    return { kind, name, label, value, message, errors, changed };
+    const placeholder = PLACEHOLDERS[kind];
+    return { kind, name, label, value, message, errors, changed, placeholder };
   }
 
   valueOf(kind: ContactKind): string {
@@ -179,6 +188,7 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
               id={{id}}
               @value={{row.value}}
               @onInput={{fn this.type row.kind}}
+              placeholder={{row.placeholder}}
               data-test-contact-input={{row.kind}}
             />
           </Field>
