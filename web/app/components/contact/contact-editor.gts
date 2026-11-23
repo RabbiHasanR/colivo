@@ -4,7 +4,9 @@ import { action } from '@ember/object';
 import { fn } from '@ember/helper';
 import { on } from '@ember/modifier';
 import type { ContactKind } from '../../services/members';
+import { codeErrorFrom, type CodeError } from '../../utils/code-error';
 import { eq } from '../../utils/template';
+import CodeErrors from '../auth/code-errors';
 import CodeField from '../auth/code-field';
 import Button from '../ui/button';
 import Field from '../ui/field';
@@ -40,6 +42,8 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
   /** The row waiting for its code, if any. */
   @tracked confirming: ContactKind | null = null;
   @tracked code = '';
+  /** Why the code for the row being confirmed was refused, if it was. */
+  @tracked codeError: CodeError | null = null;
 
   get rows(): Row[] {
     return [this.row('phone', 'Phone'), this.row('email', 'Email')];
@@ -76,16 +80,43 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
   @action
   async submit(kind: ContactKind, event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    const contact = this.valueOf(kind);
-    if (this.confirming === kind) {
-      await this.args.onSave(contact, this.code);
-      this.confirming = null;
-      this.code = '';
-      this.typed = { ...this.typed, [kind]: undefined };
-      return;
-    }
-    await this.args.onSendCode(contact);
+    await this.refusable(() =>
+      this.confirming === kind ? this.confirm(kind) : this.sendCode(kind),
+    );
+  }
+
+  async sendCode(kind: ContactKind): Promise<void> {
+    await this.args.onSendCode(this.valueOf(kind));
     this.confirming = kind;
+  }
+
+  async confirm(kind: ContactKind): Promise<void> {
+    await this.args.onSave(this.valueOf(kind), this.code);
+    this.stopConfirming();
+    this.typed = { ...this.typed, [kind]: undefined };
+  }
+
+  /** Run a step; a refused code shows why instead of failing the page. */
+  async refusable(step: () => Promise<void>): Promise<void> {
+    this.codeError = null;
+    try {
+      await step();
+    } catch (error) {
+      this.codeError = codeErrorFrom(error);
+      if (!this.codeError) throw error;
+    }
+  }
+
+  @action
+  async sendNewCode(): Promise<void> {
+    const kind = this.confirming;
+    if (kind) await this.refusable(() => this.sendCode(kind));
+  }
+
+  @action stopConfirming(): void {
+    this.confirming = null;
+    this.code = '';
+    this.codeError = null;
   }
 
   <template>
@@ -105,12 +136,23 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
             />
           </Field>
           {{#if (eq this.confirming row.kind)}}
-            <CodeField @value={{this.code}} @onInput={{this.setCode}}>
+            <CodeField
+              @value={{this.code}}
+              @onInput={{this.setCode}}
+              @invalid={{if this.codeError true false}}
+            >
               <Button
                 type="submit"
                 data-test-contact-save={{row.kind}}
               >Save</Button>
             </CodeField>
+            {{#if this.codeError}}
+              <CodeErrors
+                @error={{this.codeError}}
+                @onSendNewCode={{this.sendNewCode}}
+                @onUseDifferentContact={{this.stopConfirming}}
+              />
+            {{/if}}
           {{else}}
             <Button
               type="submit"

@@ -124,4 +124,43 @@ module('Integration | Component | contact/contact-editor', function (hooks) {
 
     assert.dom('[data-test-contact-remove]').doesNotExist();
   });
+
+  /** Type ``value`` in the ``kind`` row, send a code, and type ``code``. */
+  async function confirmWith(kind: string, value: string, code: string) {
+    await fillIn(`[data-test-contact-input="${kind}"]`, value);
+    await click(`[data-test-contact-send-code="${kind}"]`);
+    await fillIn(
+      `[data-test-contact-row="${kind}"] [data-test-code-field]`,
+      code,
+    );
+    await click(`[data-test-contact-save="${kind}"]`);
+  }
+
+  test('shows why a code was refused, with the tries left', async function (assert) {
+    // GIVEN Maruf logs in with a phone; the API refuses the code as wrong
+    // WHEN  the owner saves his new email with that code
+    // THEN  the email row says the code isn't right and 4 tries are left
+    worker.use(
+      http.post('*/api/v1/members/:id/contact/code', () =>
+        HttpResponse.json(codeSentBody),
+      ),
+      http.put('*/api/v1/members/:id/contact', () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: "That code isn't right.",
+            data: { reason: 'wrong', tries_left: 4 },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+    await renderFor(this, { phone: MARUF.phone, email: null });
+
+    await confirmWith('email', 'maruf@example.com', '000000');
+
+    assert
+      .dom('[data-test-contact-row="email"] [data-test-code-error]')
+      .hasText("That code isn't right. 4 tries left.");
+  });
 });
