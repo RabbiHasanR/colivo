@@ -160,7 +160,11 @@ export default class AppShell extends Component<AppShellSignature> {
             {{/if}}
           </ul>
           <div class="mt-auto flex flex-col gap-1">
-            <div class="flex items-center gap-2.5 rounded-xl bg-page p-2.5">
+            <LinkTo
+              @route="authenticated.profile"
+              class="flex min-h-touch items-center gap-2.5 rounded-xl bg-page p-2.5 hover:bg-line"
+              data-test-nav-profile
+            >
               <Avatar @name={{this.session.me.membership.name}} @size="md" />
               {{! One text for screen readers: "Rabbi Hasan · Owner". }}
               <span class="flex min-w-0 flex-col" data-test-shell-person>
@@ -172,7 +176,7 @@ export default class AppShell extends Component<AppShellSignature> {
                     this.session.me.membership.role
                   }}</span>
               </span>
-            </div>
+            </LinkTo>
             <button
               type="button"
               class="min-h-touch rounded-field px-3 text-left text-sm font-medium text-ink-soft hover:bg-page"

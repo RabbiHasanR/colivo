@@ -65,4 +65,23 @@ module('Integration | Component | layout/app-shell', function (hooks) {
       else assert.dom('[data-test-home-switcher]').doesNotExist();
     });
   }
+
+  test('the name card opens My profile', async function (assert) {
+    // GIVEN Rabbi is logged in to Our Flat
+    // WHEN  the shell is shown
+    // THEN  his name card is a link to My profile
+    // LinkTo builds its href only once the router is set up.
+    (this.owner as unknown as { setupRouter(): void }).setupRouter();
+    const session = this.owner.lookup('service:session');
+    session.me = meIn(OUR_FLAT_ID, [ourFlat]);
+
+    await render(
+      <template>
+        <AppShell>Page</AppShell>
+      </template>,
+    );
+
+    assert.dom('[data-test-nav-profile]').hasAttribute('href', '/profile');
+    assert.dom('[data-test-nav-profile]').includesText('Rabbi Hasan');
+  });
 });

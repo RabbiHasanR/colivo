@@ -1,7 +1,7 @@
 import type { TOC } from '@ember/component/template-only';
 import { initials } from '../../utils/names';
 
-type Size = 'sm' | 'md';
+type Size = 'sm' | 'md' | 'lg';
 
 interface AvatarSignature {
   Element: HTMLSpanElement;
@@ -10,9 +10,11 @@ interface AvatarSignature {
 }
 
 // sm: a table row (32px). md: the sidebar's profile card (36px).
+// lg: My profile (64px, WebProfile.html).
 const SIZES: Record<Size, string> = {
   sm: 'size-8 text-xs',
   md: 'size-9 text-[13px]',
+  lg: 'size-16 text-xl',
 };
 
 function classes(size: Size = 'sm', faded = false): string {

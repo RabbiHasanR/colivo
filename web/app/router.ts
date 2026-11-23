@@ -13,6 +13,8 @@ Router.map(function () {
   // Everything behind log-in; its index is the home page at "/".
   this.route('authenticated', { path: '' }, function () {
     this.route('members');
+    // My profile (Phase 1c): your name, phone and email.
+    this.route('profile');
     this.route('welcome');
   });
 });

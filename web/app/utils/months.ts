@@ -49,3 +49,9 @@ export function firstMonthChoices(now: Date, timeZone: string): MonthChoice[] {
 export function thisMonthLabel(now: Date, timeZone: string): string {
   return choice(...yearAndMonth(now, timeZone)).label;
 }
+
+/** A date from the API (`2026-11-21`) as its month: `November 2026`. */
+export function formatMonth(isoDate: string): string {
+  const [year, month] = isoDate.split('-').map(Number);
+  return choice(year ?? 1970, month ?? 1).label;
+}

@@ -1,5 +1,9 @@
 import { module, test } from 'qunit';
-import { firstMonthChoices, thisMonthLabel } from 'colivo-web/utils/months';
+import {
+  firstMonthChoices,
+  formatMonth,
+  thisMonthLabel,
+} from 'colivo-web/utils/months';
 
 module('Unit | Utils | months', function () {
   test('first-month choices are this month and next in the home time zone', function (assert) {
@@ -38,5 +42,12 @@ module('Unit | Utils | months', function () {
     );
 
     assert.strictEqual(label, 'December 2026');
+  });
+
+  test('a date from the API reads as its month and year', function (assert) {
+    // GIVEN the join date 2026-11-21
+    // WHEN  it is shown as "member since …"
+    // THEN  it reads "November 2026"
+    assert.strictEqual(formatMonth('2026-11-21'), 'November 2026');
   });
 });
