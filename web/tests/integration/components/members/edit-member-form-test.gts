@@ -73,4 +73,22 @@ module('Integration | Component | members/edit-member-form', function (hooks) {
     assert.dom('[data-test-contact-input]').doesNotExist();
     assert.dom('[data-test-contact-remove]').doesNotExist();
   });
+
+  test('tells the owner to reactivate a past member to change their log-in', async function (assert) {
+    // GIVEN Maruf was deactivated, so his log-in can't be changed
+    // WHEN  the owner opens his Edit tab
+    // THEN  his phone shows as text with "Reactivate them to change their log-in."
+    const maruf = member({ status: 'inactive', contact_editable: false });
+    const onSaved = () => {};
+    await render(
+      <template>
+        <EditMemberForm @member={{maruf}} @onSaved={{onSaved}} />
+      </template>,
+    );
+
+    assert.dom('[data-test-contact-value="phone"]').hasText('+8801812345678');
+    assert
+      .dom('[data-test-contact-note]')
+      .hasText('Reactivate them to change their log-in.');
+  });
 });
