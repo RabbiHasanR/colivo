@@ -876,3 +876,52 @@ def test_status_and_role_changes_answer_404_for_another_homes_member(
     assert "Karim" not in response.text
     session.refresh(karim)
     assert (karim.role, karim.status) == ("member", "active")
+
+
+def rabbi_joins_old_fort(session: Session) -> uuid.UUID:
+    """Make Rabbi (01712 345678) an active member of "Old Fort"; its id."""
+    person = session.exec(select(Person).where(Person.phone == PHONE_E164)).one()
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area="Dhanmondi", first_month=date(2026, 1, 1)
+    )
+    session.add(Membership(home_id=old_fort.id, person_id=person.id, name="Rabbi"))
+    session.flush()
+    return old_fort.id
+
+
+@pytest.mark.xfail(
+    strict=True, reason="acceptance: a person in several homes chooses one"
+)
+def test_person_in_two_homes_chooses_one_after_log_in(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" and is a member of "Old Fort"
+    WHEN  he logs in, and then opens Old Fort by naming it
+    THEN  log-in lists both homes without choosing one, a request naming no
+          home is refused with "choose_home", and naming Old Fort opens it
+          as a member
+    """
+    sign_up_owner(client, redis_client, clock)
+    old_fort_id = rabbi_joins_old_fort(session)
+    client.post("/api/v1/auth/log-out")
+    clock.advance(timedelta(minutes=2))
+    client.post("/api/v1/auth/codes", json={"contact": PHONE})
+
+    logged_in = client.post(
+        "/api/v1/auth/log-in",
+        json={"contact": PHONE, "code": notifier.last_code_to(PHONE_E164)},
+    ).json()["data"]
+    unnamed = client.get("/api/v1/me")
+    named = client.get("/api/v1/me", headers={"X-Colivo-Home": str(old_fort_id)})
+
+    assert logged_in["me"] is None
+    assert [home["name"] for home in logged_in["homes"]] == ["Old Fort", "Our Flat"]
+    assert unnamed.status_code == 409
+    assert unnamed.json()["data"] == {"reason": "choose_home"}
+    me = named.json()["data"]
+    assert (me["home"]["name"], me["membership"]["role"]) == ("Old Fort", "member")
