@@ -202,4 +202,31 @@ module('Integration | Component | contact/contact-editor', function (hooks) {
     await fillIn('[data-test-contact-input="phone"]', '+8801812345678');
     assert.dom(sendPhone).doesNotExist();
   });
+
+  test('shows why a new phone or email was refused as not valid', async function (assert) {
+    // GIVEN the API answers 422: what was typed isn't a phone or an email
+    // WHEN  the owner types "01812" as Maruf's new phone and presses Send code
+    // THEN  the phone row says to enter a phone number or an email
+    const notValid = 'Value error, Enter a phone number or an email.';
+    worker.use(
+      http.post('*/api/v1/members/:id/contact/code', () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: 'Validation Error',
+            errors: [`body.contact: ${notValid}`],
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    await renderFor(this, { phone: MARUF.phone, email: null });
+
+    await fillIn('[data-test-contact-input="phone"]', '01812');
+    await click('[data-test-contact-send-code="phone"]');
+
+    assert
+      .dom('[data-test-contact-row="phone"] [data-test-field-error]')
+      .hasText(notValid);
+  });
 });

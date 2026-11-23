@@ -36,6 +36,8 @@ interface Row {
   value: string;
   /** Why the API refused this row, other than its code. */
   message: string | null;
+  /** What was wrong with the phone or email typed (422). */
+  errors: string[];
   /** Something new was typed, so a code can be sent to it. */
   changed: boolean;
 }
@@ -67,11 +69,12 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
   /** A row; the one they don't have yet is "(optional)", as in the design. */
   row(kind: ContactKind, name: string): Row {
     const label = this.args[kind] === null ? `${name} (optional)` : name;
-    const message =
-      this.refused?.kind === kind ? this.refused.refusal.message : null;
+    const refusal = this.refused?.kind === kind ? this.refused.refusal : null;
+    const message = refusal?.message ?? null;
+    const errors = refusal?.fieldErrors['contact'] ?? [];
     const value = this.valueOf(kind);
     const changed = value.trim() !== '' && value !== (this.args[kind] ?? '');
-    return { kind, label, value, message, changed };
+    return { kind, label, value, message, errors, changed };
   }
 
   valueOf(kind: ContactKind): string {
@@ -167,7 +170,7 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
           data-test-contact-row={{row.kind}}
           {{on "submit" (fn this.submit row.kind)}}
         >
-          <Field @label={{row.label}} as |id|>
+          <Field @label={{row.label}} @errors={{row.errors}} as |id|>
             <TextInput
               id={{id}}
               @value={{row.value}}
