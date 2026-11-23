@@ -62,10 +62,17 @@ export default class SessionService extends Service {
     }
   }
 
-  /** Act in `homeId` in this tab; who they are there is read again. */
-  chooseHome(homeId: string): void {
+  /**
+   * Open `homeId` in this tab, from "Choose a home" or the home switcher:
+   * who they are there is read again, and its home page opens. The
+   * `authenticated` route is refreshed so its guard runs for the new home
+   * even when the tab was already inside it.
+   */
+  async openHome(homeId: string): Promise<void> {
     this.currentHome.choose(homeId);
     this.me = null;
+    await this.router.transitionTo('authenticated.index');
+    await this.router.refresh('authenticated');
   }
 
   async requestCode(contact: string): Promise<CodeSent> {

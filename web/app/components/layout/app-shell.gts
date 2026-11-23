@@ -6,7 +6,10 @@ import { guidFor } from '@ember/object/internals';
 import { service } from '@ember/service';
 import { LinkTo } from '@ember/routing';
 import type RouterService from '@ember/routing/router-service';
+import type { TOC } from '@ember/component/template-only';
 import type SessionService from '../../services/session';
+import type { Me } from '../../services/session';
+import HomeSwitcher from '../homes/home-switcher';
 import { roleLabel } from '../../utils/roles';
 import Avatar from '../ui/avatar';
 import Button from '../ui/button';
@@ -16,6 +19,34 @@ const NAV_LINK =
   'flex min-h-touch items-center gap-2.5 rounded-field px-3 text-sm ' +
   'font-medium text-ink-soft hover:bg-page ' +
   '[&.active]:bg-primary-tint [&.active]:font-semibold [&.active]:text-primary';
+
+/** Whether the person can switch: they are in more than one home. */
+function inSeveralHomes(me: Me): boolean {
+  return me.homes.length > 1;
+}
+
+interface ShellHomeSignature {
+  Args: { me: Me; onChoose: (homeId: string) => void };
+}
+
+/**
+ * The home this page is in, under "Colivo": plain text for a person in one
+ * home; for several, a button that opens a menu of their other homes
+ * (Phase 1b).
+ */
+const ShellHome: TOC<ShellHomeSignature> = <template>
+  <span class="text-xs text-muted" data-test-shell-home>
+    {{#if (inSeveralHomes @me)}}
+      <HomeSwitcher
+        @current={{@me.home}}
+        @homes={{@me.homes}}
+        @onChoose={{@onChoose}}
+      />
+    {{else}}
+      {{@me.home.name}}
+    {{/if}}
+  </span>
+</template>;
 
 interface AppShellSignature {
   Blocks: { default: [] };
@@ -40,6 +71,11 @@ export default class AppShell extends Component<AppShellSignature> {
   }
 
   @action
+  openHome(homeId: string): void {
+    void this.session.openHome(homeId);
+  }
+
+  @action
   async logOut(): Promise<void> {
     await this.session.logOut();
     this.router.transitionTo('log-in');
@@ -50,7 +86,14 @@ export default class AppShell extends Component<AppShellSignature> {
       <header
         class="flex items-center justify-between border-b border-line bg-surface px-4 py-2 lg:hidden"
       >
-        <span class="font-display text-lg font-bold text-primary">Colivo</span>
+        <span class="flex min-w-0 flex-col">
+          <span
+            class="font-display text-lg font-bold text-primary"
+          >Colivo</span>
+          {{#if this.session.me}}
+            <ShellHome @me={{this.session.me}} @onChoose={{this.openHome}} />
+          {{/if}}
+        </span>
         <Button
           @variant="secondary"
           aria-controls={{this.sidebarId}}
@@ -74,9 +117,7 @@ export default class AppShell extends Component<AppShellSignature> {
             class="font-display text-lg font-bold text-primary"
           >Colivo</span>
           {{#if this.session.me}}
-            <span class="text-xs text-muted" data-test-shell-home>
-              {{this.session.me.home.name}}
-            </span>
+            <ShellHome @me={{this.session.me}} @onChoose={{this.openHome}} />
           {{/if}}
         </div>
         {{#if this.session.me}}

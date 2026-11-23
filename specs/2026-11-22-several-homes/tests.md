@@ -72,8 +72,8 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 ### B10 — Switch homes from the shell
 
 - [x] T10.1 integration — `test_me_lists_the_persons_homes_for_the_switcher` ✅: `MeOut.homes` has both homes
-- [x] T10.2 web integration — `homes/home-switcher-test.gts` › lists the other homes and switches to the chosen one
-- [x] T10.3 web integration — `layout/app-shell-test.gts` › shows the switcher only for a person in several homes (one vs two homes)
+- [x] T10.2 web integration — `homes/home-switcher-test.gts` › lists the other homes and switches to the chosen one ✅
+- [x] T10.3 web integration — `layout/app-shell-test.gts` › shows the switcher only for a person in several homes (one vs two homes) ✅
 - [ ] T10.4 keyboard (arrows, Escape, focus return) — _(skipped: manual check 5, as Phase 1 did for the dialog)_
 
 ### B11 — Each tab keeps its own home

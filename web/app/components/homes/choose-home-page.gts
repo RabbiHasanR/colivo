@@ -1,7 +1,6 @@
 import Component from '@glimmer/component';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
-import type RouterService from '@ember/routing/router-service';
 import type SessionService from '../../services/session';
 import type { HomeChoice } from '../../services/current-home';
 import AuthLayout from '../auth/auth-layout';
@@ -16,13 +15,11 @@ interface ChooseHomePageSignature {
  * homes; choosing one opens its home page in this tab.
  */
 export default class ChooseHomePage extends Component<ChooseHomePageSignature> {
-  @service declare router: RouterService;
   @service declare session: SessionService;
 
   @action
   choose(homeId: string): void {
-    this.session.chooseHome(homeId);
-    this.router.transitionTo('authenticated.index');
+    void this.session.openHome(homeId);
   }
 
   <template>
