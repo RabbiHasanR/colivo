@@ -1040,3 +1040,22 @@ def test_log_out_works_without_choosing_a_home(
 
     assert response.status_code == 200
     assert client.get("/api/v1/me/homes").status_code == 401
+
+
+def test_not_in_home_answer_is_the_same_for_any_home(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat", and Karim's "Old Fort" exists
+    WHEN  Rabbi names Old Fort, and then a home id that doesn't exist
+    THEN  both answers are the same 403, and neither names Old Fort
+    """
+    sign_up_owner(client, redis_client, clock)
+    old_fort_id = member_of_old_fort(session).home_id
+
+    other = client.get("/api/v1/me", headers={HOME_HEADER: str(old_fort_id)})
+    unknown = client.get("/api/v1/me", headers={HOME_HEADER: str(uuid.uuid7())})
+
+    assert (other.status_code, unknown.status_code) == (403, 403)
+    assert other.json() == unknown.json()
+    assert "Old Fort" not in other.text

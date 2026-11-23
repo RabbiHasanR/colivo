@@ -47,6 +47,7 @@ from app.modules.homes.models import Home
 
 ALREADY_IN_THIS_HOME = "Already a member of this home."
 CHOOSE_HOME = "Choose a home."
+NOT_IN_HOME = "You're no longer a member of this home."
 PAST_MEMBER = "This person was a member of this home. Reactivate them instead."
 NAME_TAKEN = "Someone in this home already has that name."
 NO_STAY = "Only someone who lives in the home has a join date."
@@ -114,8 +115,9 @@ def membership_for(
 
     Raises:
         AppError: 409 "Choose a home." when no home is named and the person
-            is active in several.
-        HTTPException: 401 when there is none.
+            is active in several; 403 when the named home isn't one they are
+            active in now, whether or not it exists.
+        HTTPException: 401 when they are active in no home.
     """
     query = select(Membership).where(
         Membership.person_id == person.id,
@@ -127,6 +129,12 @@ def membership_for(
     if home_id is None and len(memberships) > 1:
         raise AppError(
             409, CHOOSE_HOME, HomeRefusalOut(reason=HomeRefusalReason.CHOOSE_HOME)
+        )
+    if not memberships and home_id is not None:
+        # The same answer whether the home exists or not, so nobody learns
+        # which homes exist.
+        raise AppError(
+            403, NOT_IN_HOME, HomeRefusalOut(reason=HomeRefusalReason.NOT_IN_HOME)
         )
     if not memberships:
         raise HTTPException(401, "Log in first.")

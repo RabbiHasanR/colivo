@@ -1256,3 +1256,39 @@ def test_no_home_named_with_several_homes_is_refused(
 
     assert (error.value.status_code, error.value.detail) == (409, "Choose a home.")
     assert error.value.data == HomeRefusalOut(reason=HomeRefusalReason.CHOOSE_HOME)
+
+
+@pytest.mark.parametrize(
+    "which", ["inactive there", "another person's home", "no such home"]
+)
+def test_naming_a_home_the_person_is_not_active_in_is_refused(
+    session: Session, redis_client: Redis, clock: MovableClock, which: str
+) -> None:
+    """
+    GIVEN 01712 345678 owns "Our Flat"; they left "Old Fort"; "Green House"
+          is someone else's
+    WHEN  a request of theirs names Old Fort, Green House or an unknown id
+    THEN  each is refused with the same 403, reason not_in_home
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    old_fort = rabbi_in_old_fort_too(session, owner)
+    old_fort.status = MembershipStatus.INACTIVE
+    green_house = homes_service.create_home(
+        session, name="Green House", area=None, first_month=date(2026, 1, 1)
+    )
+    session.flush()
+    home_id = {
+        "inactive there": old_fort.home_id,
+        "another person's home": green_house.id,
+        "no such home": uuid.uuid7(),
+    }[which]
+    person = session.get_one(Person, owner.person_id)
+
+    with pytest.raises(AppError) as error:
+        service.membership_for(session, person, home_id)
+
+    assert (error.value.status_code, error.value.detail) == (
+        403,
+        "You're no longer a member of this home.",
+    )
+    assert error.value.data == HomeRefusalOut(reason=HomeRefusalReason.NOT_IN_HOME)

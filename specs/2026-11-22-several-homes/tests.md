@@ -98,8 +98,8 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 ### B14 — Naming a home you're not in: 403, nothing about that home
 
-- [x] T14.1 unit — `test_naming_a_home_the_person_is_not_active_in_is_refused`, parametrised: inactive there, another person's home, an id that doesn't exist → 403, reason `not_in_home`, the same message
-- [x] T14.2 integration — `test_not_in_home_answer_is_the_same_for_any_home`: the bodies for another person's home and an unknown id are identical, and neither names Old Fort
+- [x] T14.1 unit — `test_naming_a_home_the_person_is_not_active_in_is_refused` ✅, parametrised: inactive there, another person's home, an id that doesn't exist → 403, reason `not_in_home`, the same message
+- [x] T14.2 integration — `test_not_in_home_answer_is_the_same_for_any_home` ✅ _(passed on its first run, after T14.1; seen failing by answering an existing home differently)_: the bodies for another person's home and an unknown id are identical, and neither names Old Fort
 
 ### B15 — Removed from the open home: "Choose a home" with a notice
 
