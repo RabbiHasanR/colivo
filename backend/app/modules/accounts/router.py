@@ -127,10 +127,10 @@ def log_in(
 def log_out(
     request: Request,
     response: Response,
-    membership: CurrentMemberDep,
+    person: CurrentPersonDep,
     redis_client: RedisDep,
 ) -> None:
-    """End the session and clear its cookie."""
+    """End the session and clear its cookie; needs no home (Phase 1b)."""
     service.log_out(redis_client, request.cookies[SESSION_COOKIE])
     response.delete_cookie(SESSION_COOKIE)
     set_response_message(request, "Logged out")

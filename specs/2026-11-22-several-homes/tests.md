@@ -85,7 +85,7 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 ### B12 — Log-out logs out every tab and forgets the home
 
-- [x] T12.1 integration — `test_log_out_works_without_choosing_a_home`: two homes, no header → 200, session ended
+- [x] T12.1 integration — `test_log_out_works_without_choosing_a_home` ✅: two homes, no header → 200, session ended
 - [x] T12.2 web unit — `services/current-home-test.ts` › forget clears this tab's home and the last home
 - [x] T12.3 web acceptance — `log-out-test.ts` › after log-out, a log-in with several homes shows "Choose a home", not the old home
 

@@ -1023,3 +1023,20 @@ def test_adding_a_member_without_naming_a_home_changes_nothing(
     assert response.status_code == 409
     assert response.json()["data"] == {"reason": "choose_home"}
     assert members_named(session, "Maruf") == 0
+
+
+def test_log_out_works_without_choosing_a_home(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" and is a member of "Old Fort"
+    WHEN  he logs out without naming a home
+    THEN  he is logged out: the next request needs a log-in
+    """
+    sign_up_owner(client, redis_client, clock)
+    rabbi_joins_old_fort(session)
+
+    response = client.post("/api/v1/auth/log-out")
+
+    assert response.status_code == 200
+    assert client.get("/api/v1/me/homes").status_code == 401
