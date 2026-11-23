@@ -69,6 +69,7 @@ LAST_CONTACT = "They need a phone or an email to log in."
 CONTACT_TAKEN = "Someone else logs in with that phone or email."
 SAME_CONTACT = "That's already their phone or email."
 ONLY_THEY_CAN = "Only they can change their log-in, from My profile."
+REACTIVATE_FIRST = "Reactivate them first."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -1027,6 +1028,8 @@ def contact_refusal(
     Returns:
         The refusal to raise, or None.
     """
+    if member.status != MembershipStatus.ACTIVE:
+        return HTTPException(400, REACTIVATE_FIRST)
     if member.role == Role.OWNER and editor.role != Role.OWNER:
         return HTTPException(403, OWNER_DETAILS_FOR_OWNER)
     yourself = editor.person_id == member.person_id

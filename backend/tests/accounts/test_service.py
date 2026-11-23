@@ -1553,3 +1553,28 @@ def test_your_own_row_is_not_blocked_by_your_other_home(
     )
 
     assert [message.to for message in notifier.sent] == ["rabbi@example.com"]
+
+
+def test_a_past_members_log_in_cant_be_changed(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf was deactivated from "Our Flat"
+    WHEN  the owner asks for a code to change his log-in
+    THEN  it is refused with 400 "Reactivate them first.", and nothing is sent
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+    service.deactivate(
+        session, owner, member.id, DeactivateIn(on=date(2026, 11, 21)), clock()
+    )
+
+    with pytest.raises(HTTPException) as refused:
+        service.request_member_contact_code(
+            session, redis_client, notifier, owner, member.id, email(), clock()
+        )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        400,
+        "Reactivate them first.",
+    )
+    assert notifier.sent == []

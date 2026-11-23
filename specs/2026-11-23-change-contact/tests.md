@@ -76,7 +76,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B12 — A past member's log-in can't be changed
 
-- [x] T12.1 unit — `test_a_past_members_log_in_cant_be_changed` (400 "Reactivate them first.")
+- [x] T12.1 unit — `test_a_past_members_log_in_cant_be_changed` ✅ (400 "Reactivate them first.")
 - [x] T12.2 web integration — a past member's Edit tab shows the phone and email read-only with "Reactivate them to change their log-in."
 
 ### B13 — A phone or email in the wrong form is refused (422)
