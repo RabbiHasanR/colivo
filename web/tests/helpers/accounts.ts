@@ -12,6 +12,8 @@ export type Role = Me['membership']['role'];
 
 type MeMembership = Me['membership'];
 
+export const OUR_FLAT_ID = '01a1fd00-0000-7000-8000-000000000001';
+
 /**
  * Who is logged in: Rabbi Hasan, owner of "Our Flat" (OF-4827), or Maruf
  * for a member. Details are checked unless `membership` says otherwise.
@@ -33,12 +35,13 @@ export function me(
       ...membership,
     },
     home: {
-      id: '01a1fd00-0000-7000-8000-000000000001',
+      id: OUR_FLAT_ID,
       code: 'OF-4827',
       name: 'Our Flat',
       area: 'Mirpur',
       first_month: '2026-11-01',
     },
+    homes: [{ id: OUR_FLAT_ID, name: 'Our Flat', area: 'Mirpur', role }],
   };
 }
 

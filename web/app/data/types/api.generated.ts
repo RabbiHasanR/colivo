@@ -76,6 +76,8 @@ export interface paths {
         /**
          * Log In
          * @description Log in with a phone or email and its one-time code.
+         *
+         *     The answer lists the person's homes; ``me`` is set only for one home.
          */
         post: operations["log_in_api_v1_auth_log_in_post"];
         delete?: never;
@@ -95,7 +97,7 @@ export interface paths {
         put?: never;
         /**
          * Log Out
-         * @description End the session and clear its cookie.
+         * @description End the session and clear its cookie; needs no home (Phase 1b).
          */
         post: operations["log_out_api_v1_auth_log_out_post"];
         delete?: never;
@@ -126,6 +128,26 @@ export interface paths {
          * @description Fix your own name; this also finishes the first log-in check.
          */
         patch: operations["update_me_api_v1_me_patch"];
+        trace?: never;
+    };
+    "/api/v1/me/homes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Homes
+         * @description The logged-in person's active homes, to choose one; needs no home.
+         */
+        get: operations["my_homes_api_v1_me_homes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/members": {
@@ -334,6 +356,35 @@ export interface components {
             redis: components["schemas"]["ServiceStatus"];
         };
         /**
+         * HomeChoiceOut
+         * @description One of the person's active homes, for choosing or switching homes.
+         */
+        HomeChoiceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Area */
+            area: string | null;
+            role: components["schemas"]["Role"];
+        };
+        /**
+         * HomeRefusalOut
+         * @description The ``data`` of a 409 "Choose a home" or 403 "no longer a member".
+         */
+        HomeRefusalOut: {
+            reason: components["schemas"]["HomeRefusalReason"];
+        };
+        /**
+         * HomeRefusalReason
+         * @description Why a request was refused for the home it named (Phase 1b).
+         * @enum {string}
+         */
+        HomeRefusalReason: "choose_home" | "not_in_home";
+        /**
          * LogInIn
          * @description Log in with a phone or email and the code sent to it.
          */
@@ -342,6 +393,17 @@ export interface components {
             contact: string;
             /** Code */
             code: string;
+        };
+        /**
+         * LogInOut
+         * @description The answer to a log-in: the person's homes, and ``me`` for one home.
+         *
+         *     With several homes, ``me`` is None and the client asks which home.
+         */
+        LogInOut: {
+            /** Homes */
+            homes: components["schemas"]["HomeChoiceOut"][];
+            me?: components["schemas"]["MeOut"] | null;
         };
         /**
          * MeHomeOut
@@ -391,12 +453,14 @@ export interface components {
         };
         /**
          * MeOut
-         * @description Who is logged in, and in which home.
+         * @description Who is logged in, and in which home; ``homes`` for switching homes.
          */
         MeOut: {
             person: components["schemas"]["MePersonOut"];
             membership: components["schemas"]["MeMembershipOut"];
             home: components["schemas"]["MeHomeOut"];
+            /** Homes */
+            homes: components["schemas"]["HomeChoiceOut"][];
         };
         /**
          * MePersonOut
@@ -577,6 +641,26 @@ export interface components {
             /** Errors */
             errors?: string[] | null;
         };
+        /** StandardResponse[HomeRefusalOut] */
+        StandardResponse_HomeRefusalOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["HomeRefusalOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** StandardResponse[LogInOut] */
+        StandardResponse_LogInOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["LogInOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
         /** StandardResponse[MeOut] */
         StandardResponse_MeOut_: {
             /** Success */
@@ -604,6 +688,17 @@ export interface components {
             /** Message */
             message: string;
             data?: components["schemas"]["SetupOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** StandardResponse[list[HomeChoiceOut]] */
+        StandardResponse_list_HomeChoiceOut__: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["HomeChoiceOut"][] | null;
             /** Errors */
             errors?: string[] | null;
         };
@@ -790,7 +885,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StandardResponse_MeOut_"];
+                    "application/json": components["schemas"]["StandardResponse_LogInOut_"];
                 };
             };
             /** @description Bad Request */
@@ -845,7 +940,9 @@ export interface operations {
     get_me_api_v1_me_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Colivo-Home"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -860,12 +957,41 @@ export interface operations {
                     "application/json": components["schemas"]["StandardResponse_MeOut_"];
                 };
             };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_HomeRefusalOut_"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_HomeRefusalOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     update_me_api_v1_me_patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Colivo-Home"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -895,7 +1021,7 @@ export interface operations {
             };
         };
     };
-    list_members_api_v1_members_get: {
+    my_homes_api_v1_me_homes_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -910,7 +1036,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    "application/json": components["schemas"]["StandardResponse_list_HomeChoiceOut__"];
+                };
+            };
+        };
+    };
+    list_members_api_v1_members_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Colivo-Home"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
                     "application/json": components["schemas"]["StandardResponse_list_MemberOut__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -918,7 +1075,9 @@ export interface operations {
     add_member_api_v1_members_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Colivo-Home"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -951,7 +1110,9 @@ export interface operations {
     update_member_api_v1_members__member_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Colivo-Home"?: string | null;
+            };
             path: {
                 member_id: string;
             };
@@ -986,7 +1147,9 @@ export interface operations {
     change_role_api_v1_members__member_id__role_put: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Colivo-Home"?: string | null;
+            };
             path: {
                 member_id: string;
             };
@@ -1021,7 +1184,9 @@ export interface operations {
     deactivate_api_v1_members__member_id__deactivate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Colivo-Home"?: string | null;
+            };
             path: {
                 member_id: string;
             };
@@ -1056,7 +1221,9 @@ export interface operations {
     reactivate_api_v1_members__member_id__reactivate_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Colivo-Home"?: string | null;
+            };
             path: {
                 member_id: string;
             };
@@ -1091,7 +1258,9 @@ export interface operations {
     get_setup_api_v1_home_setup_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Colivo-Home"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1104,6 +1273,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StandardResponse_SetupOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

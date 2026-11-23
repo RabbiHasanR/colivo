@@ -26,6 +26,7 @@ from app.modules.accounts.schemas import (
     CodeSentOut,
     DeactivateIn,
     HomeChoiceOut,
+    HomeRefusalOut,
     LogInIn,
     LogInOut,
     MemberIn,
@@ -44,6 +45,13 @@ router = CoreRouter()
 CODE_ERRORS: dict[int | str, dict[str, object]] = {
     400: {"model": StandardResponse[CodeErrorOut]},
     429: {"model": StandardResponse[CodeErrorOut]},
+}
+
+# Any endpoint that acts in a home can answer these (Phase 1b); declared on
+# GET /me so the contract carries the refusal's shape once.
+HOME_ERRORS: dict[int | str, dict[str, object]] = {
+    403: {"model": StandardResponse[HomeRefusalOut]},
+    409: {"model": StandardResponse[HomeRefusalOut]},
 }
 
 
@@ -137,7 +145,7 @@ def log_out(
     response.status_code = 200
 
 
-@router.get("/me")
+@router.get("/me", responses=HOME_ERRORS)
 def get_me(
     request: Request,
     response: Response,
