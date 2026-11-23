@@ -381,9 +381,12 @@ request reads the active membership from PostgreSQL, so deactivating a
 member logs them out at once. Rejected: a `session` table (one more table
 and a clean-up job; losing Redis only logs people out).
 
-_Phase 1c, planned:_ each session's key is also kept in the set
+_Phase 1c, built:_ each session's key is also kept in the set
 `person_sessions:{person_id}` (refreshed with the session), so a change to
-the person's log-in can end all their sessions, or all but one. See
+the person's log-in can end all their sessions, or all but one. The refresh
+writes the session only while it still exists (`SET … XX`), so a request
+reading a session as it is ended can't bring it back (B25, from the
+security review). See
 [Log-in contacts](#log-in-contacts-agreed-23-nov-2026).
 
 ### Log-in contacts _(agreed 23 Nov 2026)_
@@ -635,7 +638,7 @@ table also has `created_at` and `updated_at` (`timestamptz`, default
 
 A log-in identity, shared across homes. Nothing about life in a home.
 
-_Phase 1c, planned: no column change. A person may have both a phone and an
+_Phase 1c, built: no column change. A person may have both a phone and an
 email; adding, changing and removing them follows
 [Log-in contacts](#log-in-contacts-agreed-23-nov-2026)._
 
@@ -673,7 +676,7 @@ The tenant. Every home-owned table points here.
 ### membership _(Phase 1, built)_
 
 _Phase 1b, built: one index change, no column change (below), in `a8f729dfae84_several_homes`._
-_Phase 1c, planned: one more index change, no column change (below), in group 2's `<rev>_change_contact`._
+_Phase 1c, built: one more index change, no column change (below), in `1c59687c8639_change_contact`._
 
 A person in one home. Everything in a home points here, never to `person`.
 
@@ -695,8 +698,8 @@ deactivated.
 | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `membership(home_id, person_id)` UNIQUE                           | The members list per home; one membership per person per home, so a returning member is reactivated                                                                                                   |
 | `membership(person_id) WHERE status = 'active'` UNIQUE            | One active home per person (FR-85). _(Phase 1b, built: dropped, `uq_membership_active_person_id`)_                                                                                                    |
-| `membership(person_id) WHERE status = 'active'`                   | A person's active homes: log-in, the home picker and switcher, the `X-Colivo-Home` check. _(Phase 1b, built: `ix_membership_active_person_id`; Phase 1c, planned: dropped, replaced by the next one)_ |
-| `membership(person_id)`                                           | "Is this person in any other home, active or past?" (Phase 1c's log-in change rule), and a person's active homes as above. _(Phase 1c, planned: `ix_membership_person_id`)_                           |
+| `membership(person_id) WHERE status = 'active'`                   | A person's active homes: log-in, the home picker and switcher, the `X-Colivo-Home` check. _(Phase 1b, built: `ix_membership_active_person_id`; Phase 1c, built: dropped, replaced by the next one)_ |
+| `membership(person_id)`                                           | "Is this person in any other home, active or past?" (Phase 1c's log-in change rule), and a person's active homes as above. _(Phase 1c, built: `ix_membership_person_id`)_                           |
 | `membership(home_id) WHERE role = 'owner'` UNIQUE                 | Exactly one owner per home (FR-63)                                                                                                                                                                    |
 | `membership(home_id, lower(name)) WHERE status = 'active'` UNIQUE | Names unique among active members, ignoring case (FR-04)                                                                                                                                              |
 
@@ -765,3 +768,4 @@ limits and sessions (Phase 1c adds change codes and `person_sessions`; see
 | Phase 1b (22 Nov 2026) | Planned: drop the unique index on active `membership(person_id)`, add a plain one; the current home travels per request in `X-Colivo-Home`, sessions unchanged. Settles the open question on several homes                                                    |
 | Phase 1b (built)       | Built in `a8f729dfae84_several_homes`: `uq_membership_active_person_id` dropped, `ix_membership_active_person_id` (partial, not unique) added; Phase 1 data migrates unchanged                                                                                |
 | Phase 1c (23 Nov 2026) | Planned: a person may have a phone and an email, each added or changed with a code; `ix_membership_person_id` replaces `ix_membership_active_person_id`; change codes and `person_sessions` in Redis; one `change_log` row per home for a log-in change       |
+| Phase 1c (built)       | Built in `1c59687c8639_change_contact`: `ix_membership_active_person_id` dropped, `ix_membership_person_id` added; Redis keys `otp:change:{person_id}:{contact}` (with `:wrong:`, `:lock:`, `:old:`) and `person_sessions:{person_id}`; Phase 1b data migrates unchanged |

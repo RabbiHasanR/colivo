@@ -247,6 +247,35 @@ _Filled in as Phase 0 is planned and built. Record each decision as:_
   "Choose a home" with a notice.
 - **CORS:** `X-Colivo-Home` is in the explicit `allow_headers` list.
 
+## Decided in Phase 1c
+
+- **A phone and an email per person:** either one logs in. The existing
+  `person` CHECK (`phone IS NOT NULL OR email IS NOT NULL`) keeps the last
+  one; a removal it refuses (two at once) answers the same 400 as the early
+  check.
+- **Every added or changed phone or email is proven with a code** sent to
+  the new one, by the owner or a manager (`/members/{id}/contact…`) or by
+  the person on My profile (`/me/contact…`). "Someone else logs in with
+  that" is answered only after the right code, so the code request answers
+  the same either way; the unique index catches two saves at once (409).
+- **The other-home rule:** the owner or a manager can't change the log-in of
+  a member who is in another home, active or past (403); only the person
+  can, from My profile. Checked again on save and on remove, not only when
+  the code is sent. Served by `ix_membership_person_id`.
+- **Scoped code keys:** change codes live under
+  `otp:change:{person_id}:{contact}` with their own wrong count and lock, so
+  a change code can't log in and a log-in code can't confirm a change. The
+  once-a-minute, 5-an-hour send limit (`otp:sent:{contact}`) is shared.
+- **Ending sessions:** each session is listed in
+  `person_sessions:{person_id}`. A change or removal ends all the person's
+  sessions (owner or manager) or all but this browser's (My profile);
+  adding one ends none. A session refresh writes only while the session
+  still exists (`SET … XX`), so a request in flight can't bring an ended
+  session back (B25, security review).
+- **Notices:** an addition or change is sent to the existing phone or email
+  (the new one partly hidden) and to the new one; a removal to the one
+  removed. Every change is a `change_log` row in each of the person's homes.
+
 ## Project conventions
 
 Every phase follows this layout. Update this section when a convention changes.
@@ -424,6 +453,18 @@ Add each one as it's discovered: **<Area>:** <limitation>.
   Nothing about them is revealed (security review, 23 Nov 2026).
 - **Picker after every log-in:** a person in several homes always chooses
   after logging in; the last home is only where a new tab starts.
+- **An owner or manager can take over a member in no other home:** they
+  can add a phone or email they control (with its code) and log in as that
+  member. The member is told on their existing phone or email. Members in
+  another home are protected by the other-home rule (Phase 1c).
+- **The read-only Edit tab hints at another home:** it tells the owner or a
+  manager that a member is in some other home, though never which one
+  (Phase 1c).
+- **Sessions from before Phase 1c:** sessions are listed in
+  `person_sessions` only when created or used, so one left unused across
+  the Phase 1c deploy wouldn't be ended by a log-in change. Nothing is
+  deployed yet (B40), so no action; a deploy that keeps old sessions would
+  need a one-off backfill (security review, 23 Nov 2026).
 - **Not test-driven, checked by hand:** countdowns ticking, layout at each
   width, focus after "Create my own home", the dialog's keyboard behaviour.
 

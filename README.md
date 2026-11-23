@@ -77,6 +77,14 @@ have each add a third phone to their home. That person's log-in shows
 browsers (or a private window) for the three people, since one browser keeps
 one log-in.
 
+To try changing a phone or email: on Members, open someone's **Edit** tab
+(or your own **My profile** from your name in the sidebar), type the new
+phone or email and press **Send code**. The code goes to the new one, so read
+it from `dev:outbox` as above, type it and press **Save**. A change or removal
+logs the member out everywhere (from My profile, everywhere but this
+browser). A member who is also in another home can only change their own,
+on My profile.
+
 ## Everyday commands
 
 Run `make` to list every target. The ones you'll use most:
