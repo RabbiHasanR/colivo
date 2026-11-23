@@ -59,6 +59,16 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
     this.typed = { ...this.typed, [kind]: value };
   }
 
+  /** Both exist, so either can go; the last way to log in can't. */
+  get canRemove(): boolean {
+    return this.args.phone !== null && this.args.email !== null;
+  }
+
+  @action
+  async remove(kind: ContactKind): Promise<void> {
+    await this.args.onRemove(kind);
+  }
+
   @action setCode(value: string): void {
     this.code = value;
   }
@@ -108,6 +118,14 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
               class="self-start"
               data-test-contact-send-code={{row.kind}}
             >Send code</Button>
+          {{/if}}
+          {{#if this.canRemove}}
+            <Button
+              @variant="danger-link"
+              class="self-start"
+              data-test-contact-remove={{row.kind}}
+              {{on "click" (fn this.remove row.kind)}}
+            >Remove</Button>
           {{/if}}
         </form>
       {{/each}}

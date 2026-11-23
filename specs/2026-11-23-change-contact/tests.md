@@ -31,7 +31,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 - [x] T4.1 unit — `test_removing_the_email_keeps_only_the_phone` ✅
 - [x] T4.2 integration — `DELETE /members/{id}/contact/email` answers 200 with the member ✅
 - [x] T4.3 integration — `DELETE /members/{id}/contact/fax` answers 422 ✅ _(passed on its first run: the `ContactKind` path parameter added for T4.2 already refuses it)_
-- [x] T4.4 web integration — contact editor shows Remove only while both exist; pressing it removes that one
+- [x] T4.4 web integration — contact editor shows Remove only while both exist; pressing it removes that one ✅
 
 ### B5 — The last way a member logs in can't be removed
 

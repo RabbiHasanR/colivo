@@ -92,4 +92,36 @@ module('Integration | Component | contact/contact-editor', function (hooks) {
       .dom('[data-test-contact-row="email"] label')
       .hasText('Email (optional)');
   });
+
+  test('offers Remove only while both exist, and removes that one', async function (assert) {
+    // GIVEN Maruf logs in with a phone and an email
+    // WHEN  his log-in is shown, and the owner presses Remove on the email
+    // THEN  both rows offer Remove, and the email's removal is sent
+    const removed: unknown[] = [];
+    worker.use(
+      http.delete('*/api/v1/members/:id/contact/:channel', ({ params }) => {
+        removed.push(params['channel']);
+        return HttpResponse.json({
+          success: true,
+          message: 'Log-in changed',
+          data: member({ email: null }),
+        });
+      }),
+    );
+    await renderFor(this, { phone: MARUF.phone, email: 'maruf@example.com' });
+
+    assert.dom('[data-test-contact-remove]').exists({ count: 2 });
+    await click('[data-test-contact-remove="email"]');
+
+    assert.deepEqual(removed, ['email']);
+  });
+
+  test('offers no Remove for the only way to log in', async function (assert) {
+    // GIVEN Maruf logs in with a phone only
+    // WHEN  his log-in is shown
+    // THEN  nothing offers Remove: the last way to log in can't go
+    await renderFor(this, { phone: MARUF.phone, email: null });
+
+    assert.dom('[data-test-contact-remove]').doesNotExist();
+  });
 });
