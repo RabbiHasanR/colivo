@@ -97,7 +97,7 @@ export default class SessionService extends Service {
 
   /**
    * Log in with a one-time code; the API sets the session cookie. A person
-   * in one home acts in it at once (Phase 1b).
+   * in one home acts in it at once; with several, they choose (Phase 1b).
    */
   async logIn(contact: string, code: string): Promise<LogInAnswer> {
     const { content } = await this.store.request<LogInAnswer>(
@@ -106,6 +106,9 @@ export default class SessionService extends Service {
     if (content.me) {
       this.currentHome.choose(content.me.home.id);
       this.me = content.me;
+    } else {
+      // Several homes: they choose; never a home remembered from before.
+      this.currentHome.forget();
     }
     return content;
   }
@@ -136,10 +139,14 @@ export default class SessionService extends Service {
     }
   }
 
-  /** End the session in the API (it clears the cookie) and forget who it was. */
+  /**
+   * End the session in the API (it clears the cookie) and forget who it was,
+   * and the home: the next log-in starts from its own answer.
+   */
   async logOut(): Promise<void> {
     await this.store.request(logOut());
     this.me = null;
+    this.currentHome.forget();
   }
 }
 

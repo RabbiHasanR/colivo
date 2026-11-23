@@ -51,6 +51,13 @@ export default class CurrentHomeService extends Service {
     readHome(() => sessionStorage, TAB_HOME_KEY) ??
     readHome(() => localStorage, LAST_HOME_KEY);
 
+  /** Forget the home in this tab and for new tabs (log-out). */
+  forget(): void {
+    this.homeId = null;
+    writeHome(() => sessionStorage, TAB_HOME_KEY, null);
+    writeHome(() => localStorage, LAST_HOME_KEY, null);
+  }
+
   /** The logged-in person's homes, to choose one (`GET /me/homes`). */
   async loadHomes(): Promise<HomeChoice[]> {
     const { content } = await this.store.request<HomeChoice[]>(getMyHomes());

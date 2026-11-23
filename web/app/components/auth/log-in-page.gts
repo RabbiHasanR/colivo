@@ -3,6 +3,7 @@ import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
 import type RouterService from '@ember/routing/router-service';
+import type SessionService from '../../services/session';
 import { fn } from '@ember/helper';
 import { on } from '@ember/modifier';
 import { eq } from '../../utils/template';
@@ -24,6 +25,7 @@ const TABS: Array<{ key: Tab; label: string }> = [
  */
 export default class LogInPage extends Component {
   @service declare router: RouterService;
+  @service declare session: SessionService;
 
   @tracked tab: Tab = 'log-in';
 
@@ -43,9 +45,12 @@ export default class LogInPage extends Component {
     this.tab = 'create-home';
   }
 
+  /** After log-in or sign-up: the home page, or "Choose a home" for several. */
   @action
   goHome(): void {
-    this.router.transitionTo('authenticated.index');
+    this.router.transitionTo(
+      this.session.me ? 'authenticated.index' : 'choose-home',
+    );
   }
 
   <template>

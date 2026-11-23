@@ -51,6 +51,20 @@ module('Unit | Service | current-home | choosing', function (hooks) {
     assert.strictEqual(sessionStorage.getItem(TAB_HOME_KEY), GREEN_HOUSE);
     assert.strictEqual(localStorage.getItem(LAST_HOME_KEY), GREEN_HOUSE);
   });
+
+  test("forget clears this tab's home and the last home", function (assert) {
+    // GIVEN Green House was chosen in this tab
+    // WHEN  the home is forgotten (log-out)
+    // THEN  this tab has no home, and nothing is kept for new tabs
+    const service = currentHome(this.owner);
+    service.choose(GREEN_HOUSE);
+
+    service.forget();
+
+    assert.strictEqual(service.homeId, null);
+    assert.strictEqual(sessionStorage.getItem(TAB_HOME_KEY), null);
+    assert.strictEqual(localStorage.getItem(LAST_HOME_KEY), null);
+  });
 });
 
 module('Unit | Service | current-home | refused storage', function (hooks) {
