@@ -81,7 +81,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B13 — A phone or email in the wrong form is refused (422)
 
-- [x] T13.1 integration — `POST …/contact/code` and `PUT …/contact` answer 422 for "not a phone" (parametrised; DELETE's 422 is T4.3)
+- [x] T13.1 integration — `POST …/contact/code` and `PUT …/contact` answer 422 for "not a phone" (parametrised; DELETE's 422 is T4.3) ✅ _(passed on its first run: both bodies use Phase 1's `ContactIn`; kept as each endpoint's one 422)_
 - [x] T13.2 web integration — contact editor shows the field error on 422
 
 ### B14 — Change codes and log-in codes can't stand in for each other

@@ -1455,3 +1455,34 @@ def test_changing_another_homes_members_log_in_answers_404(
     assert response.status_code == 404
     assert response.json()["message"] == "Member not found."
     assert notifier.sent == []
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "body"),
+    [
+        pytest.param("POST", "contact/code", {"contact": "hello"}, id="code"),
+        pytest.param(
+            "PUT", "contact", {"contact": "hello", "code": "123456"}, id="save"
+        ),
+    ],
+)
+def test_a_new_contact_in_the_wrong_form_answers_422(
+    client: TestClient,
+    redis_client: Redis,
+    clock: MovableClock,
+    method: str,
+    path: str,
+    body: dict[str, Any],
+) -> None:
+    """
+    GIVEN the owner of "Our Flat" added Maruf
+    WHEN  a code is asked for, or a change saved, with "hello" as the contact
+    THEN  it answers 422 with "Enter a phone number or an email."
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+
+    response = client.request(method, f"/api/v1/members/{member_id}/{path}", json=body)
+
+    assert response.status_code == 422
+    assert "Enter a phone number or an email." in response.json()["errors"][0]
