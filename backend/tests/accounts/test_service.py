@@ -1360,3 +1360,22 @@ def test_adding_an_email_keeps_the_phone(
 
     person = person_of(session, member)
     assert (person.phone, person.email) == (MARUF_E164, MARUF_EMAIL)
+
+
+def test_changing_the_phone_replaces_the_old_one(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678
+    WHEN  the owner changes it to 01912 345678 with the code sent to it
+    THEN  the old phone finds nobody, and the new one finds Maruf
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    change_with_code(
+        session, redis_client, notifier, clock, owner, member, phone("+8801912345678")
+    )
+
+    assert service.find_person(session, phone(MARUF_E164)) is None
+    found = service.find_person(session, phone("+8801912345678"))
+    assert found is not None and found.id == member.person_id
