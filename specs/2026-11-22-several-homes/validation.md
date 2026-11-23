@@ -63,9 +63,9 @@ case), which B1, B3 and B4 below supersede.
 - B14 — A request naming a home the person isn't active in is refused (403)
   and says nothing about that home, whether it exists or not. [backend]
 - B15 — Someone removed from the home a tab is showing, while still active
-  in another, sees "You're no longer a member of <home>" and the tab moves
-  to their other home, or to "Choose a home" if they have several left; they
-  stay logged in. [backend] [web]
+  in another, is taken to "Choose a home" with "You're no longer a member of
+  <home>", even when only one home is left; they stay logged in. [backend]
+  [web]
 - B16 — Someone removed from their last active home is logged out at once,
   even in a tab that is open, and logging in again gets "Not added yet".
   [backend] [web]
@@ -119,8 +119,9 @@ at Gate 2. Group 1 is groundwork and has no tests.
    to Green House. Reload tab 1: still Our Flat. Open a third tab: Green
    House. Log out in tab 2; tab 1's next click goes to log-in.
 3. **Removed from one home.** With Rabbi's tab on Green House, Karim
-   deactivates Rabbi there. Rabbi's next click shows "You're no longer a
-   member of Green House" and opens Our Flat; Rabbi is still logged in.
+   deactivates Rabbi there. Rabbi's next click shows "Choose a home" with
+   "You're no longer a member of Green House" and only Our Flat to choose;
+   Rabbi is still logged in.
 4. **Widths.** "Choose a home", the shell's home menu and Members at
    **320px, 768px and 1280px**, in the light scheme (the design's only one):
    no horizontal page scroll, long home names wrap or are cut with an

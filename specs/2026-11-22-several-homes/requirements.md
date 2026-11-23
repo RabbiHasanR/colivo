@@ -56,7 +56,7 @@ Technical rules: [tech-stack.md](../tech-stack.md); schema:
 - Each browser tab keeps its own home; a new tab opens on the last home
   chosen.
 - Removed from the home a tab shows while still active in another: the tab
-  moves to another home and the person stays logged in.
+  goes to "Choose a home" with a notice, and the person stays logged in.
 - `/security-review` of the branch, including Phase 1's deferred 22 Nov web
   changes (the restyle, log-in tabs, the add-or-edit card, and the 403 role
   re-check in `data/handlers/error-watch.ts` / `session.recheckRole`).
@@ -141,8 +141,10 @@ Who: the API, for every logged-in request.
   with 409 "Choose a home" and changes nothing.
 - A home the person isn't active in (deactivated meanwhile, or never a
   member): 403 "You're no longer a member of this home", which says nothing
-  about whether that home exists. The web then moves the tab to another of
-  their homes, or the picker.
+  about whether that home exists. The web then takes the tab to "Choose a
+  home" with "You're no longer a member of <home>", even when only one home
+  is left (agreed 23 Nov 2026 at group 3's design sketch: the person sees why
+  and confirms where they are, and no home page notice is needed).
 - No active home at all: 401, logged out at once (Phase 1's FR-80 rule).
 - Endpoints that need no home: health, `/auth/*`, `GET /me/homes`.
 

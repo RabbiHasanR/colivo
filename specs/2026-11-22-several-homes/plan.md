@@ -140,8 +140,8 @@ for choosing a home`.
 - `web/app/data/builders/{auth,me}.ts`: `LogInOut`; `getMyHomes()`.
 - `web/app/services/session.ts`: log-in with one home chooses it; with
   several, goes to `choose-home`; `logOut()` also calls
-  `currentHome.forget()`; `not_in_home` → notice, then the other home or
-  the picker.
+  `currentHome.forget()`; `not_in_home` → "Choose a home" with the notice, even with one home
+  left.
 - Routes and templates: `web/app/routes/choose-home.ts` and
   `web/app/templates/choose-home.gts` (outside `authenticated`, which would
   loop: its guard reads `GET /me/homes`, 401 → log-in);
@@ -167,7 +167,7 @@ for choosing a home`.
   second page of the same browser context switches to the other home; the
   first page reloads and still shows its own home. The second owner then
   deactivates the first in their home, and the first page's next request
-  shows "You're no longer a member of …" and opens the remaining home.
+  shows "Choose a home" with "You're no longer a member of …".
 
 ## 4. Verify and document
 
