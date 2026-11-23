@@ -303,6 +303,37 @@ def test_log_in_with_one_home_returns_it(
     assert [home.name for home in answer.homes] == ["Our Flat"]
 
 
+def test_log_in_with_several_homes_lists_them_without_me(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN 01712 345678 owns "Our Flat" (Mirpur) and is a member of "Old Fort"
+    WHEN  they log in with a new code
+    THEN  the answer lists both homes by name, with area and role, and
+          chooses none
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area=None, first_month=date(2026, 1, 1)
+    )
+    session.add(Membership(home_id=old_fort.id, person_id=owner.person_id, name="R"))
+    session.flush()
+    clock.advance(timedelta(minutes=2))
+    contact = Contact(channel=Channel.SMS, value=PHONE_E164)
+    code = codes.issue_code(redis_client, contact, clock())
+
+    _, answer = service.log_in(
+        session, redis_client, LogInIn(contact=contact, code=code), clock()
+    )
+
+    homes = [(home.name, home.area, home.role) for home in answer.homes]
+    assert homes == [
+        ("Old Fort", None, Role.MEMBER),
+        ("Our Flat", "Mirpur", Role.OWNER),
+    ]
+    assert answer.me is None
+
+
 def add_inactive_member(session: Session, phone: str) -> None:
     """Make ``phone`` a deactivated member of "Old Flat"."""
     person = Person(phone=phone)

@@ -15,6 +15,38 @@ NOT_LOGGED_IN = "Log in first."
 NOT_ALLOWED = "Your role can't do this."
 
 
+def current_person(
+    request: Request, session: SessionDep, redis_client: RedisDep, clock: ClockDep
+) -> Person:
+    """Return the logged-in person (a FastAPI dependency), whatever home.
+
+    A person who is active in no home is logged out: they were deactivated
+    from their last home (FR-80).
+
+    Args:
+        request: The request, carrying the session cookie.
+        session: The database session.
+        redis_client: Where sessions are kept.
+        clock: The app's clock.
+
+    Returns:
+        The person.
+
+    Raises:
+        HTTPException: 401 without a live session or an active home.
+    """
+    token = request.cookies.get(SESSION_COOKIE)
+    person_id = token and sessions.read_session(redis_client, token, clock())
+    person = person_id and session.get(Person, person_id)
+    if not person or not service.active_homes(session, person):
+        raise HTTPException(401, NOT_LOGGED_IN)
+    return person
+
+
+# The logged-in person, for endpoints that need no home: `CurrentPersonDep`.
+CurrentPersonDep = Annotated[Person, Depends(current_person)]
+
+
 def current_membership(
     request: Request, session: SessionDep, redis_client: RedisDep, clock: ClockDep
 ) -> Membership:

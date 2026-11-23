@@ -3,7 +3,12 @@ import uuid
 from fastapi import Request, Response
 from starlette.exceptions import HTTPException
 
-from app.api.deps import CurrentMemberDep, OwnerDep, OwnerOrManagerDep
+from app.api.deps import (
+    CurrentMemberDep,
+    CurrentPersonDep,
+    OwnerDep,
+    OwnerOrManagerDep,
+)
 from app.core.clock import ClockDep
 from app.core.config import settings
 from app.core.database import SessionDep
@@ -20,6 +25,7 @@ from app.modules.accounts.schemas import (
     CodeRequestIn,
     CodeSentOut,
     DeactivateIn,
+    HomeChoiceOut,
     LogInIn,
     LogInOut,
     MemberIn,
@@ -143,6 +149,19 @@ def get_me(
     set_response_message(request, "Logged in")
     response.status_code = 200
     return service.get_me(session, membership)
+
+
+@router.get("/me/homes")
+def my_homes(
+    request: Request,
+    response: Response,
+    person: CurrentPersonDep,
+    session: SessionDep,
+) -> list[HomeChoiceOut]:
+    """The logged-in person's active homes, to choose one; needs no home."""
+    set_response_message(request, "Your homes")
+    response.status_code = 200
+    return service.active_homes(session, person)
 
 
 @router.get("/members")

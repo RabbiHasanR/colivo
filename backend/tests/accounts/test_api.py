@@ -13,7 +13,13 @@ from app.core.notifier import Channel
 from app.modules.accounts import codes, sessions
 from app.modules.accounts.constants import SESSION_COOKIE
 from app.modules.accounts.contact import Contact
-from app.modules.accounts.models import Membership, MembershipPeriod, Person, Role
+from app.modules.accounts.models import (
+    Membership,
+    MembershipPeriod,
+    MembershipStatus,
+    Person,
+    Role,
+)
 from app.modules.homes import service as homes_service
 from tests.conftest import FakeNotifier, MovableClock
 
@@ -925,3 +931,35 @@ def test_person_in_two_homes_chooses_one_after_log_in(
     assert unnamed.json()["data"] == {"reason": "choose_home"}
     me = named.json()["data"]
     assert (me["home"]["name"], me["membership"]["role"]) == ("Old Fort", "member")
+
+
+def test_my_homes_lists_active_homes_without_a_header(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat", is a member of "Old Fort", and was a member
+          of "Green House" (deactivated)
+    WHEN  he asks for his homes, naming none
+    THEN  it lists Old Fort and Our Flat with his role, and not Green House
+    """
+    sign_up_owner(client, redis_client, clock)
+    rabbi_joins_old_fort(session)
+    person = session.exec(select(Person).where(Person.phone == PHONE_E164)).one()
+    green_house = homes_service.create_home(
+        session, name="Green House", area=None, first_month=date(2026, 1, 1)
+    )
+    session.add(
+        Membership(
+            home_id=green_house.id,
+            person_id=person.id,
+            name="Rabbi",
+            status=MembershipStatus.INACTIVE,
+        )
+    )
+    session.flush()
+
+    response = client.get("/api/v1/me/homes")
+
+    assert response.status_code == 200
+    homes = [(home["name"], home["role"]) for home in response.json()["data"]]
+    assert homes == [("Old Fort", "member"), ("Our Flat", "owner")]
