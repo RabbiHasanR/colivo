@@ -151,3 +151,23 @@ class MeOut(BaseModel):
     person: MePersonOut
     membership: MeMembershipOut
     home: MeHomeOut
+
+
+class HomeChoiceOut(BaseModel):
+    """One of the person's active homes, for choosing or switching homes."""
+
+    id: uuid.UUID
+    name: str
+    area: str | None
+    # The person's role in that home.
+    role: Role
+
+
+class LogInOut(BaseModel):
+    """The answer to a log-in: the person's homes, and ``me`` for one home.
+
+    With several homes, ``me`` is None and the client asks which home.
+    """
+
+    homes: list[HomeChoiceOut]
+    me: MeOut | None = None

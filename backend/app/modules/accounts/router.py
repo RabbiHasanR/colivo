@@ -21,6 +21,7 @@ from app.modules.accounts.schemas import (
     CodeSentOut,
     DeactivateIn,
     LogInIn,
+    LogInOut,
     MemberIn,
     MemberOut,
     MemberUpdateIn,
@@ -103,14 +104,17 @@ def log_in(
     session: SessionDep,
     redis_client: RedisDep,
     clock: ClockDep,
-) -> MeOut:
-    """Log in with a phone or email and its one-time code."""
-    membership = service.log_in(session, redis_client, data, clock())
-    token = sessions.create_session(redis_client, membership.person_id, clock())
+) -> LogInOut:
+    """Log in with a phone or email and its one-time code.
+
+    The answer lists the person's homes; ``me`` is set only for one home.
+    """
+    person, answer = service.log_in(session, redis_client, data, clock())
+    token = sessions.create_session(redis_client, person.id, clock())
     set_session_cookie(response, token)
     set_response_message(request, "Logged in")
     response.status_code = 200
-    return service.get_me(session, membership)
+    return answer
 
 
 @router.post("/auth/log-out")

@@ -21,7 +21,9 @@ from app.modules.accounts.models import (
 from app.modules.accounts.schemas import (
     CodeSentOut,
     DeactivateIn,
+    HomeChoiceOut,
     LogInIn,
+    LogInOut,
     MeHomeOut,
     MemberIn,
     MemberOut,
@@ -287,10 +289,38 @@ def log_out(redis_client: Redis, token: str) -> None:
     sessions.end_session(redis_client, token)
 
 
+def active_homes(session: Session, person: Person) -> list[HomeChoiceOut]:
+    """The homes ``person`` is an active member of, by name, with their role.
+
+    Args:
+        session: The database session.
+        person: The person.
+
+    Returns:
+        One row per active home; empty when they are active nowhere.
+    """
+    rows = session.exec(
+        select(Home, Membership.role)
+        .join(Membership, col(Membership.home_id) == col(Home.id))
+        .where(
+            Membership.person_id == person.id,
+            Membership.status == MembershipStatus.ACTIVE,
+        )
+        .order_by(col(Home.name))
+    ).all()
+    return [
+        HomeChoiceOut(id=home.id, name=home.name, area=home.area, role=Role(role))
+        for home, role in rows
+    ]
+
+
 def log_in(
     session: Session, redis_client: Redis, data: LogInIn, now: datetime
-) -> Membership:
-    """Log in with a one-time code (FR-84): into the person's one active home.
+) -> tuple[Person, LogInOut]:
+    """Log in with a one-time code (FR-84).
+
+    A person in one home goes straight to it; with several, the answer
+    lists them and the client asks which one (Phase 1b).
 
     Args:
         session: The database session.
@@ -299,7 +329,8 @@ def log_in(
         now: The current time.
 
     Returns:
-        The person's active membership.
+        The person, for the session, and the answer: their homes, and
+        ``me`` when there is exactly one.
 
     Raises:
         HTTPException: 404 "Not added yet" when the person is active in no
@@ -307,11 +338,15 @@ def log_in(
     """
     codes.use_code(redis_client, data.contact, data.code, now)
     person = find_person(session, data.contact)
-    membership = person and active_membership(session, person)
-    if not membership:
+    homes = active_homes(session, person) if person else []
+    if not person or not homes:
         # Only after the right code, so nobody learns who has an account.
         raise HTTPException(404, NOT_ADDED)
-    return membership
+    me = None
+    if len(homes) == 1:
+        membership = membership_in(session, person, homes[0].id)
+        me = membership and get_me(session, membership)
+    return person, LogInOut(homes=homes, me=me)
 
 
 def add_member(

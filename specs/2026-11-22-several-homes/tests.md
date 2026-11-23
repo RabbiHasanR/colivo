@@ -54,7 +54,7 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 ### B7 — One home: log-in goes straight there
 
-- [x] T7.1 unit — `test_log_in_with_one_home_returns_it` _(changed from `test_log_in_returns_the_active_membership`: `log_in` now returns `LogInOut`)_: `me` is Our Flat, `homes` has one row
+- [x] T7.1 unit — `test_log_in_with_one_home_returns_it` ✅ _(changed from `test_log_in_returns_the_active_membership`: `log_in` now returns `LogInOut`)_: `me` is Our Flat, `homes` has one row
 - [x] T7.2 web acceptance — `log-in-test.ts` › owner logs back in with a one-time code _(changed: the log-in mock answers `LogInOut`; also checks the next `GET /me` sends `X-Colivo-Home` for Our Flat)_
 
 ### B8 — Several homes: log-in shows "Choose a home"

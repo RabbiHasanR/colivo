@@ -281,24 +281,26 @@ def test_sign_up_refused_with_a_wrong_code(
     assert session.exec(select(func.count()).select_from(Home)).one() == 0
 
 
-def test_log_in_returns_the_active_membership(
+def test_log_in_with_one_home_returns_it(
     session: Session, redis_client: Redis, clock: MovableClock
 ) -> None:
     """
-    GIVEN 01712 345678 owns "Our Flat"
+    GIVEN 01712 345678 owns "Our Flat" and no other home
     WHEN  they log in with a new code
-    THEN  their owner membership of Our Flat is the one logged in
+    THEN  the answer is their owner membership of Our Flat, the one home
     """
     owner = sign_up_with_new_code(session, redis_client, clock)
     clock.advance(timedelta(minutes=2))
     contact = Contact(channel=Channel.SMS, value=PHONE_E164)
     code = codes.issue_code(redis_client, contact, clock())
 
-    membership = service.log_in(
+    person, answer = service.log_in(
         session, redis_client, LogInIn(contact=contact, code=code), clock()
     )
 
-    assert membership.id == owner.id
+    assert person.id == owner.person_id
+    assert answer.me is not None and answer.me.membership.id == owner.id
+    assert [home.name for home in answer.homes] == ["Our Flat"]
 
 
 def add_inactive_member(session: Session, phone: str) -> None:
