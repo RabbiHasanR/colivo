@@ -1464,3 +1464,31 @@ def test_removing_one_they_dont_have_is_refused(
         400,
         "They have no email to remove.",
     )
+
+
+def test_a_code_for_the_phone_they_already_have_is_refused(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678
+    WHEN  the owner asks for a code to change it to 01812 345678
+    THEN  it is refused with 400, and no code is sent
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    with pytest.raises(HTTPException) as refused:
+        service.request_member_contact_code(
+            session,
+            redis_client,
+            notifier,
+            owner,
+            member.id,
+            phone(MARUF_E164),
+            clock(),
+        )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        400,
+        "That's already their phone or email.",
+    )
+    assert notifier.sent == []

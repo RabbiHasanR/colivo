@@ -67,6 +67,7 @@ ALREADY_ACTIVE = "This member is already active."
 DEACTIVATE_BEFORE_STAY = "Deactivation can't start before their stay began."
 LAST_CONTACT = "They need a phone or an email to log in."
 CONTACT_TAKEN = "Someone else logs in with that phone or email."
+SAME_CONTACT = "That's already their phone or email."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -939,7 +940,12 @@ def request_contact_code(
     Returns:
         How the code was sent, how long it works and when a new one can be
         sent.
+
+    Raises:
+        HTTPException: 400 when it is the one they already have.
     """
+    if getattr(person, kind_of(contact)) == contact.value:
+        raise HTTPException(400, SAME_CONTACT)
     return request_code(redis_client, notifier, contact, now)
 
 
