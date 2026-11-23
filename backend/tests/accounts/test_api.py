@@ -1231,3 +1231,29 @@ def test_removing_an_unknown_kind_of_contact_answers_422(
     response = client.delete(f"/api/v1/members/{member_id}/contact/fax")
 
     assert response.status_code == 422
+
+
+def test_saving_a_contact_with_a_wrong_code_answers_400_and_changes_nothing(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN a code was sent to maruf@example.com for Maruf
+    WHEN  PUT /api/v1/members/{id}/contact is sent with another code
+    THEN  it answers 400 "wrong" with 4 tries left, and Maruf has no email
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    client.post(
+        f"/api/v1/members/{member_id}/contact/code", json={"contact": MARUF_EMAIL}
+    )
+    wrong = "000000" if notifier.last_code_to(MARUF_EMAIL) != "000000" else "111111"
+
+    response = client.put(
+        f"/api/v1/members/{member_id}/contact",
+        json={"contact": MARUF_EMAIL, "code": wrong},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["data"] == {"reason": "wrong", "tries_left": 4}
+    listed = client.get("/api/v1/members").json()["data"]
+    assert [each["email"] for each in listed if each["id"] == member_id] == [None]

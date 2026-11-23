@@ -42,7 +42,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B6 — Wrong, expired and too many codes are refused as on log-in
 
-- [x] T6.1 integration — `PUT /members/{id}/contact` with a wrong code answers 400 with tries left and changes nothing
+- [x] T6.1 integration — `PUT /members/{id}/contact` with a wrong code answers 400 with tries left and changes nothing ✅ _(passed on its first run: the save checks the code first, with log-in's `use_code`)_
 - [ ] T6.2 unit — expiry, the lock after 5, and the send limits _(pinned by Phase 1's `test_codes.py`; the scope doesn't change them, and B14 tests what it adds)_
 - [x] T6.3 web integration — contact editor shows why a code was refused, with tries left
 
