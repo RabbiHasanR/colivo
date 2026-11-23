@@ -1098,3 +1098,19 @@ def test_role_follows_the_chosen_home(
     assert in_our_flat.status_code == 200
     assert in_old_fort.status_code == 403
     assert in_old_fort.json().get("data") is None
+
+
+def test_home_header_that_is_not_an_id_answers_422(
+    client: TestClient, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat"
+    WHEN  a request names the home "our-flat", which isn't a home id
+    THEN  it answers 422, saying which header is wrong
+    """
+    sign_up_owner(client, redis_client, clock)
+
+    response = client.get("/api/v1/me", headers={HOME_HEADER: "our-flat"})
+
+    assert response.status_code == 422
+    assert "x-colivo-home" in response.json()["errors"][0].lower()

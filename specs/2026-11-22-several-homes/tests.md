@@ -118,7 +118,7 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 ### B18 — A malformed home id: 422
 
-- [x] T18.1 integration — `test_home_header_that_is_not_an_id_answers_422`
+- [x] T18.1 integration — `test_home_header_that_is_not_an_id_answers_422` ✅ _(passed on its first run: FastAPI checks the `uuid.UUID` header type; seen failing with the header read as text, which reached the database)_
 
 ### B19 — The browser may send the home header, only from the web app
 
