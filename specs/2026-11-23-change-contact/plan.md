@@ -32,7 +32,8 @@ Docs and constants only. Commit: `chore: add phase 1c groundwork`.
 
 ## 2. The owner or a manager changes a member's log-in (slice 1)
 
-- **Behaviours:** B1–B19.
+- **Behaviours:** B1–B18 (B19 dropped while building: the members list
+  shows no phone or email).
 - **Acceptance:**
   - Backend: `backend/tests/accounts/test_api.py::test_owner_adds_an_email_to_a_member_with_a_code`.
   - Web: `web/tests/acceptance/members-test.ts` › owner adds an email to a
@@ -102,8 +103,6 @@ Docs and constants only. Commit: `chore: add phase 1c groundwork`.
   `members-page.gts`): the contact editor under Name and Joined on, from the
   member's `contact_editable`, with "Only they can change their log-in, from
   My profile." when false.
-- `web/app/components/members/member-list.gts`: phone with the email under
-  it when both exist (B19).
 - Tests: `web/tests/integration/components/contact/contact-editor-test.gts`,
   `web/tests/integration/components/members/{edit-member-form,member-list}-test.gts`,
   `web/tests/acceptance/members-test.ts`; MSW handlers and factories in

@@ -116,6 +116,6 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 - [x] T18.1 unit — `test_a_phone_taken_while_saving_answers_409` ✅ (a `before_flush` hook on the test session commits a rival person with that phone from a second connection; the test deletes the rival afterwards)
 
-### B19 — The members list shows the phone with the email under it
+### B19 — The members list shows the phone with the email under it _(dropped)_
 
-- [x] T19.1 web integration — a member with both shows the phone, then the email under it
+- [ ] T19.1 web integration — a member with both shows the phone, then the email under it _(B19 dropped on 23 Nov 2026: the members list shows no phone or email in `WebMembers.html`; they are on the Edit tab)_

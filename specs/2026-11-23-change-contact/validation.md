@@ -62,8 +62,8 @@ recorded in this phase. Phase 1 and 1b behaviours still hold.
   who, when, and the old and new value. [backend]
 - B18 — If two changes to the same new phone or email arrive at the same
   moment, one is saved and the other is told it is taken. [backend]
-- B19 — The members list shows a member's phone with their email under it
-  when they have both. [web]
+- B19 — _Dropped on 23 Nov 2026, while building group 2: the members list
+  shows no phone or email (`WebMembers.html`); they are on the Edit tab._
 
 ### My profile
 
@@ -117,8 +117,8 @@ groundwork and has no tests.
 1. **End-to-end walkthrough against the design.** Sign up as Rabbi with a
    phone and create "Our Flat" (`colivo-design/web/WebAuth.html`). Add
    Maruf by phone (`WebMembers.html`). On Maruf's Edit tab, add an email:
-   Send code, type the code from the outbox, Save; the row shows his phone
-   with the email under it. Log out; log in as Maruf with the email, then
+   Send code, type the code from the outbox, Save; the Edit tab shows his
+   phone and email. Log out; log in as Maruf with the email, then
    with the phone. Open My profile from the sidebar name
    (`WebProfile.html`), change the phone, confirm the code; the old phone now
    gets "Not added yet". Remove the email; Remove is gone from the phone.
