@@ -16,6 +16,7 @@ export function member(fields: Partial<Member> = {}): Member {
     role: 'member',
     status: 'active',
     joined_on: '2026-11-21',
+    contact_editable: true,
     ...fields,
   };
 }

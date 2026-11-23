@@ -800,6 +800,257 @@
         }
       }
     },
+    "/api/v1/members/{member_id}/contact/code": {
+      "post": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Request Member Contact Code",
+        "description": "Send a code to a member's new phone or email, to confirm it.",
+        "operationId": "request_member_contact_code_api_v1_members__member_id__contact_code_post",
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Member Id"
+            }
+          },
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeRequestIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeSentOut_"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeErrorOut_"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeErrorOut_"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/members/{member_id}/contact": {
+      "put": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Set Member Contact",
+        "description": "Save a member's new phone or email with the code sent to it.",
+        "operationId": "set_member_contact_api_v1_members__member_id__contact_put",
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Member Id"
+            }
+          },
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactChangeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_MemberOut_"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeErrorOut_"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_CodeErrorOut_"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/members/{member_id}/contact/{channel}": {
+      "delete": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Remove Member Contact",
+        "description": "Stop a member logging in with their phone or their email.",
+        "operationId": "remove_member_contact_api_v1_members__member_id__contact__channel__delete",
+        "parameters": [
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Member Id"
+            }
+          },
+          {
+            "name": "channel",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ContactKind"
+            }
+          },
+          {
+            "name": "X-Colivo-Home",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Colivo-Home"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_MemberOut_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/home/setup": {
       "get": {
         "tags": [
@@ -964,6 +1215,34 @@
         ],
         "title": "Contact",
         "description": "A phone (E.164) or an email address (lower case), and how to reach it."
+      },
+      "ContactChangeIn": {
+        "properties": {
+          "contact": {
+            "type": "string",
+            "description": "A phone number or an email"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contact",
+          "code"
+        ],
+        "title": "ContactChangeIn",
+        "description": "A new phone or email to log in with, and the code sent to it (Phase 1c)."
+      },
+      "ContactKind": {
+        "type": "string",
+        "enum": [
+          "phone",
+          "email"
+        ],
+        "title": "ContactKind",
+        "description": "Which way to log in a change is about: the phone or the email."
       },
       "DeactivateIn": {
         "properties": {
@@ -1376,6 +1655,10 @@
               }
             ],
             "title": "Joined On"
+          },
+          "contact_editable": {
+            "type": "boolean",
+            "title": "Contact Editable"
           }
         },
         "type": "object",
@@ -1386,7 +1669,8 @@
           "email",
           "role",
           "status",
-          "joined_on"
+          "joined_on",
+          "contact_editable"
         ],
         "title": "MemberOut",
         "description": "A member of the home, for the owner and managers' members list."
