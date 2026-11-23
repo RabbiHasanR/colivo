@@ -163,4 +163,29 @@ module('Integration | Component | contact/contact-editor', function (hooks) {
       .dom('[data-test-contact-row="email"] [data-test-code-error]')
       .hasText("That code isn't right. 4 tries left.");
   });
+
+  test('says when someone else logs in with that phone or email', async function (assert) {
+    // GIVEN the API answers 409: the right code, but the email is taken
+    // WHEN  the owner saves Maruf's new email with the code
+    // THEN  the email row says someone else logs in with it
+    const taken = 'Someone else logs in with that phone or email.';
+    worker.use(
+      http.post('*/api/v1/members/:id/contact/code', () =>
+        HttpResponse.json(codeSentBody),
+      ),
+      http.put('*/api/v1/members/:id/contact', () =>
+        HttpResponse.json(
+          { success: false, message: taken, errors: [taken] },
+          { status: 409 },
+        ),
+      ),
+    );
+    await renderFor(this, { phone: MARUF.phone, email: null });
+
+    await confirmWith('email', 'rabbi@example.com', '123456');
+
+    assert
+      .dom('[data-test-contact-row="email"] [data-test-contact-error]')
+      .hasText(taken);
+  });
 });

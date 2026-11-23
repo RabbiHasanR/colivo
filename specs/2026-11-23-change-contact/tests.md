@@ -50,7 +50,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 - [x] T7.1 integration — `PUT` with the right code for someone else's phone answers 409 and changes nothing ✅
 - [x] T7.2 integration — `POST …/contact/code` answers the same for someone else's phone as for a free one ✅ _(passed on its first run: it pins that the code request never checks who has the phone)_
-- [x] T7.3 web integration — contact editor shows "Someone else logs in with that phone or email."
+- [x] T7.3 web integration — contact editor shows "Someone else logs in with that phone or email." ✅
 
 ### B8 — Changing to what they already have is refused
 
