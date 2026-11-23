@@ -67,7 +67,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B10 — A manager can't change the owner's, a member can't change anyone's
 
-- [x] T10.1 integration — the three endpoints answer 403 for a manager on the owner and for a member (parametrised)
+- [x] T10.1 integration — the three endpoints answer 403 for a manager on the owner and for a member (parametrised) ✅
 - [ ] T10.2 web integration — Edit hidden for the owner's row from a manager _(Phase 1's `member-list-test.gts` pins `canEditDetails`)_
 
 ### B11 — Another home's member can't be changed and isn't revealed

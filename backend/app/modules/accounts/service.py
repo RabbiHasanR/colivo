@@ -1027,6 +1027,8 @@ def contact_refusal(
     Returns:
         The refusal to raise, or None.
     """
+    if member.role == Role.OWNER and editor.role != Role.OWNER:
+        return HTTPException(403, OWNER_DETAILS_FOR_OWNER)
     yourself = editor.person_id == member.person_id
     if not yourself and in_another_home(session, member):
         return HTTPException(403, ONLY_THEY_CAN)

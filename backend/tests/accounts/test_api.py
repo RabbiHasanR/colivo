@@ -1391,3 +1391,37 @@ def test_members_list_says_whose_log_in_can_be_changed(
         "joined_on",
         "contact_editable",
     }
+
+
+def owner_membership_id(client: TestClient) -> str:
+    """The logged-in owner's own member id."""
+    return client.get("/api/v1/me").json()["data"]["membership"]["id"]
+
+
+@pytest.mark.parametrize("caller", [Role.MANAGER, Role.MEMBER])
+@pytest.mark.parametrize(("method", "path", "body"), CONTACT_CALLS)
+def test_a_manager_cant_change_the_owners_log_in_nor_a_member_anyones(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    caller: Role,
+    method: str,
+    path: str,
+    body: dict[str, Any] | None,
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat"
+    WHEN  a manager or a member asks for a code, saves or removes his log-in
+    THEN  it answers 403, and nothing is sent
+    """
+    sign_up_owner(client, redis_client, clock)
+    owner_id = owner_membership_id(client)
+    log_in_as_new(client, session, redis_client, clock, role=caller)
+    notifier.sent.clear()
+
+    response = client.request(method, f"/api/v1/members/{owner_id}/{path}", json=body)
+
+    assert response.status_code == 403
+    assert notifier.sent == []
