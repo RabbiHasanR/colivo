@@ -61,7 +61,7 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 - [x] T8.1 unit — `test_log_in_with_several_homes_lists_them_without_me` ✅ _(passed on its first run: B7's `log_in` already handled several homes; seen failing by filling `me` for any number of homes)_: homes by name, each with area and role; `me` is null
 - [x] T8.2 integration — `test_my_homes_lists_active_homes_without_a_header` ✅: `GET /me/homes` needs no header and leaves out a home where they're inactive
-- [x] T8.3 web integration — `homes/home-picker-test.gts` › lists each home's name, area and role, and chooses the tapped one
+- [x] T8.3 web integration — `homes/home-picker-test.gts` › lists each home's name, area and role, and chooses the tapped one ✅
 - [ ] T8.4 web acceptance — _(skipped: the group's web acceptance test is this journey)_
 
 ### B9 — First log-in check per home

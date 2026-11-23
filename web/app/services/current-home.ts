@@ -10,6 +10,7 @@ export const LAST_HOME_KEY = 'colivo:last-home';
 
 // For components, which don't import the data layer.
 export type { Setup, SetupStep } from '../data/builders/home';
+export type { HomeChoice } from '../data/builders/me';
 
 /** Reads a stored home id; storage can be refused (a private window). */
 function readHome(storage: () => Storage, key: string): string | null {
