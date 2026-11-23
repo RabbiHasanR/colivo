@@ -34,6 +34,8 @@ interface Row {
   value: string;
   /** Why the API refused this row, other than its code. */
   message: string | null;
+  /** Something new was typed, so a code can be sent to it. */
+  changed: boolean;
 }
 
 /**
@@ -60,7 +62,9 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
     const label = this.args[kind] === null ? `${name} (optional)` : name;
     const message =
       this.refused?.kind === kind ? this.refused.refusal.message : null;
-    return { kind, label, value: this.valueOf(kind), message };
+    const value = this.valueOf(kind);
+    const changed = value.trim() !== '' && value !== (this.args[kind] ?? '');
+    return { kind, label, value, message, changed };
   }
 
   valueOf(kind: ContactKind): string {
@@ -165,7 +169,7 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
                 @onUseDifferentContact={{this.stopConfirming}}
               />
             {{/if}}
-          {{else}}
+          {{else if row.changed}}
             <Button
               type="submit"
               @variant="secondary"

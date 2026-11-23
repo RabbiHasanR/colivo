@@ -188,4 +188,18 @@ module('Integration | Component | contact/contact-editor', function (hooks) {
       .dom('[data-test-contact-row="email"] [data-test-contact-error]')
       .hasText(taken);
   });
+
+  test('offers Send code only once the value differs from the current one', async function (assert) {
+    // GIVEN Maruf logs in with +8801812345678
+    // WHEN  his phone is shown, then changed, then typed back as it was
+    // THEN  Send code shows only while the typed phone is a new one
+    await renderFor(this, { phone: MARUF.phone, email: null });
+    const sendPhone = '[data-test-contact-send-code="phone"]';
+
+    assert.dom(sendPhone).doesNotExist();
+    await fillIn('[data-test-contact-input="phone"]', '+8801912345678');
+    assert.dom(sendPhone).exists();
+    await fillIn('[data-test-contact-input="phone"]', '+8801812345678');
+    assert.dom(sendPhone).doesNotExist();
+  });
 });

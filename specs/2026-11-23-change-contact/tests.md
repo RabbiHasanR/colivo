@@ -55,7 +55,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 ### B8 — Changing to what they already have is refused
 
 - [x] T8.1 unit — `test_a_code_for_the_phone_they_already_have_is_refused` ✅ (400, nothing sent)
-- [x] T8.2 web integration — contact editor offers Send code only once the value differs from the current one
+- [x] T8.2 web integration — contact editor offers Send code only once the value differs from the current one ✅
 
 ### B9 — Not for a member who is also in another home
 
