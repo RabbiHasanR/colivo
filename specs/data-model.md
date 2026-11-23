@@ -322,7 +322,7 @@ keepers point to `membership`, never to `person`.
 Why: a person who leaves one home and joins another keeps one login, while
 each home's records stay separate (FR-85, NFR-03). "One active home per
 person" is a partial unique index on `person_id` for active (later also
-notice-served) memberships. _Phase 1b replaces this rule: a person may be active in several homes (decided 21 Nov 2026); see [Current home per request](#current-home-per-request-agreed-22-nov-2026)._
+notice-served) memberships. _Phase 1b replaced this rule (built 23 Nov 2026): a person may be active in several homes; see [Current home per request](#current-home-per-request-agreed-22-nov-2026)._
 
 **The name is on `membership`** _(settled at Phase 1 Gate 0, 21 Nov 2026)_:
 each home names its own member when adding them, and "unique among a home's
@@ -625,7 +625,7 @@ The tenant. Every home-owned table points here.
 
 ### membership _(Phase 1, built)_
 
-_Phase 1b, planned: one index change, no column change (below)._
+_Phase 1b, built: one index change, no column change (below), in `a8f729dfae84_several_homes`._
 
 A person in one home. Everything in a home points here, never to `person`.
 
@@ -643,13 +643,13 @@ A person in one home. Everything in a home points here, never to `person`.
 CHECK `role <> 'owner' OR status = 'active'`: the owner can't be
 deactivated.
 
-| Index                                                             | Serves                                                                                                                                            |
-| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `membership(home_id, person_id)` UNIQUE                           | The members list per home; one membership per person per home, so a returning member is reactivated                                               |
-| `membership(person_id) WHERE status = 'active'` UNIQUE            | One active home per person (FR-85). _(Phase 1b, planned: dropped, `uq_membership_active_person_id`)_                                              |
-| `membership(person_id) WHERE status = 'active'`                   | A person's active homes: log-in, the home picker and switcher, the `X-Colivo-Home` check. _(Phase 1b, planned: `ix_membership_active_person_id`)_ |
-| `membership(home_id) WHERE role = 'owner'` UNIQUE                 | Exactly one owner per home (FR-63)                                                                                                                |
-| `membership(home_id, lower(name)) WHERE status = 'active'` UNIQUE | Names unique among active members, ignoring case (FR-04)                                                                                          |
+| Index                                                             | Serves                                                                                                                                          |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `membership(home_id, person_id)` UNIQUE                           | The members list per home; one membership per person per home, so a returning member is reactivated                                             |
+| `membership(person_id) WHERE status = 'active'` UNIQUE            | One active home per person (FR-85). _(Phase 1b, built: dropped, `uq_membership_active_person_id`)_                                              |
+| `membership(person_id) WHERE status = 'active'`                   | A person's active homes: log-in, the home picker and switcher, the `X-Colivo-Home` check. _(Phase 1b, built: `ix_membership_active_person_id`)_ |
+| `membership(home_id) WHERE role = 'owner'` UNIQUE                 | Exactly one owner per home (FR-63)                                                                                                              |
+| `membership(home_id, lower(name)) WHERE status = 'active'` UNIQUE | Names unique among active members, ignoring case (FR-04)                                                                                        |
 
 ### membership_period _(Phase 1, built)_
 
@@ -713,3 +713,4 @@ limits and sessions; see
 | Phase 1 (built)        | Built in `e56c6933166b_sign_up`, `d0fcb4a7b7ad_add_members` and `2b0784c0023a_member_status`; constraint names follow the naming convention (`uq_`, `ck_`, `ix_`); the `membership_period(home_id, membership_id, starts_on)` index waits for its first query |
 | Phase 1 (21 Nov 2026)  | Phase 1b planned: a person in several homes replaces "one active home per person" (FR-85), after the security review                                                                                                                                          |
 | Phase 1b (22 Nov 2026) | Planned: drop the unique index on active `membership(person_id)`, add a plain one; the current home travels per request in `X-Colivo-Home`, sessions unchanged. Settles the open question on several homes                                                    |
+| Phase 1b (built)       | Built in `a8f729dfae84_several_homes`: `uq_membership_active_person_id` dropped, `ix_membership_active_person_id` (partial, not unique) added; Phase 1 data migrates unchanged                                                                                |

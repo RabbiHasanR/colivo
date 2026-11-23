@@ -71,6 +71,12 @@ and to the Redis list `dev:outbox`. To sign up or log in:
 Put `SESSION_COOKIE_SECURE=false` in `.env` so the browser keeps the session
 cookie on `http://localhost`. Production refuses to start with `NOTIFIER=log`.
 
+To try a person in several homes, sign up two owners with two phones, and
+have each add a third phone to their home. That person's log-in shows
+"Choose a home"; the home name in the sidebar switches homes. Use separate
+browsers (or a private window) for the three people, since one browser keeps
+one log-in.
+
 ## Everyday commands
 
 Run `make` to list every target. The ones you'll use most:

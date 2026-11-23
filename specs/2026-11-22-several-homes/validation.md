@@ -79,7 +79,11 @@ case), which B1, B3 and B4 below supersede.
 
 ### Security review follow-ups
 
-_Added after `/security-review` (group 4), with the user's OK._
+None. The `/security-review` of 23 Nov 2026 (the branch, and Phase 1's
+deferred 22 Nov web changes, `121f0b9` included) found no High or Medium
+finding. Its one product note (anyone can be added to a home, revealing
+nothing about them) is in
+[tech-stack.md → Known limitations](../tech-stack.md#known-limitations).
 
 ## Automated checks
 
