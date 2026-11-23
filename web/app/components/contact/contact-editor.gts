@@ -162,7 +162,7 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
     <div class="flex flex-col gap-3" data-test-contact-editor ...attributes>
       {{#unless @editable}}
         <dl class="flex flex-col gap-2 text-sm">
-          {{#each this.rows as |row|}}
+          {{#each this.rows key="kind" as |row|}}
             <div class="flex flex-col gap-0.5">
               <dt class="text-xs text-muted">{{row.name}}</dt>
               <dd class="break-words" data-test-contact-value={{row.kind}}>{{if
@@ -177,7 +177,7 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
           <p class="text-xs text-muted" data-test-contact-note>{{@note}}</p>
         {{/if}}
       {{/unless}}
-      {{#each this.editableRows as |row|}}
+      {{#each this.editableRows key="kind" as |row|}}
         <form
           class="flex flex-col gap-2"
           data-test-contact-row={{row.kind}}

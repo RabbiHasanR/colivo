@@ -1,5 +1,5 @@
 import { module, test } from 'qunit';
-import { click, fillIn, render } from '@ember/test-helpers';
+import { click, fillIn, render, typeIn } from '@ember/test-helpers';
 import { http, HttpResponse } from 'msw';
 import { setupRenderingTest } from 'colivo-web/tests/helpers';
 import { setupMsw, worker } from 'colivo-web/tests/helpers/msw';
@@ -228,5 +228,17 @@ module('Integration | Component | contact/contact-editor', function (hooks) {
     assert
       .dom('[data-test-contact-row="phone"] [data-test-field-error]')
       .hasText(notValid);
+  });
+
+  test('keeps the field focused while you type', async function (assert) {
+    // GIVEN Maruf's phone in the editor (bug found in the manual check)
+    // WHEN  a new number is typed into it, key by key
+    // THEN  the phone field still has the focus, holding all of it
+    await renderFor(this, { phone: MARUF.phone, email: null });
+
+    await typeIn('[data-test-contact-input="phone"]', '9');
+
+    assert.dom('[data-test-contact-input="phone"]').isFocused();
+    assert.dom('[data-test-contact-input="phone"]').hasValue('+88018123456789');
   });
 });

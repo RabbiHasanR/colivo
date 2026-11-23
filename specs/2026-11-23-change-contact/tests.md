@@ -159,3 +159,10 @@ Web acceptance: `web/tests/acceptance/profile-test.ts` › person changes their 
 - [x] T24.1 integration — logged in on two browsers, a person changes their phone in one: that one still works, the other answers 401 ✅ _(passed on its first run, because the `/me` routes already pass the cookie as `keep_token`; seen failing (401, 401) with `keep_token=None`)_
 - [x] T24.2 integration — removing your own email keeps this browser logged in ✅ _(passed on its first run, because the `/me` routes already pass the cookie as `keep_token`; seen failing (401, 401) with `keep_token=None`)_
 - [ ] T24.3 web — anything on the web _(nothing changes on screen; the web acceptance test shows the page still works after the change)_
+
+## Fixes from the manual check (23 Nov 2026)
+
+Bugs found by hand, each reproduced by a failing test first; the tests stay
+as regression tests ([testing.md → Workflow](../testing.md#workflow)).
+
+- [x] F1 web integration — contact editor keeps the field focused while you type ✅ (`{{#each}}` had no key, so every keystroke rebuilt the row)
