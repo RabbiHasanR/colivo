@@ -122,4 +122,4 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 ### B19 — The browser may send the home header, only from the web app
 
-- [x] T19.1 integration — `tests/core/test_cors.py::test_preflight_allows_the_home_header`, parametrised: the web app's origin → allowed; another origin → refused
+- [x] T19.1 integration — `tests/core/test_api.py::test_preflight_allows_the_home_header` ✅ _(in `test_api.py`, beside Phase 1's CORS tests, not a new `test_cors.py`)_, parametrised: the web app's origin → allowed; another origin → refused
