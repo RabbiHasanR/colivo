@@ -46,6 +46,10 @@ interface Row {
   changed: boolean;
   /** The design's hint in an empty field. */
   placeholder: string;
+  /** Beside the field: "Send code" for something new typed… */
+  showSendCode: boolean;
+  /** …or "Remove" while both exist and nothing new is typed. */
+  showRemove: boolean;
 }
 
 // The placeholders colivo-design uses (WebMembers.html, WebProfile.html).
@@ -87,7 +91,20 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
     const value = this.valueOf(kind);
     const changed = value.trim() !== '' && value !== (this.args[kind] ?? '');
     const placeholder = PLACEHOLDERS[kind];
-    return { kind, name, label, value, message, errors, changed, placeholder };
+    const showSendCode = changed && this.confirming !== kind;
+    const showRemove = this.canRemove && !changed;
+    return {
+      kind,
+      name,
+      label,
+      value,
+      message,
+      errors,
+      changed,
+      placeholder,
+      showSendCode,
+      showRemove,
+    };
   }
 
   valueOf(kind: ContactKind): string {
@@ -184,13 +201,31 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
           {{on "submit" (fn this.submit row.kind)}}
         >
           <Field @label={{row.label}} @errors={{row.errors}} as |id|>
-            <TextInput
-              id={{id}}
-              @value={{row.value}}
-              @onInput={{fn this.type row.kind}}
-              placeholder={{row.placeholder}}
-              data-test-contact-input={{row.kind}}
-            />
+            <span class="flex items-center gap-2">
+              <TextInput
+                id={{id}}
+                class="min-w-0 flex-1"
+                @value={{row.value}}
+                @onInput={{fn this.type row.kind}}
+                placeholder={{row.placeholder}}
+                data-test-contact-input={{row.kind}}
+              />
+              {{#if row.showSendCode}}
+                <Button
+                  type="submit"
+                  @variant="secondary"
+                  class="shrink-0"
+                  data-test-contact-send-code={{row.kind}}
+                >Send code</Button>
+              {{else if row.showRemove}}
+                <Button
+                  @variant="danger-link"
+                  class="shrink-0 px-2"
+                  data-test-contact-remove={{row.kind}}
+                  {{on "click" (fn this.remove row.kind)}}
+                >Remove</Button>
+              {{/if}}
+            </span>
           </Field>
           {{#if (eq this.confirming row.kind)}}
             <CodeField
@@ -210,24 +245,9 @@ export default class ContactEditor extends Component<ContactEditorSignature> {
                 @onUseDifferentContact={{this.stopConfirming}}
               />
             {{/if}}
-          {{else if row.changed}}
-            <Button
-              type="submit"
-              @variant="secondary"
-              class="self-start"
-              data-test-contact-send-code={{row.kind}}
-            >Send code</Button>
           {{/if}}
           {{#if row.message}}
             <FormError data-test-contact-error>{{row.message}}</FormError>
-          {{/if}}
-          {{#if this.canRemove}}
-            <Button
-              @variant="danger-link"
-              class="self-start"
-              data-test-contact-remove={{row.kind}}
-              {{on "click" (fn this.remove row.kind)}}
-            >Remove</Button>
           {{/if}}
         </form>
       {{/each}}

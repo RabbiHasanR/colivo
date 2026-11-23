@@ -89,7 +89,7 @@ const API = {
 
 /**
  * Each page: its name, its URL, whether someone is logged in, and what to
- * click first, if anything (a tab).
+ * click (a tab) or fill (a field, as [selector, text]) first, if anything.
  */
 const PAGES = [
   { name: 'log-in', path: '/log-in', loggedIn: false },
@@ -115,6 +115,12 @@ const PAGES = [
     click: '[data-test-edit-member="Maruf"]',
   },
   { name: 'profile', path: '/profile', loggedIn: true },
+  {
+    name: 'profile-new-phone',
+    path: '/profile',
+    loggedIn: true,
+    fill: ['[data-test-contact-input="phone"]', '01912345678'],
+  },
   {
     name: 'member-edit-locked',
     path: '/members',
@@ -185,7 +191,7 @@ async function main() {
   const browser = await chromium.launch();
   try {
     await waitForServer();
-    for (const { name, path, loggedIn, click } of PAGES) {
+    for (const { name, path, loggedIn, click, fill } of PAGES) {
       for (const width of WIDTHS) {
         const page = await browser.newPage({
           viewport: { width, height: 900 },
@@ -193,6 +199,7 @@ async function main() {
         await answerApi(page, loggedIn);
         await page.goto(`${BASE}${path}`, { waitUntil: 'networkidle' });
         if (click) await page.click(click);
+        if (fill) await page.fill(...fill);
         const file = `${OUT}/${name}-${width}.png`;
         await page.screenshot({ path: file, fullPage: true });
         console.log(file);
