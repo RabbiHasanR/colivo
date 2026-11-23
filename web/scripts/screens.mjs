@@ -33,7 +33,7 @@ const homes = [
 ];
 
 const owner = {
-  person: { phone: '+8801712345678' },
+  person: { phone: '+8801712345678', email: null },
   membership: {
     id: 'm1',
     name: 'Rabbi Hasan',

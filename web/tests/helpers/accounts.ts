@@ -23,7 +23,7 @@ export function me(
   membership: Partial<MeMembership> = {},
 ): Me {
   return {
-    person: { phone: '+8801712345678' },
+    person: { phone: '+8801712345678', email: null },
     membership: {
       id: '01a1fd00-0000-7000-8000-000000000002',
       name: role === 'member' ? 'Maruf' : 'Rabbi Hasan',

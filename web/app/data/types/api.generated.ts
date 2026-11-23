@@ -314,6 +314,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/contact/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request My Contact Code
+         * @description Send a code to your new phone or email; needs no home (Phase 1c).
+         */
+        post: operations["request_my_contact_code_api_v1_me_contact_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set My Contact
+         * @description Save your new phone or email with its code; your other browsers log out.
+         */
+        put: operations["set_my_contact_api_v1_me_contact_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/contact/{channel}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove My Contact
+         * @description Stop logging in with your phone or your email; other browsers log out.
+         */
+        delete: operations["remove_my_contact_api_v1_me_contact__channel__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/home/setup": {
         parameters: {
             query?: never;
@@ -540,11 +600,13 @@ export interface components {
         };
         /**
          * MePersonOut
-         * @description The logged-in person's log-in identity.
+         * @description The logged-in person's log-in identity: their phone and email.
          */
         MePersonOut: {
             /** Phone */
             phone: string | null;
+            /** Email */
+            email: string | null;
         };
         /**
          * MeUpdateIn
@@ -746,6 +808,16 @@ export interface components {
             /** Message */
             message: string;
             data?: components["schemas"]["MeOut"] | null;
+            /** Errors */
+            errors?: string[] | null;
+        };
+        /** StandardResponse[MePersonOut] */
+        StandardResponse_MePersonOut_: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            data?: components["schemas"]["MePersonOut"] | null;
             /** Errors */
             errors?: string[] | null;
         };
@@ -1464,6 +1536,139 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StandardResponse_MemberOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_my_contact_code_api_v1_me_contact_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeSentOut_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+        };
+    };
+    set_my_contact_api_v1_me_contact_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactChangeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MePersonOut_"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_CodeErrorOut_"];
+                };
+            };
+        };
+    };
+    remove_my_contact_api_v1_me_contact__channel__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                channel: components["schemas"]["ContactKind"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardResponse_MePersonOut_"];
                 };
             };
             /** @description Validation Error */
