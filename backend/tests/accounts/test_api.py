@@ -1624,3 +1624,172 @@ def test_me_answers_the_persons_phone_and_email(
     me = client.get("/api/v1/me").json()["data"]
 
     assert me["person"] == {"phone": PHONE_E164, "email": "rabbi@example.com"}
+
+
+def test_my_contact_code_goes_to_the_new_email(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678
+    WHEN  POST /api/v1/me/contact/code is sent for rabbi@example.com
+    THEN  it answers 200, and the code goes to the email, not to his phone
+    """
+    sign_up_owner(client, redis_client, clock)
+    notifier.sent.clear()
+
+    response = client.post(
+        "/api/v1/me/contact/code", json={"contact": "rabbi@example.com"}
+    )
+
+    assert response.status_code == 200
+    assert [message.to for message in notifier.sent] == ["rabbi@example.com"]
+
+
+def add_my_email(
+    client: TestClient, notifier: FakeNotifier
+) -> tuple[int, dict[str, Any]]:
+    """The logged-in person adds rabbi@example.com on My profile.
+
+    Returns:
+        The answer's status and body.
+    """
+    client.post("/api/v1/me/contact/code", json={"contact": "rabbi@example.com"})
+    response = client.put(
+        "/api/v1/me/contact",
+        json={
+            "contact": "rabbi@example.com",
+            "code": notifier.last_code_to("rabbi@example.com"),
+        },
+    )
+    return response.status_code, response.json()
+
+
+def test_saving_my_new_email_answers_200_with_both(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678 and has a code for his email
+    WHEN  PUT /api/v1/me/contact is sent with rabbi@example.com and the code
+    THEN  it answers 200 with his phone and his new email
+    """
+    sign_up_owner(client, redis_client, clock)
+
+    status, body = add_my_email(client, notifier)
+
+    assert status == 200
+    assert body["data"] == {
+        "phone": PHONE_E164,
+        "email": "rabbi@example.com",
+    }
+
+
+def test_removing_my_email_answers_200_with_only_the_phone(
+    client: TestClient, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with 01712 345678 and rabbi@example.com
+    WHEN  DELETE /api/v1/me/contact/email is sent
+    THEN  it answers 200 with only his phone
+    """
+    sign_up_owner(client, redis_client, clock)
+    add_my_email(client, notifier)
+
+    response = client.delete("/api/v1/me/contact/email")
+
+    assert response.status_code == 200
+    assert response.json()["data"] == {"phone": PHONE_E164, "email": None}
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "body", "message"),
+    [
+        pytest.param(
+            "POST",
+            "/api/v1/me/contact/code",
+            {"contact": PHONE},
+            "That's already your phone or email.",
+            id="same phone",
+        ),
+        pytest.param(
+            "DELETE",
+            "/api/v1/me/contact/phone",
+            None,
+            "You need a phone or an email to log in.",
+            id="last one",
+        ),
+        pytest.param(
+            "DELETE",
+            "/api/v1/me/contact/email",
+            None,
+            "You have no email to remove.",
+            id="none to remove",
+        ),
+    ],
+)
+def test_my_log_in_refusals_speak_to_me(
+    client: TestClient,
+    redis_client: Redis,
+    clock: MovableClock,
+    method: str,
+    path: str,
+    body: dict[str, Any] | None,
+    message: str,
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with only 01712 345678
+    WHEN  he asks for a code to it, removes it, or removes an email he lacks
+    THEN  it answers 400, worded to him
+    """
+    sign_up_owner(client, redis_client, clock)
+    clock.advance(timedelta(minutes=1))
+
+    response = client.request(method, path, json=body)
+
+    assert (response.status_code, response.json()["message"]) == (400, message)
+
+
+MY_CONTACT_CALLS = [
+    pytest.param("POST", "/api/v1/me/contact/code", {"contact": "hello"}, id="code"),
+    pytest.param(
+        "PUT", "/api/v1/me/contact", {"contact": "hello", "code": "123456"}, id="save"
+    ),
+    pytest.param("DELETE", "/api/v1/me/contact/fax", None, id="remove"),
+]
+
+
+@pytest.mark.parametrize(("method", "path", "body"), MY_CONTACT_CALLS)
+def test_my_log_in_answers_422_for_what_is_not_a_phone_or_email(
+    client: TestClient,
+    redis_client: Redis,
+    clock: MovableClock,
+    method: str,
+    path: str,
+    body: dict[str, Any] | None,
+) -> None:
+    """
+    GIVEN Rabbi Hasan is logged in
+    WHEN  he sends "hello" as a new contact, or removes a "fax"
+    THEN  it answers 422
+    """
+    sign_up_owner(client, redis_client, clock)
+
+    response = client.request(method, path, json=body)
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize(("method", "path", "body"), MY_CONTACT_CALLS)
+def test_my_log_in_needs_a_log_in(
+    client: TestClient, method: str, path: str, body: dict[str, Any] | None
+) -> None:
+    """
+    GIVEN nobody is logged in
+    WHEN  any of the My profile log-in calls is sent
+    THEN  it answers 401
+    """
+    path = path.replace("/fax", "/email")
+    body = body and {"contact": "rabbi@example.com", "code": "123456"}
+
+    response = client.request(method, path, json=body)
+
+    assert response.status_code == 401

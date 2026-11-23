@@ -140,12 +140,12 @@ Web acceptance: `web/tests/acceptance/profile-test.ts` › person changes their 
 
 ### B22 — A person adds, changes or removes their own phone or email, with a code
 
-- [x] T22.1 integration — `POST /me/contact/code` sends the code to the new email, not to the phone
-- [x] T22.2 integration — `PUT /me/contact` with the code answers 200 with the person's phone and new email
-- [x] T22.3 integration — `DELETE /me/contact/email` answers 200 with only the phone
-- [x] T22.4 integration — refusals speak to the person: "That's already your phone or email.", "You need a phone or an email to log in.", "You have no email to remove." (parametrised)
-- [x] T22.5 integration — 422 for "hello" on the code and the save, and for `DELETE /me/contact/fax` (parametrised)
-- [x] T22.6 integration — the three endpoints answer 401 without a log-in (parametrised)
+- [x] T22.1 integration — `POST /me/contact/code` sends the code to the new email, not to the phone ✅
+- [x] T22.2 integration — `PUT /me/contact` with the code answers 200 with the person's phone and new email ✅
+- [x] T22.3 integration — `DELETE /me/contact/email` answers 200 with only the phone ✅
+- [x] T22.4 integration — refusals speak to the person: "That's already your phone or email.", "You need a phone or an email to log in.", "You have no email to remove." (parametrised) ✅
+- [x] T22.5 integration — 422 for "hello" on the code and the save, and for `DELETE /me/contact/fax` (parametrised) ✅ _(passed on its first run: Pydantic, the `ContactKind` path parameter and `CurrentPersonDep` already refuse it; kept as each endpoint's check)_
+- [x] T22.6 integration — the three endpoints answer 401 without a log-in (parametrised) ✅ _(passed on its first run: Pydantic, the `ContactKind` path parameter and `CurrentPersonDep` already refuse it; kept as each endpoint's check)_
 - [ ] T22.7 integration — wrong code, someone else's phone, limits, scoped codes _(same service code as group 2's T6.1, T7.1–T7.2, T14.1–T14.4; rule 7)_
 - [ ] T22.8 web integration — the editor's code, refusal and Remove states _(the same `ContactEditor`, tested in group 2; rule 7)_
 

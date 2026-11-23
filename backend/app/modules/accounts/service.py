@@ -67,8 +67,10 @@ REACTIVATE_TOO_EARLY = "Charges can start again only after their last stay ended
 ALREADY_ACTIVE = "This member is already active."
 DEACTIVATE_BEFORE_STAY = "Deactivation can't start before their stay began."
 LAST_CONTACT = "They need a phone or an email to log in."
+LAST_CONTACT_YOURS = "You need a phone or an email to log in."
 CONTACT_TAKEN = "Someone else logs in with that phone or email."
 SAME_CONTACT = "That's already their phone or email."
+SAME_CONTACT_YOURS = "That's already your phone or email."
 ONLY_THEY_CAN = "Only they can change their log-in, from My profile."
 REACTIVATE_FIRST = "Reactivate them first."
 # Told to a phone or email that no longer logs in.
@@ -999,6 +1001,8 @@ def request_contact_code(
     person: Person,
     contact: Contact,
     now: datetime,
+    *,
+    yourself: bool = False,
 ) -> CodeSentOut:
     """Send a code to a new phone or email for ``person`` to log in with.
 
@@ -1008,6 +1012,7 @@ def request_contact_code(
         person: Whose log-in changes.
         contact: The new phone or email.
         now: The current time.
+        yourself: The person asks on My profile: refusals say "your".
 
     Returns:
         How the code was sent, how long it works and when a new one can be
@@ -1017,7 +1022,7 @@ def request_contact_code(
         HTTPException: 400 when it is the one they already have.
     """
     if getattr(person, kind_of(contact)) == contact.value:
-        raise HTTPException(400, SAME_CONTACT)
+        raise HTTPException(400, SAME_CONTACT_YOURS if yourself else SAME_CONTACT)
     scope = codes.change_scope(person.id)
     return request_code(redis_client, notifier, contact, now, scope)
 
@@ -1234,6 +1239,7 @@ def remove_contact(
     *,
     changed_by: Membership | None = None,
     keep_token: str | None = None,
+    yourself: bool = False,
 ) -> Person:
     """Stop ``person`` logging in with their phone or their email.
 
@@ -1247,6 +1253,7 @@ def remove_contact(
         kind: Which one to remove.
         changed_by: The owner or manager removing it; None for the person.
         keep_token: The caller's session, kept when theirs ends.
+        yourself: The person removes their own: refusals say "you".
 
     Returns:
         The changed person.
@@ -1257,9 +1264,10 @@ def remove_contact(
     """
     removed = getattr(person, kind)
     if removed is None:
-        raise HTTPException(400, f"They have no {kind} to remove.")
+        who = "You have" if yourself else "They have"
+        raise HTTPException(400, f"{who} no {kind} to remove.")
     if getattr(person, other_kind(kind)) is None:
-        raise HTTPException(400, LAST_CONTACT)
+        raise HTTPException(400, LAST_CONTACT_YOURS if yourself else LAST_CONTACT)
     setattr(person, kind, None)
     record_log_in_change(session, person, changed_by, {kind: removed}, {kind: None})
     session.commit()

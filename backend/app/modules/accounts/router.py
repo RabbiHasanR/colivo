@@ -35,6 +35,7 @@ from app.modules.accounts.schemas import (
     MemberOut,
     MemberUpdateIn,
     MeOut,
+    MePersonOut,
     MeUpdateIn,
     ReactivateIn,
     RoleIn,
@@ -366,3 +367,73 @@ def remove_member_contact(
     set_response_message(request, "Log-in changed")
     response.status_code = 200
     return service.member_out(session, member, editor)
+
+
+@router.post("/me/contact/code", responses=CODE_ERRORS)
+def request_my_contact_code(
+    request: Request,
+    response: Response,
+    data: CodeRequestIn,
+    person: CurrentPersonDep,
+    redis_client: RedisDep,
+    notifier: NotifierDep,
+    clock: ClockDep,
+) -> CodeSentOut:
+    """Send a code to your new phone or email; needs no home (Phase 1c)."""
+    sent = service.request_contact_code(
+        redis_client, notifier, person, data.contact, clock(), yourself=True
+    )
+    set_response_message(request, "Code sent")
+    response.status_code = 200
+    return sent
+
+
+@router.put("/me/contact", responses=CODE_ERRORS)
+def set_my_contact(
+    request: Request,
+    response: Response,
+    data: ContactChangeIn,
+    person: CurrentPersonDep,
+    session: SessionDep,
+    redis_client: RedisDep,
+    notifier: NotifierDep,
+    clock: ClockDep,
+) -> MePersonOut:
+    """Save your new phone or email with its code; your other browsers log out."""
+    changed = service.set_contact(
+        session,
+        redis_client,
+        notifier,
+        person,
+        data,
+        clock(),
+        keep_token=request.cookies[SESSION_COOKIE],
+    )
+    set_response_message(request, "Log-in changed")
+    response.status_code = 200
+    return MePersonOut.model_validate(changed, from_attributes=True)
+
+
+@router.delete("/me/contact/{channel}")
+def remove_my_contact(
+    request: Request,
+    response: Response,
+    channel: ContactKind,
+    person: CurrentPersonDep,
+    session: SessionDep,
+    redis_client: RedisDep,
+    notifier: NotifierDep,
+) -> MePersonOut:
+    """Stop logging in with your phone or your email; other browsers log out."""
+    changed = service.remove_contact(
+        session,
+        redis_client,
+        notifier,
+        person,
+        channel,
+        keep_token=request.cookies[SESSION_COOKIE],
+        yourself=True,
+    )
+    set_response_message(request, "Log-in changed")
+    response.status_code = 200
+    return MePersonOut.model_validate(changed, from_attributes=True)
