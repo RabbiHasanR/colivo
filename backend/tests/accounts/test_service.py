@@ -1774,3 +1774,31 @@ def test_a_phone_taken_while_saving_answers_409(
         409,
         "Someone else logs in with that phone or email.",
     )
+
+
+def test_your_own_change_is_kept_in_each_home_under_your_membership_there(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan is in "Our Flat" and "Old Fort"
+    WHEN  he changes his own phone to 01912 345678
+    THEN  each home's history has the change, made by his membership there
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    there = also_in_old_fort(session, owner, MembershipStatus.ACTIVE)
+    person = person_of(session, owner)
+    new_phone = phone("+8801912345678")
+    service.request_contact_code(redis_client, notifier, person, new_phone, clock())
+    data = ContactChangeIn(
+        contact=new_phone, code=notifier.last_code_to(new_phone.value)
+    )
+
+    service.set_contact(session, redis_client, notifier, person, data, clock())
+
+    for membership in (owner, there):
+        last = history_of(session, membership)[-1]
+        assert (last.home_id, last.changed_by, last.new_values) == (
+            membership.home_id,
+            membership.id,
+            {"phone": "+8801912345678"},
+        )

@@ -1789,3 +1789,30 @@ def test_my_log_in_needs_a_log_in(
     response = client.request(method, path, json=body)
 
     assert response.status_code == 401
+
+
+def test_a_person_in_two_homes_changes_their_phone_without_choosing_a_home(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Rabbi Hasan is active in "Our Flat" and "Old Fort"
+    WHEN  he changes his phone on My profile, naming no home
+    THEN  it answers 200, not "Choose a home": a log-in belongs to no one home
+    """
+    sign_up_owner(client, redis_client, clock)
+    rabbi_joins_old_fort(session)
+    client.post("/api/v1/me/contact/code", json={"contact": "01912 345678"})
+
+    response = client.put(
+        "/api/v1/me/contact",
+        json={
+            "contact": "01912 345678",
+            "code": notifier.last_code_to("+8801912345678"),
+        },
+    )
+
+    assert response.status_code == 200

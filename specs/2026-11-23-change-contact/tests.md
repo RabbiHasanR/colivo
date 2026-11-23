@@ -151,8 +151,8 @@ Web acceptance: `web/tests/acceptance/profile-test.ts` › person changes their 
 
 ### B23 — A person in several homes changes their own log-in without choosing a home
 
-- [x] T23.1 integration — a person in two homes changes their phone with no `X-Colivo-Home` header and gets 200, not "Choose a home"
-- [x] T23.2 unit — `test_your_own_change_is_kept_in_each_home_under_your_membership_there`
+- [x] T23.1 integration — a person in two homes changes their phone with no `X-Colivo-Home` header and gets 200, not "Choose a home" ✅ _(passed on its first run, because the route already uses `CurrentPersonDep`; seen failing (409) with `CurrentMemberDep`)_
+- [x] T23.2 unit — `test_your_own_change_is_kept_in_each_home_under_your_membership_there` ✅ _(passed on its first run, because group 2's `record_log_in_change` writes one row per home; seen failing when it records only one)_
 
 ### B24 — After changing or removing your own, other sessions end and this browser stays
 
