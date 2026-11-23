@@ -946,6 +946,41 @@ def contacts_of(person: Person) -> list[Contact]:
     return found
 
 
+def record_log_in_change(
+    session: Session,
+    person: Person,
+    changed_by: Membership | None,
+    old_values: dict[str, Any],
+    new_values: dict[str, Any],
+) -> None:
+    """Keep a change to ``person``'s log-in in every home they are in (FR-27).
+
+    A log-in is the same in every home, so each home keeps its own proof,
+    under the person's membership there. The editor is named in their own
+    home; elsewhere (and for the person's own change) the person is.
+
+    Args:
+        session: The database session the change is made in.
+        person: Whose log-in changed.
+        changed_by: The owner or manager who changed it; None for the person.
+        old_values: The phone or email before, e.g. ``{"email": None}``.
+        new_values: The phone or email after.
+    """
+    memberships = session.exec(
+        select(Membership).where(Membership.person_id == person.id)
+    ).all()
+    for member in memberships:
+        editor_here = changed_by is not None and changed_by.home_id == member.home_id
+        record_member_change(
+            session,
+            member,
+            changed_by=changed_by if changed_by and editor_here else member,
+            action=ChangeAction.UPDATE,
+            old_values=old_values,
+            new_values=new_values,
+        )
+
+
 def other_kind(kind: ContactKind) -> ContactKind:
     """The other way to log in: the email for a phone, the phone for an email."""
     return ContactKind.PHONE if kind == ContactKind.EMAIL else ContactKind.EMAIL
@@ -988,6 +1023,7 @@ def set_contact(
     data: ContactChangeIn,
     now: datetime,
     *,
+    changed_by: Membership | None = None,
     keep_token: str | None = None,
 ) -> Person:
     """Save a new phone or email for ``person``, with the code sent to it.
@@ -1001,6 +1037,7 @@ def set_contact(
         person: Whose log-in changes.
         data: The new phone or email and its code.
         now: The current time.
+        changed_by: The owner or manager making it; None for the person.
         keep_token: The caller's session, kept when theirs ends.
 
     Returns:
@@ -1017,11 +1054,14 @@ def set_contact(
         raise HTTPException(409, CONTACT_TAKEN)
     kind = kind_of(data.contact)
     before = contacts_of(person)
-    replaced = getattr(person, kind) is not None
+    old_value = getattr(person, kind)
     setattr(person, kind, data.contact.value)
+    record_log_in_change(
+        session, person, changed_by, {kind: old_value}, {kind: data.contact.value}
+    )
     session.commit()
     session.refresh(person)
-    if replaced:
+    if old_value is not None:
         # A way to log in was taken away: every other browser logs in again.
         sessions.end_sessions(redis_client, person.id, keep_token)
     added = CONTACT_ADDED.format(shown=partly_hidden(data.contact))
@@ -1161,7 +1201,14 @@ def set_member_contact(
     """
     member, person = member_to_change(session, editor, member_id)
     set_contact(
-        session, redis_client, notifier, person, data, now, keep_token=keep_token
+        session,
+        redis_client,
+        notifier,
+        person,
+        data,
+        now,
+        changed_by=editor,
+        keep_token=keep_token,
     )
     return member
 
@@ -1173,6 +1220,7 @@ def remove_contact(
     person: Person,
     kind: ContactKind,
     *,
+    changed_by: Membership | None = None,
     keep_token: str | None = None,
 ) -> Person:
     """Stop ``person`` logging in with their phone or their email.
@@ -1185,6 +1233,7 @@ def remove_contact(
         notifier: Tells the removed phone or email.
         person: Whose log-in changes.
         kind: Which one to remove.
+        changed_by: The owner or manager removing it; None for the person.
         keep_token: The caller's session, kept when theirs ends.
 
     Returns:
@@ -1200,6 +1249,7 @@ def remove_contact(
     if getattr(person, other_kind(kind)) is None:
         raise HTTPException(400, LAST_CONTACT)
     setattr(person, kind, None)
+    record_log_in_change(session, person, changed_by, {kind: removed}, {kind: None})
     session.commit()
     session.refresh(person)
     sessions.end_sessions(redis_client, person.id, keep_token)
@@ -1235,5 +1285,13 @@ def remove_member_contact(
         The member.
     """
     member, person = member_to_change(session, editor, member_id)
-    remove_contact(session, redis_client, notifier, person, kind, keep_token=keep_token)
+    remove_contact(
+        session,
+        redis_client,
+        notifier,
+        person,
+        kind,
+        changed_by=editor,
+        keep_token=keep_token,
+    )
     return member

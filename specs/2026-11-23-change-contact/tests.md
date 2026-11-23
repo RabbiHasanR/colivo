@@ -109,8 +109,8 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B17 — Every addition, change and removal is kept in the home's history
 
-- [x] T17.1 unit — `test_a_change_is_kept_with_who_and_the_old_and_new_value`
-- [x] T17.2 unit — `test_a_removal_is_kept_in_the_history`
+- [x] T17.1 unit — `test_a_change_is_kept_with_who_and_the_old_and_new_value` ✅
+- [x] T17.2 unit — `test_a_removal_is_kept_in_the_history` ✅ _(passed on its first run, because the removal's history row went in with T17.1; seen failing without it)_
 
 ### B18 — Two changes to the same new phone or email at once: one wins
 

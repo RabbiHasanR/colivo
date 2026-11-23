@@ -34,7 +34,7 @@ from app.modules.accounts.schemas import (
     RoleIn,
     SignUpIn,
 )
-from app.modules.history.models import ChangeLog
+from app.modules.history.models import ChangeAction, ChangeLog
 from app.modules.homes import service as homes_service
 from app.modules.homes.models import Home
 from tests.conftest import FakeNotifier, MovableClock
@@ -1677,3 +1677,51 @@ def test_a_removal_tells_the_removed_contact(
             "If this wasn't you, tell your home's owner or a manager.",
         )
     ]
+
+
+def test_a_change_is_kept_with_who_and_the_old_and_new_value(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with 01812 345678
+    WHEN  the owner changes it to 01912 345678
+    THEN  Our Flat's history of Maruf has the change, by the owner, old and new
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    change_with_code(
+        session, redis_client, notifier, clock, owner, member, phone("+8801912345678")
+    )
+
+    last = history_of(session, member)[-1]
+    assert (last.home_id, last.changed_by, last.action) == (
+        owner.home_id,
+        owner.id,
+        ChangeAction.UPDATE,
+    )
+    assert (last.old_values, last.new_values) == (
+        {"phone": MARUF_E164},
+        {"phone": "+8801912345678"},
+    )
+
+
+def test_a_removal_is_kept_in_the_history(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with a phone and maruf@example.com
+    WHEN  the owner removes his email
+    THEN  the history keeps it: the email before, none after, by the owner
+    """
+    owner, member = maruf_with_both(session, redis_client, notifier, clock)
+
+    service.remove_member_contact(
+        session, redis_client, notifier, owner, member.id, ContactKind.EMAIL, clock()
+    )
+
+    last = history_of(session, member)[-1]
+    assert (last.changed_by, last.old_values, last.new_values) == (
+        owner.id,
+        {"email": MARUF_EMAIL},
+        {"email": None},
+    )
