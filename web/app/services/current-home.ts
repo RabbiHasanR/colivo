@@ -1,6 +1,7 @@
 import Service, { service } from '@ember/service';
 import { tracked } from '@glimmer/tracking';
 import { getSetup, type Setup } from '../data/builders/home';
+import { getMyHomes, type HomeChoice } from '../data/builders/me';
 import type Store from './store';
 
 /** Where a tab keeps its chosen home (sessionStorage: this tab only). */
@@ -49,6 +50,12 @@ export default class CurrentHomeService extends Service {
   @tracked homeId: string | null =
     readHome(() => sessionStorage, TAB_HOME_KEY) ??
     readHome(() => localStorage, LAST_HOME_KEY);
+
+  /** The logged-in person's homes, to choose one (`GET /me/homes`). */
+  async loadHomes(): Promise<HomeChoice[]> {
+    const { content } = await this.store.request<HomeChoice[]>(getMyHomes());
+    return content;
+  }
 
   /** Act in `homeId` in this tab; new tabs start from it too. */
   choose(homeId: string): void {

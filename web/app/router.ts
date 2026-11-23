@@ -8,6 +8,8 @@ export default class Router extends EmberRouter {
 
 Router.map(function () {
   this.route('log-in');
+  // Which home to act in, for a person in several (Phase 1b).
+  this.route('choose-home');
   // Everything behind log-in; its index is the home page at "/".
   this.route('authenticated', { path: '' }, function () {
     this.route('members');

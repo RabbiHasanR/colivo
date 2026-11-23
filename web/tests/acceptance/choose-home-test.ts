@@ -41,4 +41,16 @@ module('Acceptance | choose a home', function (hooks) {
       assert.dom('[data-test-shell-home]').hasText('Our Flat');
     },
   );
+
+  test('a tab with no home chosen, for a person in several homes, opens "Choose a home"', async function (assert) {
+    // GIVEN Rabbi is logged in, in Our Flat and Green House, and this tab has no home
+    // WHEN  he opens the app
+    // THEN  he is asked which home, with both listed
+    worker.use(...homesApi(undefined, { loggedIn: true }));
+
+    await visit('/');
+
+    assert.strictEqual(currentURL(), '/choose-home');
+    assert.dom('[data-test-home-choice]').exists({ count: 2 });
+  });
 });

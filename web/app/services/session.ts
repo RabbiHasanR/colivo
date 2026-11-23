@@ -10,7 +10,7 @@ import {
   type SignUpFields,
 } from '../data/builders/auth';
 import { getMe, updateMe, type Me } from '../data/builders/me';
-import { ApiError } from '../utils/api-error';
+import { ApiError, refusalReason } from '../utils/api-error';
 
 // For components, which don't import the data layer.
 export type { Me, Role } from '../data/builders/me';
@@ -41,21 +41,31 @@ export default class SessionService extends Service {
   }
 
   /**
-   * Who is logged in: asks `GET /me` once, then remembers. Null when nobody
-   * is (401).
+   * Who is logged in, in this tab's home: asks `GET /me` once, then
+   * remembers. When there is nobody to show, says where to go instead:
+   * `log-in` when nobody is logged in (401); `choose-home` when the tab
+   * names no home of theirs and they have several (409 choose_home), or
+   * names one they're no longer in (403 not_in_home), Phase 1b.
    */
-  async load(): Promise<Me | null> {
+  async landing(): Promise<Me | 'log-in' | 'choose-home'> {
     if (this.me) return this.me;
     try {
       const { content } = await this.store.request<Me>(getMe());
       this.me = content;
+      return content;
     } catch (error) {
       if (error instanceof ApiError && error.kind === 'unauthorized') {
-        return null;
+        return 'log-in';
       }
+      if (refusalReason(error)) return 'choose-home';
       throw error;
     }
-    return this.me;
+  }
+
+  /** Act in `homeId` in this tab; who they are there is read again. */
+  chooseHome(homeId: string): void {
+    this.currentHome.choose(homeId);
+    this.me = null;
   }
 
   async requestCode(contact: string): Promise<CodeSent> {

@@ -27,3 +27,12 @@ export function updateMe(name: string) {
     cacheOptions: { [SkipCache]: true as const },
   };
 }
+
+/** The logged-in person's homes (`GET /me/homes`); needs no home chosen. */
+export function getMyHomes() {
+  return {
+    url: apiUrl('me/homes'),
+    method: 'GET' as const,
+    cacheOptions: { [SkipCache]: true as const },
+  };
+}
