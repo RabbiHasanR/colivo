@@ -1078,3 +1078,23 @@ def test_my_homes_answers_401_with_no_active_home(
     response = client.get("/api/v1/me/homes")
 
     assert response.status_code == 401
+
+
+def test_role_follows_the_chosen_home(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi owns "Our Flat" and is a plain member of "Old Fort"
+    WHEN  he asks for the members list in each home
+    THEN  Our Flat answers it; Old Fort refuses with 403 for his role there
+    """
+    sign_up_owner(client, redis_client, clock)
+    our_flat_id = owner_home_id(client)
+    old_fort_id = rabbi_joins_old_fort(session)
+
+    in_our_flat = client.get("/api/v1/members", headers={HOME_HEADER: str(our_flat_id)})
+    in_old_fort = client.get("/api/v1/members", headers={HOME_HEADER: str(old_fort_id)})
+
+    assert in_our_flat.status_code == 200
+    assert in_old_fort.status_code == 403
+    assert in_old_fort.json().get("data") is None

@@ -113,7 +113,7 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 ### B17 — The role follows the chosen home
 
-- [x] T17.1 integration — `test_role_follows_the_chosen_home`: owner of Our Flat and member of Old Fort; `GET /members` → 200 in Our Flat, 403 (role, no reason) in Old Fort
+- [x] T17.1 integration — `test_role_follows_the_chosen_home` ✅ _(passed on its first run: `require_role` reads the chosen membership since B9; seen failing by taking the person's highest role)_: owner of Our Flat and member of Old Fort; `GET /members` → 200 in Our Flat, 403 (role, no reason) in Old Fort
 - [ ] T17.2 web — _(skipped: the nav reads the role from the chosen home's `me`; covered by Phase 1's `members-test.ts` › a member has no Members link)_
 
 ### B18 — A malformed home id: 422
