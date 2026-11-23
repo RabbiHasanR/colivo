@@ -156,6 +156,6 @@ Web acceptance: `web/tests/acceptance/profile-test.ts` › person changes their 
 
 ### B24 — After changing or removing your own, other sessions end and this browser stays
 
-- [x] T24.1 integration — logged in on two browsers, a person changes their phone in one: that one still works, the other answers 401
-- [x] T24.2 integration — removing your own email keeps this browser logged in
+- [x] T24.1 integration — logged in on two browsers, a person changes their phone in one: that one still works, the other answers 401 ✅ _(passed on its first run, because the `/me` routes already pass the cookie as `keep_token`; seen failing (401, 401) with `keep_token=None`)_
+- [x] T24.2 integration — removing your own email keeps this browser logged in ✅ _(passed on its first run, because the `/me` routes already pass the cookie as `keep_token`; seen failing (401, 401) with `keep_token=None`)_
 - [ ] T24.3 web — anything on the web _(nothing changes on screen; the web acceptance test shows the page still works after the change)_

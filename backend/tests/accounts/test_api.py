@@ -1816,3 +1816,61 @@ def test_a_person_in_two_homes_changes_their_phone_without_choosing_a_home(
     )
 
     assert response.status_code == 200
+
+
+def rabbi_on_another_browser(
+    session: Session, redis_client: Redis, clock: MovableClock
+) -> str:
+    """A second open session for Rabbi (01712 345678), as on his phone."""
+    person = session.exec(select(Person).where(Person.phone == PHONE_E164)).one()
+    return sessions.create_session(redis_client, person.id, clock())
+
+
+def test_changing_my_phone_logs_out_my_other_browsers_only(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Rabbi Hasan is logged in on his laptop and his phone
+    WHEN  he changes his phone on My profile on the laptop
+    THEN  the laptop stays logged in, and the phone's session answers 401
+    """
+    sign_up_owner(client, redis_client, clock)
+    laptop = client.cookies[SESSION_COOKIE]
+    other = rabbi_on_another_browser(session, redis_client, clock)
+    client.post("/api/v1/me/contact/code", json={"contact": "01912 345678"})
+
+    client.put(
+        "/api/v1/me/contact",
+        json={
+            "contact": "01912 345678",
+            "code": notifier.last_code_to("+8801912345678"),
+        },
+    )
+
+    assert (me_with(client, laptop), me_with(client, other)) == (200, 401)
+
+
+def test_removing_my_email_keeps_this_browser_logged_in(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+) -> None:
+    """
+    GIVEN Rabbi Hasan logs in with a phone and an email, on two browsers
+    WHEN  he removes his email on My profile on the laptop
+    THEN  the laptop stays logged in, and the other browser answers 401
+    """
+    sign_up_owner(client, redis_client, clock)
+    add_my_email(client, notifier)
+    laptop = client.cookies[SESSION_COOKIE]
+    other = rabbi_on_another_browser(session, redis_client, clock)
+
+    client.delete("/api/v1/me/contact/email")
+
+    assert (me_with(client, laptop), me_with(client, other)) == (200, 401)
