@@ -1425,3 +1425,33 @@ def test_a_manager_cant_change_the_owners_log_in_nor_a_member_anyones(
 
     assert response.status_code == 403
     assert notifier.sent == []
+
+
+@pytest.mark.parametrize("whose", ["another home's", "nobody's"])
+@pytest.mark.parametrize(("method", "path", "body"), CONTACT_CALLS)
+def test_changing_another_homes_members_log_in_answers_404(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    whose: str,
+    method: str,
+    path: str,
+    body: dict[str, Any] | None,
+) -> None:
+    """
+    GIVEN Karim is a member of "Old Fort", not of "Our Flat"
+    WHEN  the owner of Our Flat changes the log-in of Karim, or of an unknown id
+    THEN  it answers 404 "Member not found.", and nothing is sent
+    """
+    sign_up_owner(client, redis_client, clock)
+    karim = member_of_old_fort(session)
+    target = karim.id if whose == "another home's" else uuid.uuid7()
+    notifier.sent.clear()
+
+    response = client.request(method, f"/api/v1/members/{target}/{path}", json=body)
+
+    assert response.status_code == 404
+    assert response.json()["message"] == "Member not found."
+    assert notifier.sent == []

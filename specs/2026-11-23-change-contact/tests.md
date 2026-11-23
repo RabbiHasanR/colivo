@@ -72,7 +72,7 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B11 — Another home's member can't be changed and isn't revealed
 
-- [x] T11.1 integration — the three endpoints answer 404 for another home's member and for an unknown id (parametrised)
+- [x] T11.1 integration — the three endpoints answer 404 for another home's member and for an unknown id (parametrised) ✅ _(passed on its first run: `member_to_change` starts with Phase 1's `get_member`; kept to pin the new endpoints' home scoping)_
 
 ### B12 — A past member's log-in can't be changed
 
