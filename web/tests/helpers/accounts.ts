@@ -214,3 +214,34 @@ export function homesApi(
     }),
   ];
 }
+
+type MePerson = Schemas['MePersonOut'];
+
+/**
+ * `POST /me/contact/code`, `PUT /me/contact` and `DELETE /me/contact/:channel`
+ * over one person starting as `person` (Phase 1c): any code is accepted, and
+ * a contact with "@" is an email.
+ */
+export function myContactApi(
+  person: MePerson = { phone: '+8801712345678', email: null },
+) {
+  const me = { ...person };
+  const answer = () =>
+    HttpResponse.json({ success: true, message: 'Log-in changed', data: me });
+  return [
+    http.post('*/api/v1/me/contact/code', () =>
+      HttpResponse.json(codeSentBody),
+    ),
+    http.put('*/api/v1/me/contact', async ({ request }) => {
+      const { contact } = (await request.json()) as Schemas['ContactChangeIn'];
+      if (contact.includes('@')) me.email = contact;
+      else me.phone = contact;
+      return answer();
+    }),
+    http.delete('*/api/v1/me/contact/:channel', ({ params }) => {
+      if (params['channel'] === 'email') me.email = null;
+      else me.phone = null;
+      return answer();
+    }),
+  ];
+}
