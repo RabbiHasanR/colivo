@@ -70,6 +70,7 @@ export default class SessionService extends Service {
    */
   async openHome(homeId: string): Promise<void> {
     this.currentHome.choose(homeId);
+    this.currentHome.leftHomeName = null;
     this.me = null;
     await this.router.transitionTo('authenticated.index');
     await this.router.refresh('authenticated');
@@ -123,6 +124,27 @@ export default class SessionService extends Service {
     if (!this.me) return;
     this.me = null;
     this.router.transitionTo('log-in');
+  }
+
+  /**
+   * A request was refused (403). Removed from this tab's home while still in
+   * others (`not_in_home`): go to "Choose a home", saying which home they
+   * left (Phase 1b). Otherwise their role may have changed: check it.
+   */
+  async forbidden(error: ApiError): Promise<void> {
+    if (refusalReason(error) === 'not_in_home') {
+      this.leftHome();
+      return;
+    }
+    await this.recheckRole();
+  }
+
+  /** This tab's home removed them: "Choose a home" says so. */
+  leftHome(): void {
+    if (!this.me) return;
+    this.currentHome.leftHomeName = this.me.home.name;
+    this.me = null;
+    this.router.transitionTo('choose-home');
   }
 
   /**

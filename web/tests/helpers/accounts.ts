@@ -140,7 +140,10 @@ export function logInBody(homes: HomeChoice[], loggedIn: Me | null): LogInBody {
 }
 
 /** A refusal of the home a request named (or didn't), with its reason. */
-function homeRefusal(status: 403 | 409, reason: 'not_in_home' | 'choose_home') {
+export function homeRefusal(
+  status: 403 | 409,
+  reason: 'not_in_home' | 'choose_home',
+) {
   const message =
     reason === 'choose_home'
       ? 'Choose a home.'

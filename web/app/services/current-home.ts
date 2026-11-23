@@ -51,6 +51,9 @@ export default class CurrentHomeService extends Service {
     readHome(() => sessionStorage, TAB_HOME_KEY) ??
     readHome(() => localStorage, LAST_HOME_KEY);
 
+  /** The home this tab was just removed from, for "Choose a home" to say. */
+  @tracked leftHomeName: string | null = null;
+
   /** Forget the home in this tab and for new tabs (log-out). */
   forget(): void {
     this.homeId = null;

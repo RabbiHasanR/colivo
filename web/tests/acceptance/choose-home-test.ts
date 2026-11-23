@@ -2,11 +2,17 @@ import { module, test } from 'qunit';
 import { click, currentURL, fillIn, visit } from '@ember/test-helpers';
 import { setupApplicationTest } from 'colivo-web/tests/helpers';
 import { setupMsw, worker } from 'colivo-web/tests/helpers/msw';
+import { http } from 'msw';
 import {
+  GREEN_HOUSE_ID,
+  homeRefusal,
   homesApi,
   newHomeSetup,
   notLoggedIn,
+  ourFlat,
+  twoHomes,
 } from 'colivo-web/tests/helpers/accounts';
+import { TAB_HOME_KEY } from 'colivo-web/services/current-home';
 
 module('Acceptance | choose a home', function (hooks) {
   setupApplicationTest(hooks);
@@ -49,5 +55,30 @@ module('Acceptance | choose a home', function (hooks) {
 
     assert.strictEqual(currentURL(), '/choose-home');
     assert.dom('[data-test-home-choice]').exists({ count: 2 });
+  });
+
+  test('removed from the open home goes to "Choose a home" with a notice', async function (assert) {
+    // GIVEN Rabbi manages "Green House" in this tab, and also owns "Our Flat"
+    // WHEN  Green House removes him, and he then opens Members there
+    // THEN  he is asked which home, told he's no longer in Green House, and
+    //       only Our Flat is offered
+    const homes = [{ ...twoHomes[0]!, role: 'manager' as const }, ourFlat];
+    worker.use(
+      ...homesApi(homes, { loggedIn: true }),
+      http.get('*/api/v1/members', () => homeRefusal(403, 'not_in_home')),
+    );
+    sessionStorage.setItem(TAB_HOME_KEY, GREEN_HOUSE_ID);
+    await visit('/');
+    assert.dom('[data-test-shell-home]').includesText('Green House');
+
+    homes.shift();
+    await click('[data-test-nav-members]');
+
+    assert.strictEqual(currentURL(), '/choose-home');
+    assert
+      .dom('[data-test-left-home]')
+      .hasText("You're no longer a member of Green House.");
+    assert.dom('[data-test-home-choice]').exists({ count: 1 });
+    assert.dom('[data-test-home-choice="Our Flat"]').exists();
   });
 });

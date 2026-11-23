@@ -7,6 +7,7 @@ import { createAuthHandler } from '../data/handlers/auth';
 import { createEnvelopeHandler } from '../data/handlers/api-envelope';
 import { createErrorWatchHandler } from '../data/handlers/error-watch';
 import type { Handler } from '../data/handlers/types';
+import type { ApiError } from '../utils/api-error';
 import type SessionService from './session';
 import type CurrentHomeService from './current-home';
 
@@ -23,7 +24,7 @@ function asWarpDriveHandler(handler: Handler): WarpDriveHandler {
 
 /** Set by the store once it exists, so the handlers can reach the session. */
 let onSessionEnded: () => void = () => {};
-let onForbidden: () => void = () => {};
+let onForbidden: (error: ApiError) => void = () => {};
 let homeId: () => string | null = () => null;
 
 /**
@@ -35,7 +36,7 @@ const BaseStore = useLegacyStore({
   cache: JSONAPICache,
   handlers: [
     createErrorWatchHandler('unauthorized', () => onSessionEnded()),
-    createErrorWatchHandler('forbidden', () => onForbidden()),
+    createErrorWatchHandler('forbidden', (error) => onForbidden(error)),
     ErrorHandler,
     createAuthHandler(() => homeId()),
     createEnvelopeHandler(),
@@ -46,7 +47,7 @@ const BaseStore = useLegacyStore({
 /**
  * The app's store. A 401 on any request means the session ended: the session
  * service then forgets who was logged in and goes to log-in. A 403 makes it
- * check whether the person's role changed meanwhile.
+ * check why: they left the home, or their role changed meanwhile.
  */
 export default class Store extends BaseStore {
   @service declare session: SessionService;
@@ -55,7 +56,7 @@ export default class Store extends BaseStore {
   constructor(...args: ConstructorParameters<typeof BaseStore>) {
     super(...args);
     onSessionEnded = () => this.session.expire();
-    onForbidden = () => void this.session.recheckRole();
+    onForbidden = (error) => void this.session.forbidden(error);
     homeId = () => this.currentHome.homeId;
   }
 }

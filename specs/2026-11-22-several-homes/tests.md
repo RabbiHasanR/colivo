@@ -105,7 +105,7 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 
 ### B15 — Removed from the open home: "Choose a home" with a notice
 
-- [x] T15.1 web acceptance — `choose-home-test.ts` › removed from the open home goes to "Choose a home" with "You're no longer a member of Green House"
+- [x] T15.1 web acceptance — `choose-home-test.ts` › removed from the open home goes to "Choose a home" with "You're no longer a member of Green House" ✅
 - [x] T15.2 web unit — `utils/api-error-test.ts` › `refusalReason` reads `choose_home` and `not_in_home`, and null for anything else ✅
 
 ### B16 — Removed from the last home: logged out at once
