@@ -72,12 +72,9 @@ class Membership(TableBase, table=True):
             unique=True,
             postgresql_where=text("role = 'owner'"),
         ),
-        # A person's active homes; they can be active in several (Phase 1b).
-        Index(
-            "ix_membership_active_person_id",
-            "person_id",
-            postgresql_where=text("status = 'active'"),
-        ),
+        # A person's memberships, any status: their active homes (Phase 1b),
+        # and whether they are in another home at all (Phase 1c).
+        Index("ix_membership_person_id", "person_id"),
     )
 
     home_id: uuid.UUID = Field(foreign_key="home.id")

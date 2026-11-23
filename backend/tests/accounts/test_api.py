@@ -1304,3 +1304,90 @@ def test_contact_code_answers_the_same_for_someone_elses_phone(
 
     assert (taken.status_code, free.status_code) == (200, 200)
     assert taken.json() == free.json()
+
+
+def maruf_joins_old_fort(
+    session: Session, status: MembershipStatus = MembershipStatus.ACTIVE
+) -> None:
+    """Make Maruf (01812 345678) a member of another home, "Old Fort"."""
+    person = session.exec(select(Person).where(Person.phone == MARUF_E164)).one()
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area="Dhanmondi", first_month=date(2026, 1, 1)
+    )
+    session.add(
+        Membership(
+            home_id=old_fort.id, person_id=person.id, name="Maruf", status=status
+        )
+    )
+    session.flush()
+
+
+# The three ways the owner or a manager changes a member's log-in: method,
+# path after /members/{id}, and body.
+CONTACT_CALLS = [
+    pytest.param("POST", "contact/code", {"contact": MARUF_EMAIL}, id="code"),
+    pytest.param(
+        "PUT", "contact", {"contact": MARUF_EMAIL, "code": "123456"}, id="save"
+    ),
+    pytest.param("DELETE", "contact/phone", None, id="remove"),
+]
+
+
+@pytest.mark.parametrize(("method", "path", "body"), CONTACT_CALLS)
+def test_a_member_in_another_home_is_refused_403(
+    client: TestClient,
+    session: Session,
+    redis_client: Redis,
+    notifier: FakeNotifier,
+    clock: MovableClock,
+    method: str,
+    path: str,
+    body: dict[str, Any] | None,
+) -> None:
+    """
+    GIVEN Maruf, a member of "Our Flat", is also active in "Old Fort"
+    WHEN  the owner of Our Flat asks for a code, saves or removes his log-in
+    THEN  it answers 403 "Only they can change …", and nothing is sent
+    """
+    sign_up_owner(client, redis_client, clock)
+    member_id = add_maruf(client)
+    maruf_joins_old_fort(session)
+    notifier.sent.clear()
+
+    response = client.request(method, f"/api/v1/members/{member_id}/{path}", json=body)
+
+    assert response.status_code == 403
+    assert response.json()["message"] == (
+        "Only they can change their log-in, from My profile."
+    )
+    assert notifier.sent == []
+
+
+def test_members_list_says_whose_log_in_can_be_changed(
+    client: TestClient, session: Session, redis_client: Redis, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf is also in "Old Fort", and Sumi is only in "Our Flat"
+    WHEN  the owner of Our Flat reads the members list
+    THEN  Maruf's log-in can't be changed and Sumi's can, and nothing in the
+          list is about Old Fort
+    """
+    sign_up_owner(client, redis_client, clock)
+    add_maruf(client)
+    client.post("/api/v1/members", json=maruf_body(name="Sumi", contact="01912 345678"))
+    maruf_joins_old_fort(session)
+
+    listed = client.get("/api/v1/members").json()["data"]
+
+    editable = {each["name"]: each["contact_editable"] for each in listed}
+    assert (editable["Maruf"], editable["Sumi"]) == (False, True)
+    assert set(listed[0]) == {
+        "id",
+        "name",
+        "phone",
+        "email",
+        "role",
+        "status",
+        "joined_on",
+        "contact_editable",
+    }

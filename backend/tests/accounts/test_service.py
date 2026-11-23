@@ -1492,3 +1492,64 @@ def test_a_code_for_the_phone_they_already_have_is_refused(
         "That's already their phone or email.",
     )
     assert notifier.sent == []
+
+
+def also_in_old_fort(
+    session: Session, member: Membership, status: MembershipStatus
+) -> Membership:
+    """Make ``member``'s person a member of another home, "Old Fort", too."""
+    old_fort = homes_service.create_home(
+        session, name="Old Fort", area=None, first_month=date(2026, 1, 1)
+    )
+    there = Membership(
+        home_id=old_fort.id, person_id=member.person_id, name="Maruf", status=status
+    )
+    session.add(there)
+    session.flush()
+    return there
+
+
+def test_a_past_membership_in_another_home_also_blocks_the_change(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf, a member of "Our Flat", was once a member of "Old Fort"
+    WHEN  the owner of Our Flat asks for a code to change his log-in
+    THEN  it is refused with 403: Old Fort could reactivate him with it
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+    also_in_old_fort(session, member, MembershipStatus.INACTIVE)
+
+    with pytest.raises(HTTPException) as refused:
+        service.request_member_contact_code(
+            session, redis_client, notifier, owner, member.id, email(), clock()
+        )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        403,
+        "Only they can change their log-in, from My profile.",
+    )
+
+
+def test_your_own_row_is_not_blocked_by_your_other_home(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Rabbi Hasan owns "Our Flat" and is also a member of "Old Fort"
+    WHEN  he asks for a code to add an email to his own row on Members
+    THEN  the code is sent: he is the person whose log-in it is
+    """
+    owner = sign_up_with_new_code(session, redis_client, clock)
+    also_in_old_fort(session, owner, MembershipStatus.ACTIVE)
+
+    service.request_member_contact_code(
+        session,
+        redis_client,
+        notifier,
+        owner,
+        owner.id,
+        email("rabbi@example.com"),
+        clock(),
+    )
+
+    assert [message.to for message in notifier.sent] == ["rabbi@example.com"]

@@ -127,6 +127,9 @@ class MemberOut(BaseModel):
     role: Role
     status: MembershipStatus
     joined_on: date | None
+    # Whether the owner or manager reading it may change their phone or email
+    # (Phase 1c); never says why, so no other home is revealed.
+    contact_editable: bool
 
 
 class MePersonOut(BaseModel):

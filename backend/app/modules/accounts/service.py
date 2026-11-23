@@ -68,6 +68,7 @@ DEACTIVATE_BEFORE_STAY = "Deactivation can't start before their stay began."
 LAST_CONTACT = "They need a phone or an email to log in."
 CONTACT_TAKEN = "Someone else logs in with that phone or email."
 SAME_CONTACT = "That's already their phone or email."
+ONLY_THEY_CAN = "Only they can change their log-in, from My profile."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -477,15 +478,19 @@ def joined_on(session: Session, membership: Membership) -> date | None:
     ).one()
 
 
-def member_out(session: Session, membership: Membership) -> MemberOut:
+def member_out(
+    session: Session, membership: Membership, viewer: Membership
+) -> MemberOut:
     """Describe a member for the members list.
 
     Args:
         session: The database session.
         membership: The member.
+        viewer: The owner or manager reading it, for ``contact_editable``.
 
     Returns:
-        Their name, phone or email, role, status and join date.
+        Their name, phone and email, role, status, join date, and whether
+        ``viewer`` may change their log-in.
     """
     person = session.get_one(Person, membership.person_id)
     return MemberOut(
@@ -496,25 +501,26 @@ def member_out(session: Session, membership: Membership) -> MemberOut:
         role=membership.role,
         status=membership.status,
         joined_on=joined_on(session, membership),
+        contact_editable=contact_refusal(session, viewer, membership) is None,
     )
 
 
-def list_members(session: Session, home_id: uuid.UUID) -> list[MemberOut]:
-    """Everyone in a home, A to Z, for the owner and managers.
+def list_members(session: Session, viewer: Membership) -> list[MemberOut]:
+    """Everyone in the viewer's home, A to Z, for the owner and managers.
 
     Args:
         session: The database session.
-        home_id: The home.
+        viewer: The owner or manager reading it.
 
     Returns:
         The members, active and deactivated.
     """
     members = session.exec(
         select(Membership)
-        .where(Membership.home_id == home_id)
+        .where(Membership.home_id == viewer.home_id)
         .order_by(func.lower(Membership.name))
     ).all()
-    return [member_out(session, member) for member in members]
+    return [member_out(session, member, viewer) for member in members]
 
 
 def update_member(
@@ -984,6 +990,73 @@ def set_contact(
     return person
 
 
+def in_another_home(session: Session, member: Membership) -> bool:
+    """Whether ``member``'s person is also a member of another home.
+
+    Args:
+        session: The database session.
+        member: The member.
+
+    Returns:
+        True when they have a membership in another home, active or past:
+        a past one can be reactivated, and would then log in with it.
+    """
+    other = session.exec(
+        select(Membership.id).where(
+            Membership.person_id == member.person_id,
+            Membership.home_id != member.home_id,
+        )
+    ).first()
+    return other is not None
+
+
+def contact_refusal(
+    session: Session, editor: Membership, member: Membership
+) -> HTTPException | None:
+    """Why ``editor`` may not change ``member``'s log-in, or None if they may.
+
+    A log-in belongs to the person in every home, so for someone also in
+    another home only they may change it; otherwise one home's owner could
+    take over their log-in everywhere.
+
+    Args:
+        session: The database session.
+        editor: The owner or manager.
+        member: The member whose log-in would change.
+
+    Returns:
+        The refusal to raise, or None.
+    """
+    yourself = editor.person_id == member.person_id
+    if not yourself and in_another_home(session, member):
+        return HTTPException(403, ONLY_THEY_CAN)
+    return None
+
+
+def member_to_change(
+    session: Session, editor: Membership, member_id: uuid.UUID
+) -> tuple[Membership, Person]:
+    """The member whose log-in ``editor`` changes, and their person.
+
+    Args:
+        session: The database session.
+        editor: The owner or manager.
+        member_id: The member asked for.
+
+    Returns:
+        The member and the person behind them.
+
+    Raises:
+        HTTPException: 404 for another home's member; the refusal from
+            ``contact_refusal``.
+    """
+    member = get_member(session, editor.home_id, member_id)
+    refusal = contact_refusal(session, editor, member)
+    if refusal is not None:
+        raise refusal
+    return member, session.get_one(Person, member.person_id)
+
+
 def request_member_contact_code(
     session: Session,
     redis_client: Redis,
@@ -1007,8 +1080,7 @@ def request_member_contact_code(
     Returns:
         How the code was sent.
     """
-    member = get_member(session, editor.home_id, member_id)
-    person = session.get_one(Person, member.person_id)
+    _, person = member_to_change(session, editor, member_id)
     return request_contact_code(redis_client, notifier, person, contact, now)
 
 
@@ -1035,8 +1107,7 @@ def set_member_contact(
     Returns:
         The member.
     """
-    member = get_member(session, editor.home_id, member_id)
-    person = session.get_one(Person, member.person_id)
+    member, person = member_to_change(session, editor, member_id)
     set_contact(session, redis_client, person, data, now)
     return member
 
@@ -1089,6 +1160,6 @@ def remove_member_contact(
     Returns:
         The member.
     """
-    member = get_member(session, editor.home_id, member_id)
-    remove_contact(session, session.get_one(Person, member.person_id), kind)
+    member, person = member_to_change(session, editor, member_id)
+    remove_contact(session, person, kind)
     return member

@@ -184,7 +184,7 @@ def list_members(
     """Everyone in the home, for the owner and managers."""
     set_response_message(request, "Members")
     response.status_code = 200
-    return service.list_members(session, membership.home_id)
+    return service.list_members(session, membership)
 
 
 @router.post("/members", status_code=201)
@@ -204,7 +204,7 @@ def add_member(
     member = service.add_member(session, notifier, adder, data, clock())
     set_response_message(request, "Member added")
     response.status_code = 201
-    return service.member_out(session, member)
+    return service.member_out(session, member, adder)
 
 
 @router.patch("/members/{member_id}")
@@ -221,7 +221,7 @@ def update_member(
     member = service.update_member(session, editor, member_id, data, clock())
     set_response_message(request, "Member changed")
     response.status_code = 200
-    return service.member_out(session, member)
+    return service.member_out(session, member, editor)
 
 
 @router.patch("/me")
@@ -254,7 +254,7 @@ def change_role(
     member = service.change_role(session, owner, member_id, data, clock())
     set_response_message(request, "Role changed")
     response.status_code = 200
-    return service.member_out(session, member)
+    return service.member_out(session, member, owner)
 
 
 @router.post("/members/{member_id}/deactivate")
@@ -271,7 +271,7 @@ def deactivate(
     member = service.deactivate(session, editor, member_id, data, clock())
     set_response_message(request, "Member deactivated")
     response.status_code = 200
-    return service.member_out(session, member)
+    return service.member_out(session, member, editor)
 
 
 @router.post("/members/{member_id}/reactivate")
@@ -288,7 +288,7 @@ def reactivate(
     member = service.reactivate(session, editor, member_id, data, clock())
     set_response_message(request, "Member reactivated")
     response.status_code = 200
-    return service.member_out(session, member)
+    return service.member_out(session, member, editor)
 
 
 @router.post("/members/{member_id}/contact/code", responses=CODE_ERRORS)
@@ -330,7 +330,7 @@ def set_member_contact(
     )
     set_response_message(request, "Log-in changed")
     response.status_code = 200
-    return service.member_out(session, member)
+    return service.member_out(session, member, editor)
 
 
 @router.delete("/members/{member_id}/contact/{channel}")
@@ -351,4 +351,4 @@ def remove_member_contact(
     )
     set_response_message(request, "Log-in changed")
     response.status_code = 200
-    return service.member_out(session, member)
+    return service.member_out(session, member, editor)
