@@ -166,3 +166,4 @@ Bugs found by hand, each reproduced by a failing test first; the tests stay
 as regression tests ([testing.md → Workflow](../testing.md#workflow)).
 
 - [x] F1 web integration — contact editor keeps the field focused while you type ✅ (`{{#each}}` had no key, so every keystroke rebuilt the row)
+- [x] F2 web acceptance — My profile shows a phone you changed on Members ✅ (the page showed `session.me`, read once at start; the profile route now reads `GET /me` again)
