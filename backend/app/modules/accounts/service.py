@@ -65,6 +65,7 @@ OWNER_DETAILS_FOR_OWNER = "Only the owner can change the owner's details."
 REACTIVATE_TOO_EARLY = "Charges can start again only after their last stay ended."
 ALREADY_ACTIVE = "This member is already active."
 DEACTIVATE_BEFORE_STAY = "Deactivation can't start before their stay began."
+LAST_CONTACT = "They need a phone or an email to log in."
 NOT_ADDED = (
     "Not added yet. Ask your home's owner or manager to add you, or create a new home."
 )
@@ -908,6 +909,16 @@ def last_stay_end(session: Session, member: Membership) -> date | None:
 # Phase 1c: the phone or email a person logs in with.
 
 
+def kind_of(contact: Contact) -> ContactKind:
+    """Whether ``contact`` is a phone or an email; also its ``person`` column."""
+    return ContactKind.EMAIL if contact.channel == Channel.EMAIL else ContactKind.PHONE
+
+
+def other_kind(kind: ContactKind) -> ContactKind:
+    """The other way to log in: the email for a phone, the phone for an email."""
+    return ContactKind.PHONE if kind == ContactKind.EMAIL else ContactKind.EMAIL
+
+
 def request_contact_code(
     redis_client: Redis,
     notifier: Notifier,
@@ -953,10 +964,7 @@ def set_contact(
         The changed person.
     """
     codes.use_code(redis_client, data.contact, data.code, now)
-    if data.contact.channel == Channel.EMAIL:
-        person.email = data.contact.value
-    else:
-        person.phone = data.contact.value
+    setattr(person, kind_of(data.contact), data.contact.value)
     session.commit()
     session.refresh(person)
     return person
@@ -1029,11 +1037,16 @@ def remove_contact(session: Session, person: Person, kind: ContactKind) -> Perso
 
     Returns:
         The changed person.
+
+    Raises:
+        HTTPException: 400 when they have none of that kind, or it is the last
+            way they log in.
     """
-    if kind == ContactKind.EMAIL:
-        person.email = None
-    else:
-        person.phone = None
+    if getattr(person, kind) is None:
+        raise HTTPException(400, f"They have no {kind} to remove.")
+    if getattr(person, other_kind(kind)) is None:
+        raise HTTPException(400, LAST_CONTACT)
+    setattr(person, kind, None)
     session.commit()
     session.refresh(person)
     return person

@@ -1409,3 +1409,58 @@ def test_removing_the_email_keeps_only_the_phone(
     person = person_of(session, member)
     assert (person.phone, person.email) == (MARUF_E164, None)
     assert service.find_person(session, email()) is None
+
+
+def test_the_last_way_to_log_in_cant_be_removed(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with only 01812 345678
+    WHEN  the owner removes the phone
+    THEN  it is refused with 400, and Maruf keeps his phone
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    with pytest.raises(HTTPException) as refused:
+        service.remove_member_contact(
+            session,
+            redis_client,
+            notifier,
+            owner,
+            member.id,
+            ContactKind.PHONE,
+            clock(),
+        )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        400,
+        "They need a phone or an email to log in.",
+    )
+    assert person_of(session, member).phone == MARUF_E164
+
+
+def test_removing_one_they_dont_have_is_refused(
+    session: Session, redis_client: Redis, notifier: FakeNotifier, clock: MovableClock
+) -> None:
+    """
+    GIVEN Maruf logs in with only 01812 345678
+    WHEN  the owner removes his email
+    THEN  it is refused with 400, saying there is no email
+    """
+    owner, member = owner_and_maruf(session, redis_client, notifier, clock)
+
+    with pytest.raises(HTTPException) as refused:
+        service.remove_member_contact(
+            session,
+            redis_client,
+            notifier,
+            owner,
+            member.id,
+            ContactKind.EMAIL,
+            clock(),
+        )
+
+    assert (refused.value.status_code, refused.value.detail) == (
+        400,
+        "They have no email to remove.",
+    )

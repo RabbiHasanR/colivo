@@ -35,8 +35,8 @@ Web acceptance: `web/tests/acceptance/members-test.ts` › owner adds an email t
 
 ### B5 — The last way a member logs in can't be removed
 
-- [x] T5.1 unit — `test_the_last_way_to_log_in_cant_be_removed` (400 "They need a phone or an email to log in.")
-- [x] T5.2 unit — `test_removing_one_they_dont_have_is_refused`
+- [x] T5.1 unit — `test_the_last_way_to_log_in_cant_be_removed` ✅ (400 "They need a phone or an email to log in.")
+- [x] T5.2 unit — `test_removing_one_they_dont_have_is_refused` ✅
 - [ ] T5.3 unit — database refuses a person with neither _(already pinned by Phase 1's `test_person_checks_reject_bad_rows`)_
 - [ ] T5.4 web integration — the 400 message on Remove _(the editor never offers Remove for the last one, T4.4)_
 
