@@ -71,6 +71,8 @@ Existing tests and helpers changed (approved at Gate 2, 23 Nov 2026):
 - [x] T9.1 integration — `test_me_shows_the_chosen_homes_first_log_in_check` ✅: checked in Our Flat, not yet in Old Fort; `GET /me` answers for the home the header names
 - [ ] T9.2 web — _(skipped: the guard already sends an unchecked membership to the check, from `me`; covered by Phase 1's `first-log-in-test.ts`)_
 
+- [x] T9.3 web acceptance — `choose-home-test.ts` › choosing a home whose first log-in check is pending opens the check ✅ _(added on 23 Nov 2026: the end-to-end journey showed an unhandled `TransitionAborted` when the guard redirected to the check; T9.2's reason was wrong, since opening a home is new web code)_
+
 ### B10 — Switch homes from the shell
 
 - [x] T10.1 integration — `test_me_lists_the_persons_homes_for_the_switcher` ✅: `MeOut.homes` has both homes

@@ -120,9 +120,13 @@ export const twoHomes: HomeChoice[] = [
 ];
 
 /** Who Rabbi is in one of `twoHomes`. */
-export function meIn(homeId: string, homes: HomeChoice[] = twoHomes): Me {
+export function meIn(
+  homeId: string,
+  homes: HomeChoice[] = twoHomes,
+  membership: Partial<MeMembership> = {},
+): Me {
   const choice = homes.find((home) => home.id === homeId)!;
-  const base = me(choice.role, { name: 'Rabbi Hasan' });
+  const base = me(choice.role, { name: 'Rabbi Hasan', ...membership });
   return {
     ...base,
     home: { ...base.home, id: choice.id, name: choice.name, area: choice.area },
@@ -159,11 +163,15 @@ export function homeRefusal(
  * `X-Colivo-Home` header names, as the backend does: no header with several
  * homes is 409 choose_home; a home not in `homes` is 403 not_in_home.
  * `homes` may be changed by the test (removed from a home). Nobody is
- * logged in until `POST /auth/log-in`, unless `loggedIn` says so.
+ * logged in until `POST /auth/log-in`, unless `loggedIn` says so; the
+ * homes in `unchecked` still have their first log-in check to do.
  */
 export function homesApi(
   homes: HomeChoice[] = [...twoHomes],
-  { loggedIn = false }: { loggedIn?: boolean } = {},
+  {
+    loggedIn = false,
+    unchecked = [],
+  }: { loggedIn?: boolean; unchecked?: string[] } = {},
 ) {
   let session = loggedIn;
   const loggedOut = () => HttpResponse.json(notLoggedInBody, { status: 401 });
@@ -199,7 +207,9 @@ export function homesApi(
       return HttpResponse.json({
         success: true,
         message: 'Logged in',
-        data: meIn(chosen!, homes),
+        data: meIn(chosen!, homes, {
+          details_checked: !unchecked.includes(chosen!),
+        }),
       });
     }),
   ];

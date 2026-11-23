@@ -81,4 +81,18 @@ module('Acceptance | choose a home', function (hooks) {
     assert.dom('[data-test-home-choice]').exists({ count: 1 });
     assert.dom('[data-test-home-choice="Our Flat"]').exists();
   });
+
+  test('choosing a home whose first log-in check is pending opens the check', async function (assert) {
+    // GIVEN Rabbi was just added to "Green House" and hasn't checked his details there
+    // WHEN  he chooses Green House
+    // THEN  Green House's first log-in check opens
+    worker.use(
+      ...homesApi(undefined, { loggedIn: true, unchecked: [GREEN_HOUSE_ID] }),
+    );
+    await visit('/choose-home');
+
+    await click('[data-test-home-choice="Green House"]');
+
+    assert.strictEqual(currentURL(), '/welcome');
+  });
 });

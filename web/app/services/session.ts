@@ -72,8 +72,15 @@ export default class SessionService extends Service {
     this.currentHome.choose(homeId);
     this.currentHome.leftHomeName = null;
     this.me = null;
-    await this.router.transitionTo('authenticated.index');
-    await this.router.refresh('authenticated');
+    try {
+      await this.router.transitionTo('authenticated.index');
+      await this.router.refresh('authenticated');
+    } catch (error) {
+      // The guard redirected (the new home's first log-in check): fine.
+      if (!(error instanceof Error && error.name === 'TransitionAborted')) {
+        throw error;
+      }
+    }
   }
 
   async requestCode(contact: string): Promise<CodeSent> {
