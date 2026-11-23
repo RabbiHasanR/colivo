@@ -2,6 +2,17 @@
 
 All notable changes to Colivo, grouped by date (newest first).
 
+## 2026-11-23
+
+- Allowed a person to be an active member of several homes: an owner or manager can add someone who is active elsewhere, someone already in a home can sign up for another, and a past member who joined another home can be reactivated; adding an active member of the same home again is refused ("Already a member of this home.").
+- Each home sees only its own membership of a person (their name, role and dates there), and a change in one home leaves their other homes alone.
+- On the web, reworded the sign-up note to say that someone already in a home can create their own.
+- In the API, every home-scoped request names its home in an `X-Colivo-Home` header: log-in lists the person's homes and goes straight into the only one; `GET /me/homes` lists them for choosing; a request that names no home for someone in several is refused ("Choose a home") and changes nothing; naming a home they aren't in gives the same 403 whether or not it exists; log-out needs no home; roles are checked in the chosen home; the web app's origin may send the header.
+- On the web, a person in several homes picks one on "Choose a home" after log-in and switches from the home name in the sidebar or the phone top bar; each tab keeps its own home and a new tab starts in the last one chosen; log-out forgets it; signing up opens the new home; being removed from the open home shows "Choose a home" with "You're no longer a member of …".
+- Added `make web-screens` shots of the "Create a home" tab, "Choose a home" and the home menu, and an end-to-end journey where Rabbi, added to two homes, chooses one, switches in a second tab and is told when one removes him.
+- Ran the security review of Phase 1b and of Phase 1's 22 Nov web changes: no findings.
+- Completed Phase 1b — A person in several homes.
+
 ## 2026-11-22
 
 - On the web, restyled every Phase 1 screen to match colivo-design: form controls, buttons and cards; the sidebar with icons, the current page in teal and a profile card with initials; the home page with its header, four stat cards (empty until their phases) and the setup checklist with a progress bar; Members & roles with role and status pills; and log-in with its brand panel, card forms and styled code errors.
@@ -15,6 +26,8 @@ All notable changes to Colivo, grouped by date (newest first).
 - In the specs, log-in codes are read from the development outbox in Redis; ID documents and profile photos are planned as Phase 2's last group, the ID optional when adding (FR-60) and the photo settable by the owner or a manager too (FR-86).
 - In the project rules, every phase follows colivo-design for web and mobile, with each difference agreed and listed in the phase's Screens table; recorded Phase 1's agreed differences.
 - Added `make web-screens`, which saves every page at 390px and 1440px with sample data to compare with the design; it found and fixed the members table widening the page on phones.
+- Deferred the security review of the 22 Nov web changes to Phase 1b.
+- In the specs, added the Phase 1b spec (a person in several homes): one person can be active in several homes, and each request names its home in a header, so each browser tab keeps its own home.
 
 ## 2026-11-21
 
