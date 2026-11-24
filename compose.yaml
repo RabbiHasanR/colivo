@@ -33,6 +33,50 @@ services:
       timeout: 3s
       retries: 10
 
+  minio:
+    # Local S3 for uploaded files. MinIO stopped publishing free images in
+    # Oct 2025; Chainguard rebuilds it from source. Its free tier has only
+    # `latest`, so the image is pinned by digest: refresh it on purpose.
+    image: cgr.dev/chainguard/minio@sha256:f2e56aceb4d38ad9b05c901270946e2353b19f86ba4396f25cf75b15b455b38c
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:?set S3_ACCESS_KEY_ID in .env}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:?set S3_SECRET_ACCESS_KEY in .env}
+      # The built-in KMS key for SSE-KMS (ID and contact documents).
+      MINIO_KMS_SECRET_KEY: ${MINIO_KMS_SECRET_KEY:?set MINIO_KMS_SECRET_KEY in .env}
+      # Lets `mc` in the healthcheck reach this server as the alias "local".
+      MC_HOST_local: http://${S3_ACCESS_KEY_ID}:${S3_SECRET_ACCESS_KEY}@localhost:9000
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio-init:
+    # Runs once per `up`: creates the app and test buckets, private, with
+    # encryption on by default. Safe to run again.
+    image: cgr.dev/chainguard/minio@sha256:f2e56aceb4d38ad9b05c901270946e2353b19f86ba4396f25cf75b15b455b38c
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        for bucket in "$$S3_BUCKET" "$$S3_TEST_BUCKET"; do
+        mc mb --ignore-existing "local/$$bucket" &&
+        mc anonymous set none "local/$$bucket" &&
+        mc encrypt set sse-s3 "local/$$bucket" || exit 1;
+        done
+    environment:
+      MC_HOST_local: http://${S3_ACCESS_KEY_ID}:${S3_SECRET_ACCESS_KEY}@minio:9000
+      S3_BUCKET: ${S3_BUCKET:?set S3_BUCKET in .env}
+      S3_TEST_BUCKET: ${S3_TEST_BUCKET:?set S3_TEST_BUCKET in .env}
+    depends_on:
+      minio:
+        condition: service_healthy
+
   backend:
     build:
       context: ./backend
@@ -45,6 +89,14 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://redis:6379/0
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:4200}
+      # The backend reaches MinIO by its service name; browsers by localhost.
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL:-http://localhost:9000}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY}
+      S3_KMS_KEY_ID: ${S3_KMS_KEY_ID}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
@@ -55,6 +107,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     healthcheck:
       # 200 = healthy; a 503 (a dependency down) or no answer = unhealthy.
       test:
@@ -72,3 +126,4 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  minio-data:

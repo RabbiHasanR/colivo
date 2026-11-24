@@ -54,6 +54,25 @@ class Settings(BaseSettings):
     # chosen (specs/tech-stack.md → Deferred decisions).
     notifier: Literal["log"] = "log"
 
+    # File storage: a private S3 bucket (MinIO locally). Browsers upload and
+    # download straight from it through presigned URLs (specs/data-model.md →
+    # Files). Unset endpoint and keys mean real AWS S3 with its usual
+    # credentials.
+    s3_endpoint_url: str | None = None
+    # The address a browser reaches the storage at, used in presigned URLs.
+    # Unset: the same as s3_endpoint_url. Differs inside Compose, where the
+    # backend reaches MinIO as http://minio:9000.
+    s3_public_endpoint_url: str | None = None
+    s3_region: str = "us-east-1"
+    s3_bucket: str = "colivo"
+    # Only the test suite uses it, like test_database_url.
+    s3_test_bucket: str | None = None
+    s3_access_key_id: str | None = None
+    s3_secret_access_key: str | None = None
+    # The KMS key that encrypts sensitive files (ID and contact documents,
+    # SSE-KMS). Locally the name in MINIO_KMS_SECRET_KEY.
+    s3_kms_key_id: str | None = None
+
     @model_validator(mode="after")
     def refuse_the_log_notifier_in_production(self) -> Self:
         """Never run production with the development notifier.

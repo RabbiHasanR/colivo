@@ -59,7 +59,7 @@ Why Flutter for mobile:
 | Data access       | SQLModel (on SQLAlchemy 2.0) + Alembic; `fastapi-orm-scaffold` layout                                                   |
 | Database          | PostgreSQL 16                                                                                                           |
 | Background jobs   | Celery + Redis for OTP, notifications, month close _(to confirm)_                                                       |
-| File storage      | Private S3 bucket, uploads by presigned POST and reads by presigned GET; MinIO locally (decided Phase 1, built Phase 2) |
+| File storage      | Private S3 bucket, uploads by presigned POST and reads by presigned GET; MinIO locally, Chainguard's image (decided Phase 1, built Phase 2) |
 | Auth              | Phone/email one-time code; server session: random token in an httpOnly cookie, its hash in Redis (decided Phase 1)      |
 | Web data layer    | WarpDrive (EmberData) request builders + handlers; types generated from `api/openapi.json` with `openapi-typescript`    |
 | Mobile data layer | Dart client from OpenAPI _(to confirm)_                                                                                 |
@@ -285,7 +285,7 @@ Every phase follows this layout. Update this section when a convention changes.
 | `backend/app/main.py`                       | FastAPI app, middleware, exception handlers; `api_router` mounted at `/api/v1`                                                                                                             |
 | `backend/app/api/api_v1.py`                 | Registers every module router; `deps.py` holds the log-in and role dependencies (`current_person`, `current_membership`, `require_role`, `OwnerDep`, `OwnerOrManagerDep`)                  |
 | `backend/app/core/`                         | `config.py` (settings from env vars), `database.py` (engine, `get_session`), `router.py` (`CoreRouter`), `schemas.py` (`StandardResponse`), `exceptions.py` (error handlers), `utils.py`   |
-| `backend/app/modules/<module>/`             | `models.py`, `schemas.py`, `service.py`, `router.py` per module: `accounts`, `homes`, `history`, `meals`, `groceries`, `payments`, `bills`, `statements`, `deposits`, `inbox`, `messaging` |
+| `backend/app/modules/<module>/`             | `models.py`, `schemas.py`, `service.py`, `router.py` per module: `accounts`, `homes`, `history`, `contacts`, `files`, `meals`, `groceries`, `payments`, `bills`, `statements`, `deposits`, `inbox`, `messaging` |
 | `backend/app/utils/`                        | Shared helpers used by several modules                                                                                                                                                     |
 | `backend/alembic/`, `backend/alembic.ini`   | Alembic migrations (`alembic/versions/`) and config                                                                                                                                        |
 | `backend/tests/<module>/`                   | That module's tests                                                                                                                                                                        |

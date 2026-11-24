@@ -111,6 +111,9 @@ jobs:
       TEST_DATABASE_URL: postgresql+psycopg://colivo:ci-only@localhost:5432/colivo_test
       REDIS_URL: redis://localhost:6379/0
       BACKEND_CORS_ORIGINS: http://localhost:4200
+      # File storage: a MinIO service and its settings join this job with the
+      # first test that uploads (Phase 2, group 5).
+      S3_TEST_BUCKET: colivo-test
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
